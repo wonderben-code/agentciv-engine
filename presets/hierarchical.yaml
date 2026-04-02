@@ -1,0 +1,25 @@
+# AgentCiv Engine — Hierarchical Preset
+#
+# Traditional top-down structure. First agent is lead and coordinates
+# all others. Communication flows through the lead. Tasks are assigned,
+# not self-selected. Good for well-defined tasks with clear decomposition.
+
+organization:
+  authority: "hierarchy"
+  communication: "hub-spoke"
+  roles: "assigned"
+  decisions: "top-down"
+  incentives: "collaborative"
+  information: "curated"
+  conflict: "authority"
+  groups: "imposed"
+  adaptation: "static"
+
+parameters:
+  communication_range: "all"
+  message_visibility: "org-mediated"
+  task_claim_mode: "assigned"
+  require_review: true
+  review_mode: "lead"
+  max_messages_per_tick: 3
+  enable_specialisation: false

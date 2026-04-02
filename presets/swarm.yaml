@@ -1,0 +1,27 @@
+# AgentCiv Engine — Swarm Preset
+#
+# Decentralised, stigmergic coordination. No explicit communication —
+# agents observe what others have done (via file changes and events)
+# and adapt. Like ants following pheromone trails. No leader, no messages,
+# no meetings. Just work and observe. Surprisingly effective for
+# parallelisable tasks.
+
+organization:
+  authority: "anarchic"
+  communication: "whisper"
+  roles: "emergent"
+  decisions: "autonomous"
+  incentives: "collaborative"
+  information: "transparent"
+  conflict: "negotiated"
+  groups: "self-selected"
+  adaptation: "real-time"
+
+parameters:
+  communication_range: "direct-only"
+  message_visibility: "direct-only"
+  task_claim_mode: "voluntary"
+  require_review: false
+  enable_specialisation: true
+  max_messages_per_tick: 0
+  max_steps_per_tick: 6

@@ -1,0 +1,27 @@
+# AgentCiv Engine — Open Source Preset
+#
+# Mimics an open source project. Distributed authority based on expertise.
+# Anyone can propose changes but they must be reviewed. Reputation matters.
+# Transparent everything. Emergent roles — maintainers emerge through
+# consistent quality contributions. Good for long-running projects.
+
+organization:
+  authority: "distributed"
+  communication: "mesh"
+  roles: "emergent"
+  decisions: "meritocratic"
+  incentives: "reputation"
+  information: "transparent"
+  conflict: "voted"
+  groups: "self-selected"
+  adaptation: "evolving"
+
+parameters:
+  communication_range: "all"
+  message_visibility: "all"
+  task_claim_mode: "voluntary"
+  require_review: true
+  review_mode: "peer"
+  min_reviewers: 2
+  enable_specialisation: true
+  max_messages_per_tick: 5

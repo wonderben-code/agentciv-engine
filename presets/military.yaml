@@ -1,0 +1,29 @@
+# AgentCiv Engine — Military Preset
+#
+# Strict chain of command. The lead assigns all tasks and reviews all work.
+# Communication is tightly controlled — reports go up, orders come down.
+# Information is need-to-know. No freelancing, no autonomous decisions.
+# Good for safety-critical tasks where coordination must be precise.
+
+organization:
+  authority: "hierarchy"
+  communication: "hub-spoke"
+  roles: "assigned"
+  decisions: "top-down"
+  incentives: "collaborative"
+  information: "need-to-know"
+  conflict: "authority"
+  groups: "imposed"
+  adaptation: "static"
+
+parameters:
+  communication_range: "direct-only"
+  message_visibility: "org-mediated"
+  task_claim_mode: "assigned"
+  require_review: true
+  review_mode: "lead"
+  min_reviewers: 1
+  enable_specialisation: false
+  allow_task_stealing: false
+  max_messages_per_tick: 2
+  max_concurrent_tasks: 1

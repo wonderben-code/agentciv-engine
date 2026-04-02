@@ -283,6 +283,23 @@ class OrgEnforcer:
                 "Other agents will defer to you on topics where you've proven expertise."
             )
 
+        # Decisions
+        if self.dimensions.decisions == "meritocratic":
+            additions.append(
+                "Decisions are merit-based. Agents with proven track records on "
+                "relevant topics have more weight in architectural discussions."
+            )
+        elif self.dimensions.decisions == "autonomous":
+            additions.append(
+                "You have full autonomy over your work. Make decisions independently. "
+                "No need to seek approval unless you want feedback."
+            )
+        elif self.dimensions.decisions == "top-down":
+            if agent_state.identity.id == self.lead_agent_id:
+                additions.append("You make all final decisions for the team.")
+            else:
+                additions.append("Major decisions are made by the lead agent.")
+
         # Roles
         role = self.agent_roles.get(agent_state.identity.id)
         if role:
@@ -294,6 +311,29 @@ class OrgEnforcer:
                     f"You've naturally specialised in {top_skill.name} "
                     f"({top_skill.tier} level). Lean into this expertise."
                 )
+
+        # Groups
+        if self.dimensions.groups == "task-based":
+            additions.append(
+                "Teams form around tasks. Collaborate with whoever is working on "
+                "related problems."
+            )
+
+        # Adaptation
+        if self.dimensions.adaptation == "real-time":
+            additions.append(
+                "The organisation can restructure at any time. If the current approach "
+                "isn't working, propose changes."
+            )
+
+        # Community-added dimensions — automatically included in prompt shaping.
+        # Any key=value pair in the org YAML that isn't a built-in dimension
+        # gets described to the agent. This is how extensibility works without
+        # code changes.
+        for dim_name, dim_value in self.dimensions.extra.items():
+            additions.append(
+                f"Organisational dimension '{dim_name}' is set to '{dim_value}'."
+            )
 
         if not additions:
             return base_prompt

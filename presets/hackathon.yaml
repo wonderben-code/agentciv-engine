@@ -1,0 +1,28 @@
+# AgentCiv Engine — Hackathon Preset
+#
+# Maximum speed, maximum parallelism. Agents work on separate components
+# simultaneously with minimal coordination. Broadcast-heavy communication
+# so everyone knows what's happening. No review gates. Ship fast.
+# Good for greenfield projects under time pressure.
+
+organization:
+  authority: "flat"
+  communication: "broadcast"
+  roles: "fluid"
+  decisions: "autonomous"
+  incentives: "competitive"
+  information: "transparent"
+  conflict: "negotiated"
+  groups: "task-based"
+  adaptation: "real-time"
+
+parameters:
+  communication_range: "all"
+  message_visibility: "all"
+  task_claim_mode: "voluntary"
+  require_review: false
+  enable_specialisation: false
+  max_messages_per_tick: 10
+  max_steps_per_tick: 6
+  max_concurrent_tasks: 3
+  allow_task_stealing: true

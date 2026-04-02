@@ -1,0 +1,27 @@
+# AgentCiv Engine — Code Review Preset
+#
+# Quality over speed. Every change must be reviewed by at least 2 agents.
+# Meritocratic decisions — agents who've contributed more quality code
+# have stronger review authority. Good for production codebases where
+# correctness is paramount.
+
+organization:
+  authority: "distributed"
+  communication: "mesh"
+  roles: "emergent"
+  decisions: "meritocratic"
+  incentives: "reputation"
+  information: "transparent"
+  conflict: "voted"
+  groups: "self-selected"
+  adaptation: "evolving"
+
+parameters:
+  communication_range: "all"
+  message_visibility: "all"
+  task_claim_mode: "voluntary"
+  require_review: true
+  review_mode: "peer"
+  min_reviewers: 2
+  enable_specialisation: true
+  max_messages_per_tick: 5
