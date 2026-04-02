@@ -4,6 +4,11 @@ Built from first principles for a developer tool. The cognitive loop is a
 thin context assembler — it gives the LLM the right context and lets the
 model reason freely using native tool-use. Our innovation is the org layer
 that sits around this, not the reasoning inside it.
+
+Multi-turn within a tick: the agent calls tools and sees results in the
+same conversation thread, exactly like a human developer using an IDE.
+The LLM's native conversation memory handles the continuity — we don't
+need to re-describe results or re-assemble context mid-step.
 """
 
 from __future__ import annotations
@@ -25,7 +30,7 @@ from .types import (
 )
 
 if TYPE_CHECKING:
-    from ..llm.client import LLMClient, ToolCall
+    from ..llm.client import LLMClient, ToolCall, ToolResult
     from ..org.config import OrgDimensions
     from ..workspace.workspace import Workspace
     from ..workspace.executor import WorkspaceExecutor
@@ -72,33 +77,49 @@ class Agent:
         messages: list[Message],
         tick: int,
     ) -> list[Action]:
-        """Run one full cognitive loop. Returns all actions taken this tick."""
+        """Run one full cognitive loop. Returns all actions taken this tick.
+
+        Uses multi-turn tool-use: the agent sees tool results within the same
+        conversation, so it can read a file and then reason about its contents
+        before deciding what to write.
+        """
         self.state.ticks_active += 1
         actions_taken: list[Action] = []
 
         # --- OBSERVE ---
         self._observe(workspace, org, events, messages)
 
-        # --- Multi-step loop (model decides when to stop via 'done' tool) ---
-        max_steps = 4
+        # --- Build initial conversation ---
+        system = self._build_system_prompt()
+        prompt = self._build_prompt(workspace.task_description, tick)
+        conversation: list[dict[str, Any]] = [
+            {"role": "user", "content": prompt},
+        ]
+
+        # --- Multi-turn loop (model decides when to stop via 'done' tool) ---
+        max_steps = 6
         for step in range(max_steps):
-            # --- REASON + DECIDE (via native tool-use) ---
-            prompt = self._build_prompt(workspace.task_description, tick, step)
-            response = await self.llm.complete_with_tools(
-                prompt,
-                system=self._build_system_prompt(),
-            )
+            response = await self.llm.complete_with_tools(conversation, system=system)
             self.state.token_budget_remaining -= response.total_tokens
 
             # Log reasoning
             if response.content:
-                log.debug("Agent %s reasoning: %s", self.state.identity.name, response.content[:200])
+                log.debug(
+                    "Agent %s step %d: %s",
+                    self.state.identity.name, step + 1, response.content[:200],
+                )
 
             # No tool call = agent is done thinking
             if not response.has_tool_call:
                 break
 
-            # Execute each tool call
+            # Add assistant message to conversation (preserves tool_use blocks)
+            conversation.append(self.llm.format_assistant_message(response))
+
+            # Execute each tool call and collect results
+            from ..llm.client import ToolResult as TR
+            tool_results: list[TR] = []
+
             for tool_call in response.tool_calls:
                 action = self._tool_call_to_action(tool_call, tick, response.content)
 
@@ -113,6 +134,22 @@ class Agent:
 
                 # --- REFLECT ---
                 self._reflect(action, result, tick)
+
+                # Collect result for LLM feedback
+                tool_results.append(TR(
+                    tool_call_id=tool_call.id,
+                    output=result.output if result.success else f"Error: {result.error}",
+                    is_error=not result.success,
+                ))
+
+            # Feed tool results back into the conversation
+            result_msg = self.llm.format_tool_results(tool_results)
+            if isinstance(result_msg, list):
+                # OpenAI: each tool result is a separate message
+                conversation.extend(result_msg)
+            else:
+                # Anthropic/Mock: all tool results in one user message
+                conversation.append(result_msg)
 
         return actions_taken
 
@@ -150,13 +187,13 @@ class Agent:
             "Call the 'done' tool when you have nothing more to do this turn."
         )
 
-    def _build_prompt(self, task: str, tick: int, step: int) -> str:
+    def _build_prompt(self, task: str, tick: int) -> str:
         """Assemble context for the LLM. Describe state, don't prescribe behaviour."""
         sections: list[str] = []
 
         # Identity and task
         sections.append(
-            f"You are {self.state.identity.name}. Tick {tick}, step {step + 1}/4.\n"
+            f"You are {self.state.identity.name}. Tick {tick}.\n"
             f"Task: {task}"
         )
 
