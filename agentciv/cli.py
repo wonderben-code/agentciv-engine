@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 from .core.agent import Agent
+from .core.attention import AttentionMap
 from .core.engine import Engine
 from .core.event_bus import EventBus
 from .core.types import AgentIdentity, AgentState, Event, EventType
@@ -150,6 +151,9 @@ async def run_solve(args: argparse.Namespace) -> None:
     event_bus = EventBus()
     event_bus.subscribe(None, lambda e: print_event(e, verbose=args.verbose))
 
+    # Create attention map
+    attention = AttentionMap()
+
     # Create agents
     agents: list[Agent] = []
     for i in range(config.agent_count):
@@ -160,7 +164,7 @@ async def run_solve(args: argparse.Namespace) -> None:
             token_budget_remaining=config.parameters.token_budget_per_agent,
         )
         llm = create_client(config.model, max_tokens=1024)
-        executor = WorkspaceExecutor(workspace)
+        executor = WorkspaceExecutor(workspace, attention=attention)
         agent = Agent(state=state, llm=llm, executor=executor)
         workspace.register_agent(state)
         agents.append(agent)
@@ -186,6 +190,7 @@ async def run_solve(args: argparse.Namespace) -> None:
         agents=agents,
         event_bus=event_bus,
         enforcer=enforcer,
+        attention=attention,
     )
 
     await engine.run()

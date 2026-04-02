@@ -11,6 +11,7 @@ import logging
 from pathlib import Path
 
 from ..core.types import Action, ActionResult, ActionType
+from ..core.attention import AttentionMap
 from .workspace import Workspace
 
 log = logging.getLogger(__name__)
@@ -19,8 +20,14 @@ log = logging.getLogger(__name__)
 class WorkspaceExecutor:
     """Executes agent actions against the real file system."""
 
-    def __init__(self, workspace: Workspace, allowed_commands: list[str] | None = None):
+    def __init__(
+        self,
+        workspace: Workspace,
+        attention: AttentionMap | None = None,
+        allowed_commands: list[str] | None = None,
+    ):
         self.workspace = workspace
+        self.attention = attention
         # Whitelist of allowed shell commands (safety)
         self.allowed_commands = allowed_commands or [
             "python", "python3", "pip", "npm", "node", "npx",
@@ -85,10 +92,19 @@ class WorkspaceExecutor:
         if not str(full_path).startswith(str(self.workspace.project_dir.resolve())):
             return ActionResult(success=False, error="Path escapes project directory")
 
+        # Contention warning via attention map
+        warning = ""
+        if self.attention:
+            other = self.attention.is_file_being_worked_on(
+                action.file_path, exclude_agent=action.agent_id,
+            )
+            if other:
+                warning = f" WARNING: {other} is also working on this file."
+
         self.workspace.write_file(action.file_path, action.content, action.agent_id, action.tick)
         return ActionResult(
             success=True,
-            output=f"Written {len(action.content)} chars to {action.file_path}",
+            output=f"Written {len(action.content)} chars to {action.file_path}.{warning}",
         )
 
     def _create_file(self, action: Action) -> ActionResult:
