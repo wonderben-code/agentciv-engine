@@ -151,6 +151,71 @@ AGENT_TOOLS = [
     },
 ]
 
+# Additional tools available during meta-ticks (--org auto)
+META_TICK_TOOLS = [
+    {
+        "name": "propose_restructure",
+        "description": (
+            "Propose a change to the team's organisational structure. "
+            "Specify which dimension to change and what value to set it to. "
+            "Available dimensions: authority, communication, roles, decisions, "
+            "incentives, information, conflict, groups, adaptation. "
+            "Other agents will vote on your proposal."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "dimension": {
+                    "type": "string",
+                    "description": "The organisational dimension to change (e.g. 'authority', 'communication')",
+                },
+                "value": {
+                    "type": "string",
+                    "description": "The new value for this dimension (e.g. 'hierarchy', 'mesh', 'meritocratic')",
+                },
+                "reasoning": {
+                    "type": "string",
+                    "description": "Why this change would help the team",
+                },
+            },
+            "required": ["dimension", "value", "reasoning"],
+        },
+    },
+    {
+        "name": "vote",
+        "description": (
+            "Vote on an active restructuring proposal. "
+            "Vote 'yes' to support the change or 'no' to oppose it."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "proposal_id": {
+                    "type": "string",
+                    "description": "The ID of the proposal to vote on",
+                },
+                "vote": {
+                    "type": "string",
+                    "enum": ["yes", "no"],
+                    "description": "Your vote: 'yes' or 'no'",
+                },
+                "reasoning": {
+                    "type": "string",
+                    "description": "Why you're voting this way",
+                },
+            },
+            "required": ["proposal_id", "vote"],
+        },
+    },
+]
+
+
+def get_tools_for_tick(is_meta_tick: bool = False) -> list[dict]:
+    """Get the right tool set for the current tick type."""
+    if is_meta_tick:
+        return AGENT_TOOLS + META_TICK_TOOLS
+    return AGENT_TOOLS
+
 
 # OpenAI function-calling format (converted from above)
 def get_openai_tools() -> list[dict]:

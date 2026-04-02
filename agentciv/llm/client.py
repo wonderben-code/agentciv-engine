@@ -69,6 +69,7 @@ class LLMClient(ABC):
     @abstractmethod
     async def complete_with_tools(
         self, messages: list[dict[str, Any]], system: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         """Send messages with tool definitions and get a response with tool calls."""
         ...
@@ -112,13 +113,14 @@ class AnthropicClient(LLMClient):
 
     async def complete_with_tools(
         self, messages: list[dict[str, Any]], system: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         client = self._get_client()
         kwargs: dict[str, Any] = {
             "model": self.model,
             "max_tokens": self.max_tokens,
             "messages": messages,
-            "tools": AGENT_TOOLS,
+            "tools": tools or AGENT_TOOLS,
         }
         if system:
             kwargs["system"] = system
@@ -219,6 +221,7 @@ class OpenAIClient(LLMClient):
 
     async def complete_with_tools(
         self, messages: list[dict[str, Any]], system: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         client = self._get_client()
         api_messages: list[dict[str, Any]] = []
@@ -226,11 +229,27 @@ class OpenAIClient(LLMClient):
             api_messages.append({"role": "system", "content": system})
         api_messages.extend(messages)
 
+        # Convert custom tools to OpenAI format if provided
+        if tools is not None:
+            openai_tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": t["name"],
+                        "description": t["description"],
+                        "parameters": t["input_schema"],
+                    },
+                }
+                for t in tools
+            ]
+        else:
+            openai_tools = get_openai_tools()
+
         response = await client.chat.completions.create(
             model=self.model,
             max_tokens=self.max_tokens,
             messages=api_messages,
-            tools=get_openai_tools(),
+            tools=openai_tools,
         )
 
         choice = response.choices[0]
@@ -302,6 +321,7 @@ class MockClient(LLMClient):
 
     async def complete_with_tools(
         self, messages: list[dict[str, Any]], system: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         # Cycle through a realistic sequence of tool calls
         sequence = [

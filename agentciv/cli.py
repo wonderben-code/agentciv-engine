@@ -69,7 +69,8 @@ def print_event(event: Event, verbose: bool = False) -> None:
             print(f"  {'─' * 40}\n")
 
         case EventType.TICK_START:
-            print(f"  {tick} ────────────────────")
+            meta = " [META-TICK]" if event.data.get("is_meta_tick") else ""
+            print(f"  {tick} ────────────────────{meta}")
 
         case EventType.TICK_END:
             actions = event.data.get("actions", 0)
@@ -113,7 +114,12 @@ def print_event(event: Event, verbose: bool = False) -> None:
             print(f"  {tick}{agent} proposes restructure: {preview}")
 
         case EventType.RESTRUCTURE_ADOPTED:
-            print(f"  {tick} ★ organisation restructured")
+            dim = event.data.get("dimension", "?")
+            old = event.data.get("old_value", "?")
+            new = event.data.get("new_value", "?")
+            yes = event.data.get("yes_votes", 0)
+            no = event.data.get("no_votes", 0)
+            print(f"  {tick} ★ RESTRUCTURED: {dim} '{old}' → '{new}' ({yes}-{no})")
 
         case EventType.ENGINE_STOPPED:
             print(f"\n  Engine stopped at tick {event.tick}")

@@ -30,6 +30,7 @@ from .types import (
     Message,
     Relationship,
 )
+from ..org.auto import AutoOrgManager
 from ..org.config import EngineConfig, OrgDimensions
 from ..org.enforcer import OrgEnforcer
 from ..workspace.workspace import Workspace
@@ -47,6 +48,7 @@ class Engine:
     event_bus: EventBus = field(default_factory=EventBus)
     enforcer: OrgEnforcer | None = None
     attention: AttentionMap = field(default_factory=AttentionMap)
+    auto_org: AutoOrgManager | None = None
     tick: int = 0
     running: bool = False
 
@@ -67,6 +69,15 @@ class Engine:
             self.enforcer.assign_initial_roles(
                 [a.state.identity.id for a in self.agents]
             )
+
+        # Initialise auto-org manager if meta-ticks are enabled
+        if self.config.parameters.meta_tick_interval > 0 and self.auto_org is None:
+            self.auto_org = AutoOrgManager(
+                dimensions=self.config.org_dimensions,
+                parameters=self.config.parameters,
+                agent_count=len(self.agents),
+            )
+            log.info("Auto-organisation enabled (meta-tick interval: %d)", self.config.parameters.meta_tick_interval)
 
         # Register all agents in the attention map
         for agent in self.agents:
@@ -105,7 +116,17 @@ class Engine:
 
     async def _execute_tick(self) -> None:
         """Execute a single tick — all agents act."""
-        self.event_bus.emit(Event(type=EventType.TICK_START, tick=self.tick))
+        # Detect meta-tick (restructuring discussion for --org auto)
+        is_meta_tick = False
+        if self.auto_org and self.auto_org.is_meta_tick(self.tick):
+            is_meta_tick = True
+            self.auto_org.start_meta_tick(self.tick)
+
+        self.event_bus.emit(Event(
+            type=EventType.TICK_START,
+            tick=self.tick,
+            data={"is_meta_tick": is_meta_tick},
+        ))
 
         # Snapshot messages and events for this tick
         tick_events = list(self._events)
@@ -124,6 +145,8 @@ class Engine:
                 events=tick_events,
                 messages=tick_messages,
                 tick=self.tick,
+                is_meta_tick=is_meta_tick,
+                auto_org=self.auto_org,
             )
             for agent in self.agents
         ]
@@ -139,6 +162,10 @@ class Engine:
             all_actions.extend(result)
 
         # --- Post-tick updates ---
+
+        # Handle auto-org proposals and votes
+        if self.auto_org:
+            self._process_auto_org_actions(all_actions)
 
         # Update attention map from actions
         self._update_attention(all_actions)
@@ -165,14 +192,71 @@ class Engine:
                     is_broadcast=action.type.name == "BROADCAST",
                 ))
 
+        # Resolve proposals at end of meta-tick
+        if is_meta_tick and self.auto_org:
+            adopted = self.auto_org.resolve_proposals(self.tick)
+            for event in adopted:
+                self.event_bus.emit(Event(
+                    type=EventType.RESTRUCTURE_ADOPTED,
+                    tick=self.tick,
+                    data={
+                        "dimension": event.dimension,
+                        "old_value": event.old_value,
+                        "new_value": event.new_value,
+                        "proposer": event.proposer,
+                        "yes_votes": event.yes_votes,
+                        "no_votes": event.no_votes,
+                    },
+                ))
+                self._events.append(Event(
+                    type=EventType.RESTRUCTURE_ADOPTED,
+                    tick=self.tick,
+                    data={
+                        "dimension": event.dimension,
+                        "old_value": event.old_value,
+                        "new_value": event.new_value,
+                    },
+                ))
+
         # Tick idle counters
         self.attention.tick_idle(self.tick)
 
         self.event_bus.emit(Event(
             type=EventType.TICK_END,
             tick=self.tick,
-            data={"actions": len(all_actions)},
+            data={"actions": len(all_actions), "is_meta_tick": is_meta_tick},
         ))
+
+    def _process_auto_org_actions(self, actions: list[Action]) -> None:
+        """Process propose_restructure and vote actions through AutoOrgManager."""
+        # Map agent IDs to names
+        agent_names = {a.state.identity.id: a.state.identity.name for a in self.agents}
+
+        for action in actions:
+            if action.type == ActionType.PROPOSE_RESTRUCTURE and self.auto_org:
+                dimension = action.content or ""
+                value = action.target_agents[0] if action.target_agents else ""
+                reasoning = action.reasoning or ""
+                name = agent_names.get(action.agent_id, action.agent_id)
+                self.auto_org.submit_proposal(
+                    agent_id=action.agent_id,
+                    agent_name=name,
+                    dimension=dimension,
+                    value=value,
+                    reasoning=reasoning,
+                    tick=action.tick,
+                )
+            elif action.type == ActionType.VOTE and self.auto_org:
+                proposal_id = action.content or ""
+                vote = action.target_agents[0] if action.target_agents else "no"
+                reasoning = action.reasoning or ""
+                result = self.auto_org.submit_vote(
+                    agent_id=action.agent_id,
+                    proposal_id=proposal_id,
+                    vote=vote,
+                    reasoning=reasoning,
+                )
+                log.debug("Vote result for %s: %s", action.agent_id, result)
 
     def _update_attention(self, actions: list[Action]) -> None:
         """Update the attention map based on this tick's actions."""

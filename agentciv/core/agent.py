@@ -39,6 +39,7 @@ from .types import (
 if TYPE_CHECKING:
     from .attention import AttentionMap
     from ..llm.client import LLMClient, ToolCall, ToolResult
+    from ..org.auto import AutoOrgManager
     from ..org.config import OrgDimensions
     from ..org.enforcer import OrgEnforcer
     from ..workspace.workspace import Workspace
@@ -58,6 +59,8 @@ TOOL_TO_ACTION: dict[str, ActionType] = {
     "claim_task": ActionType.CLAIM_TASK,
     "release_task": ActionType.RELEASE_TASK,
     "request_review": ActionType.REQUEST_REVIEW,
+    "propose_restructure": ActionType.PROPOSE_RESTRUCTURE,
+    "vote": ActionType.VOTE,
     "done": ActionType.IDLE,
 }
 
@@ -88,6 +91,8 @@ class Agent:
         events: list[Event],
         messages: list[Message],
         tick: int,
+        is_meta_tick: bool = False,
+        auto_org: AutoOrgManager | None = None,
     ) -> list[Action]:
         """Run one full cognitive loop. Returns all actions taken this tick.
 
@@ -111,15 +116,24 @@ class Agent:
         # Org enforcer shapes the system prompt
         if enforcer:
             system = enforcer.shape_system_prompt(system, self.state)
-        prompt = self._build_prompt(workspace.task_description, tick)
+        # Meta-tick augmentation for --org auto
+        if is_meta_tick and auto_org:
+            system += auto_org.get_meta_tick_system_prompt()
+        prompt = self._build_prompt(workspace.task_description, tick, auto_org=auto_org)
         conversation: list[dict[str, Any]] = [
             {"role": "user", "content": prompt},
         ]
 
+        # Select tools — meta-ticks get propose_restructure and vote tools
+        from .tools import get_tools_for_tick
+        tick_tools = get_tools_for_tick(is_meta_tick)
+
         # --- Multi-turn loop (model decides when to stop via 'done' tool) ---
         max_steps = 6
         for step in range(max_steps):
-            response = await self.llm.complete_with_tools(conversation, system=system)
+            response = await self.llm.complete_with_tools(
+                conversation, system=system, tools=tick_tools,
+            )
             self.state.token_budget_remaining -= response.total_tokens
 
             # Log reasoning
@@ -243,7 +257,9 @@ class Agent:
             "Call the 'done' tool when you have nothing more to do this turn."
         )
 
-    def _build_prompt(self, task: str, tick: int) -> str:
+    def _build_prompt(
+        self, task: str, tick: int, auto_org: AutoOrgManager | None = None,
+    ) -> str:
         """Assemble context for the LLM. Describe state, don't prescribe behaviour."""
         sections: list[str] = []
 
@@ -334,6 +350,16 @@ class Agent:
             msg_lines = [f"  {m.sender_id}: {m.content}" for m in self._recent_messages[:8]]
             sections.append("Messages:\n" + "\n".join(msg_lines))
 
+        # Auto-organisation context (--org auto)
+        if auto_org:
+            proposals_prompt = auto_org.get_active_proposals_prompt()
+            if proposals_prompt:
+                sections.append(proposals_prompt)
+            history_prompt = auto_org.get_restructure_history_prompt()
+            if history_prompt:
+                sections.append(history_prompt)
+            sections.append(f"Current org: {auto_org.current_org_summary}")
+
         return "\n\n".join(sections)
 
     # -----------------------------------------------------------------------
@@ -370,6 +396,17 @@ class Agent:
                 self.state.current_focus = args.get("description")
             case "request_review":
                 action.content = args.get("description")
+            case "propose_restructure":
+                # Pack proposal details into action fields
+                action.content = args.get("dimension", "")
+                action.reasoning = args.get("reasoning", "")
+                # Store proposed value in target_agents (reusing field)
+                action.target_agents = [args.get("value", "")]
+            case "vote":
+                action.content = args.get("proposal_id", "")
+                action.reasoning = args.get("reasoning", "")
+                # Store vote value in target_agents
+                action.target_agents = [args.get("vote", "")]
 
         return action
 
