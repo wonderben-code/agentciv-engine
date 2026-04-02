@@ -209,6 +209,11 @@ async def run_solve(args: argparse.Namespace) -> None:
 
     await engine.run()
 
+    # Print chronicle report
+    if engine.chronicle:
+        report = engine.chronicle.generate_report()
+        print(report.to_terminal())
+
 
 def show_info() -> None:
     """Show available presets, dimensions, and feature toggles."""

@@ -30,6 +30,7 @@ from .types import (
     Message,
     Relationship,
 )
+from ..chronicle.observer import Chronicle
 from ..org.auto import AutoOrgManager
 from ..org.config import EngineConfig, OrgDimensions
 from ..org.enforcer import OrgEnforcer
@@ -51,6 +52,7 @@ class Engine:
     attention: AttentionMap = field(default_factory=AttentionMap)
     auto_org: AutoOrgManager | None = None
     git: GitManager | None = None
+    chronicle: Chronicle | None = None
     tick: int = 0
     running: bool = False
 
@@ -94,6 +96,21 @@ class Engine:
                 log.warning(
                     "Git not available — falling back to optimistic contention handling"
                 )
+
+        # Initialise chronicle observer
+        if self.config.enable_chronicle and self.chronicle is None:
+            agent_names = {
+                a.state.identity.id: a.state.identity.name
+                for a in self.agents
+            }
+            self.chronicle = Chronicle(
+                task=self.config.task,
+                org_preset=self.config.org_preset,
+                agent_count=len(self.agents),
+                agent_names=agent_names,
+            )
+            self.event_bus.subscribe(None, self.chronicle.observe)
+            log.info("Chronicle observer enabled")
 
         # Register all agents in the attention map
         for agent in self.agents:
