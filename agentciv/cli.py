@@ -66,6 +66,9 @@ def build_cli() -> argparse.ArgumentParser:
     # --- info ---
     sub.add_parser("info", help="Show available presets and dimensions")
 
+    # --- mcp ---
+    sub.add_parser("mcp", help="Start the MCP server (for Claude Code, Cursor, etc.)")
+
     return parser
 
 
@@ -447,6 +450,10 @@ def main() -> None:
 
     elif args.command == "info":
         show_info()
+
+    elif args.command == "mcp":
+        from .mcp import run_server
+        run_server()
 
     else:
         parser.print_help()
