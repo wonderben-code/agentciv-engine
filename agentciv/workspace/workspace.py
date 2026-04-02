@@ -117,8 +117,12 @@ class Workspace:
                 "focus": state.current_focus or "idle",
                 "working_files": state.working_files[:3],
                 "skills": [
-                    f"{s.name}({s.tier})"
-                    for s in list(state.skills.values())[:3]
+                    {"name": s.name, "tier": s.tier, "count": s.action_count}
+                    for s in sorted(
+                        state.skills.values(),
+                        key=lambda s: s.action_count,
+                        reverse=True,
+                    )[:3]
                 ],
             })
         return summaries

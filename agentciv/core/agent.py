@@ -9,6 +9,13 @@ Multi-turn within a tick: the agent calls tools and sees results in the
 same conversation thread, exactly like a human developer using an IDE.
 The LLM's native conversation memory handles the continuity — we don't
 need to re-describe results or re-assemble context mid-step.
+
+Context sources (all visible in the prompt):
+  - Organisation description (dimensions)
+  - Attention map (who's doing what — prevents duplicated effort)
+  - Other agents' specialisations (who to ask for help)
+  - Relationship history (who you've worked well with)
+  - Project files, events, messages, memory
 """
 
 from __future__ import annotations
@@ -30,6 +37,7 @@ from .types import (
 )
 
 if TYPE_CHECKING:
+    from .attention import AttentionMap
     from ..llm.client import LLMClient, ToolCall, ToolResult
     from ..org.config import OrgDimensions
     from ..org.enforcer import OrgEnforcer
@@ -69,12 +77,14 @@ class Agent:
     _other_agents: list[dict[str, Any]] = field(default_factory=list)
     _org_description: str = ""
     _task_description: str = ""
+    _attention_context: str = ""
 
     async def tick(
         self,
         workspace: Workspace,
         org: OrgDimensions,
         enforcer: OrgEnforcer | None,
+        attention: AttentionMap | None,
         events: list[Event],
         messages: list[Message],
         tick: int,
@@ -94,7 +104,7 @@ class Agent:
         actions_taken: list[Action] = []
 
         # --- OBSERVE (filtered by org enforcer) ---
-        self._observe(workspace, org, enforcer, events, messages)
+        self._observe(workspace, org, enforcer, attention, events, messages)
 
         # --- Build initial conversation ---
         system = self._build_system_prompt()
@@ -188,6 +198,7 @@ class Agent:
         workspace: Workspace,
         org: OrgDimensions,
         enforcer: OrgEnforcer | None,
+        attention: AttentionMap | None,
         events: list[Event],
         messages: list[Message],
     ) -> None:
@@ -208,6 +219,14 @@ class Agent:
         self._org_description = org.to_prompt_description()
         self._task_description = workspace.task_description
 
+        # Attention map — who's doing what right now
+        if attention:
+            self._attention_context = attention.to_prompt_context(
+                exclude_agent=self.state.identity.id,
+            )
+        else:
+            self._attention_context = ""
+
     # -----------------------------------------------------------------------
     # Prompt building — thin context assembly, not reasoning prescription
     # -----------------------------------------------------------------------
@@ -219,6 +238,8 @@ class Agent:
             "You work with other agents to build software. "
             "Use the tools provided to read files, write code, run commands, "
             "and communicate with other agents. "
+            "Check the attention map to see what others are working on before "
+            "claiming tasks — avoid duplicating effort. "
             "Call the 'done' tool when you have nothing more to do this turn."
         )
 
@@ -235,14 +256,36 @@ class Agent:
         # Organisation
         sections.append(self._org_description)
 
+        # Attention map — CRITICAL for preventing duplication
+        if self._attention_context:
+            sections.append(self._attention_context)
+
         # Current focus
         if self.state.current_focus:
             sections.append(f"Your current focus: {self.state.current_focus}")
 
-        # Skills
+        # Skills (your own)
         if self.state.skills:
             skill_lines = [f"  {s.name}: {s.tier}" for s in self.state.skills.values()]
             sections.append("Your skills:\n" + "\n".join(skill_lines))
+
+        # Relationships — who you've worked well with
+        if self.state.relationships:
+            good_partners = sorted(
+                self.state.relationships.values(),
+                key=lambda r: r.trust,
+                reverse=True,
+            )[:5]
+            if good_partners:
+                rel_lines = []
+                for r in good_partners:
+                    if r.interaction_count > 0:
+                        rel_lines.append(
+                            f"  {r.agent_id}: {r.interaction_count} interactions, "
+                            f"trust {r.trust:.0%}"
+                        )
+                if rel_lines:
+                    sections.append("Collaboration history:\n" + "\n".join(rel_lines))
 
         # Memory
         if self.state.memories:
@@ -259,12 +302,23 @@ class Agent:
             file_lines = [f"  {f['path']}" for f in self._visible_files[:25]]
             sections.append("Project files:\n" + "\n".join(file_lines))
 
-        # Other agents
+        # Other agents with specialisation visibility
         if self._other_agents:
-            agent_lines = [
-                f"  {a['name']}: {a.get('focus', 'idle')}"
-                for a in self._other_agents
-            ]
+            agent_lines = []
+            for a in self._other_agents:
+                parts = [f"{a['name']}:"]
+                if a.get("focus"):
+                    parts.append(a["focus"])
+                else:
+                    parts.append("idle")
+                # Specialisation visibility — agents can see each other's skills
+                if a.get("skills"):
+                    skills_str = ", ".join(
+                        f"{s['name']}({s['tier']})"
+                        for s in a["skills"][:3]
+                    )
+                    parts.append(f"skills: {skills_str}")
+                agent_lines.append("  " + " | ".join(parts))
             sections.append("Other agents:\n" + "\n".join(agent_lines))
 
         # Recent events
