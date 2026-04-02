@@ -167,6 +167,7 @@ async def run_solve(args: argparse.Namespace) -> None:
     # Create and run engine
     engine = Engine(
         config=config,
+        workspace=workspace,
         agents=agents,
         event_bus=event_bus,
     )

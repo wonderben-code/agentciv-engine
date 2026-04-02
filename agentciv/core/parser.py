@@ -97,7 +97,11 @@ def _build_action(
 
         # For write/create, extract content (look for code block in response)
         if action_type in (ActionType.WRITE_FILE, ActionType.CREATE_FILE):
-            action.content = _extract_code_block(full_response)
+            content = _extract_code_block(full_response)
+            if not content:
+                # Fallback: grab everything after the ACTION line as content
+                content = _extract_content_after_action(full_response)
+            action.content = content
 
     elif action_type == ActionType.RUN_COMMAND:
         action.command = arg.strip("`\"' ")
@@ -147,4 +151,23 @@ def _extract_code_block(text: str) -> str | None:
     if code_lines:
         return "\n".join(code_lines).strip()
 
+    return None
+
+
+def _extract_content_after_action(text: str) -> str | None:
+    """Fallback: extract content that appears after the ACTION line.
+
+    Some agents write the file content directly after the action without
+    using a code fence. This grabs everything after the ACTION: WRITE_FILE line.
+    """
+    # Find the ACTION: WRITE_FILE or ACTION: CREATE_FILE line
+    match = re.search(
+        r"ACTION:\s*(?:WRITE_FILE|CREATE_FILE)\s+\S+\s*\n(.*)",
+        text,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if match:
+        content = match.group(1).strip()
+        if content:
+            return content
     return None

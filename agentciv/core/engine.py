@@ -27,6 +27,7 @@ from .types import (
     Message,
 )
 from ..org.config import EngineConfig, OrgDimensions
+from ..workspace.workspace import Workspace
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ class Engine:
     """The core engine that runs agent communities."""
 
     config: EngineConfig
+    workspace: Workspace
     agents: list[Agent] = field(default_factory=list)
     event_bus: EventBus = field(default_factory=EventBus)
     tick: int = 0
@@ -90,7 +92,7 @@ class Engine:
         all_actions: list[Action] = []
         tasks = [
             agent.tick(
-                workspace=None,  # TODO: wire up workspace
+                workspace=self.workspace,
                 org=self.config.org_dimensions,
                 events=tick_events,
                 messages=tick_messages,

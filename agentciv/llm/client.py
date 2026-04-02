@@ -135,9 +135,41 @@ class OpenAIClient(LLMClient):
         return len(text) // 4
 
 
+class MockClient(LLMClient):
+    """Mock LLM for testing the full pipeline without API calls.
+
+    Cycles through predefined responses that exercise different action types.
+    """
+
+    def __init__(self, responses: list[str] | None = None):
+        self.responses = responses or [
+            "I need to understand the project first. Let me look at the main file.\n\nACTION: READ_FILE main.py",
+            "The main.py has TODOs for /hello and /status endpoints. Let me implement them.\n\nACTION: WRITE_FILE main.py\n\n```python\nfrom http.server import HTTPServer, BaseHTTPRequestHandler\nimport json\n\n\nclass APIHandler(BaseHTTPRequestHandler):\n    def do_GET(self):\n        if self.path == '/hello':\n            self.send_response(200)\n            self.send_header('Content-Type', 'application/json')\n            self.end_headers()\n            self.wfile.write(json.dumps({'message': 'Hello, World!'}).encode())\n        elif self.path == '/status':\n            self.send_response(200)\n            self.send_header('Content-Type', 'application/json')\n            self.end_headers()\n            self.wfile.write(json.dumps({'status': 'ok'}).encode())\n        else:\n            self.send_response(404)\n            self.send_header('Content-Type', 'application/json')\n            self.end_headers()\n            self.wfile.write(json.dumps({'error': 'not found'}).encode())\n\n\nif __name__ == '__main__':\n    server = HTTPServer(('localhost', 8000), APIHandler)\n    print('Server running on http://localhost:8000')\n    server.serve_forever()\n```",
+            "I've implemented both endpoints. Let me broadcast to the team what I did.\n\nACTION: BROADCAST Implemented /hello and /status endpoints in main.py. Both return JSON responses.",
+            "The task seems complete. I'll wait and observe.\n\nACTION: IDLE",
+        ]
+        self._call_count = 0
+
+    async def complete(self, prompt: str, system: str | None = None) -> LLMResponse:
+        response = self.responses[self._call_count % len(self.responses)]
+        self._call_count += 1
+        return LLMResponse(
+            content=response,
+            model="mock",
+            input_tokens=len(prompt) // 4,
+            output_tokens=len(response) // 4,
+        )
+
+    def estimate_tokens(self, text: str) -> int:
+        return len(text) // 4
+
+
 def create_client(model: str, max_tokens: int = 1024) -> LLMClient:
     """Factory: create the right client based on model name."""
     model_lower = model.lower()
+
+    if model_lower == "mock":
+        return MockClient()
 
     if any(x in model_lower for x in ["claude", "anthropic", "sonnet", "opus", "haiku"]):
         return AnthropicClient(model=model, max_tokens=max_tokens)
