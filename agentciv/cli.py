@@ -17,6 +17,7 @@ from .core.event_bus import EventBus
 from .core.types import AgentIdentity, AgentState, Event, EventType
 from .llm.client import create_client
 from .org.config import EngineConfig
+from .org.enforcer import OrgEnforcer
 from .workspace.executor import WorkspaceExecutor
 from .workspace.workspace import Workspace
 
@@ -164,12 +165,27 @@ async def run_solve(args: argparse.Namespace) -> None:
         workspace.register_agent(state)
         agents.append(agent)
 
+    # Create org enforcer
+    enforcer = OrgEnforcer(
+        dimensions=config.org_dimensions,
+        parameters=config.parameters,
+    )
+    enforcer.assign_initial_roles([a.state.identity.id for a in agents])
+
+    if enforcer.lead_agent_id:
+        lead_name = next(
+            a.state.identity.name for a in agents
+            if a.state.identity.id == enforcer.lead_agent_id
+        )
+        print(f"  Lead agent: {lead_name}\n")
+
     # Create and run engine
     engine = Engine(
         config=config,
         workspace=workspace,
         agents=agents,
         event_bus=event_bus,
+        enforcer=enforcer,
     )
 
     await engine.run()

@@ -32,6 +32,7 @@ from .types import (
 if TYPE_CHECKING:
     from ..llm.client import LLMClient, ToolCall, ToolResult
     from ..org.config import OrgDimensions
+    from ..org.enforcer import OrgEnforcer
     from ..workspace.workspace import Workspace
     from ..workspace.executor import WorkspaceExecutor
 
@@ -73,6 +74,7 @@ class Agent:
         self,
         workspace: Workspace,
         org: OrgDimensions,
+        enforcer: OrgEnforcer | None,
         events: list[Event],
         messages: list[Message],
         tick: int,
@@ -82,15 +84,23 @@ class Agent:
         Uses multi-turn tool-use: the agent sees tool results within the same
         conversation, so it can read a file and then reason about its contents
         before deciding what to write.
+
+        The enforcer shapes behaviour through three mechanisms:
+          - Hard constraints: block disallowed actions
+          - Filtering: control what the agent sees
+          - Soft shaping: augment the system prompt
         """
         self.state.ticks_active += 1
         actions_taken: list[Action] = []
 
-        # --- OBSERVE ---
-        self._observe(workspace, org, events, messages)
+        # --- OBSERVE (filtered by org enforcer) ---
+        self._observe(workspace, org, enforcer, events, messages)
 
         # --- Build initial conversation ---
         system = self._build_system_prompt()
+        # Org enforcer shapes the system prompt
+        if enforcer:
+            system = enforcer.shape_system_prompt(system, self.state)
         prompt = self._build_prompt(workspace.task_description, tick)
         conversation: list[dict[str, Any]] = [
             {"role": "user", "content": prompt},
@@ -128,6 +138,22 @@ class Agent:
                     actions_taken.append(action)
                     return actions_taken
 
+                # --- ENFORCE org constraints ---
+                if enforcer:
+                    check = enforcer.check_action(action, self.state)
+                    if not check.allowed:
+                        log.info(
+                            "Agent %s action %s blocked: %s",
+                            self.state.identity.name, action.type.name, check.reason,
+                        )
+                        # Feed the rejection back as a tool result
+                        tool_results.append(TR(
+                            tool_call_id=tool_call.id,
+                            output=f"Action blocked by organisation rules: {check.reason}",
+                            is_error=True,
+                        ))
+                        continue
+
                 # --- ACT ---
                 result = await self.executor.execute(action)
                 actions_taken.append(action)
@@ -161,15 +187,24 @@ class Agent:
         self,
         workspace: Workspace,
         org: OrgDimensions,
+        enforcer: OrgEnforcer | None,
         events: list[Event],
         messages: list[Message],
     ) -> None:
-        self._visible_files = workspace.get_visible_files(self.state)
-        self._other_agents = workspace.get_agent_summaries(exclude=self.state.identity.id)
+        files = workspace.get_visible_files(self.state)
+        agents = workspace.get_agent_summaries(exclude=self.state.identity.id)
+        filtered_messages = [m for m in messages if m.sender_id != self.state.identity.id]
+
+        # Apply org enforcement filters
+        if enforcer:
+            files = enforcer.filter_files(files, self.state)
+            agents = enforcer.filter_agent_visibility(agents, self.state.identity.id)
+            filtered_messages = enforcer.filter_messages(messages, self.state.identity.id)
+
+        self._visible_files = files
+        self._other_agents = agents
         self._recent_events = events
-        self._recent_messages = [
-            m for m in messages if m.sender_id != self.state.identity.id
-        ]
+        self._recent_messages = filtered_messages
         self._org_description = org.to_prompt_description()
         self._task_description = workspace.task_description
 

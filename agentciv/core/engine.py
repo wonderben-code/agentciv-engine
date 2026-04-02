@@ -27,6 +27,7 @@ from .types import (
     Message,
 )
 from ..org.config import EngineConfig, OrgDimensions
+from ..org.enforcer import OrgEnforcer
 from ..workspace.workspace import Workspace
 
 log = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class Engine:
     workspace: Workspace
     agents: list[Agent] = field(default_factory=list)
     event_bus: EventBus = field(default_factory=EventBus)
+    enforcer: OrgEnforcer | None = None
     tick: int = 0
     running: bool = False
 
@@ -50,6 +52,17 @@ class Engine:
     async def run(self) -> None:
         """Run the engine for max_ticks or until convergence."""
         self.running = True
+
+        # Initialise org enforcer
+        if self.enforcer is None:
+            self.enforcer = OrgEnforcer(
+                dimensions=self.config.org_dimensions,
+                parameters=self.config.parameters,
+            )
+            self.enforcer.assign_initial_roles(
+                [a.state.identity.id for a in self.agents]
+            )
+
         self.event_bus.emit(Event(
             type=EventType.ENGINE_STARTED,
             tick=0,
@@ -94,6 +107,7 @@ class Engine:
             agent.tick(
                 workspace=self.workspace,
                 org=self.config.org_dimensions,
+                enforcer=self.enforcer,
                 events=tick_events,
                 messages=tick_messages,
                 tick=self.tick,

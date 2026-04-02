@@ -1,0 +1,351 @@
+"""Organisational enforcement — where dimensions have teeth.
+
+The config module defines WHAT the org looks like.
+This module enforces HOW it constrains agent behaviour.
+
+Three kinds of enforcement:
+  1. Hard constraints — block actions that violate org rules
+     (e.g. can't broadcast in whisper mode, can't assign tasks in flat authority)
+  2. Soft shaping — modify prompts to describe expected behaviour
+     (e.g. in hierarchy, the lead agent's prompt says "you coordinate the team")
+  3. Filtering — control what agents see
+     (e.g. information: need-to-know → agents only see files they've touched)
+
+The enforcer is stateless — it reads the OrgDimensions + RawParameters
+and returns decisions. The engine calls it; it doesn't call the engine.
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass, field
+from typing import Any
+
+from .config import OrgDimensions, RawParameters
+from ..core.types import Action, ActionType, AgentState, Message
+
+log = logging.getLogger(__name__)
+
+
+@dataclass
+class EnforcementResult:
+    """Result of checking an action against org rules."""
+    allowed: bool = True
+    reason: str = ""
+    modified_action: Action | None = None  # if we need to transform the action
+
+
+@dataclass
+class OrgEnforcer:
+    """Enforces organisational dimensions as mechanical constraints.
+
+    Not a prompt engineering trick — this shapes what agents CAN do,
+    not just what they're told to do.
+    """
+
+    dimensions: OrgDimensions
+    parameters: RawParameters
+    # Agent roles — assigned or emergent. Maps agent_id → role
+    agent_roles: dict[str, str] = field(default_factory=dict)
+    # Lead agent (for hierarchical modes). None if flat/anarchic/distributed
+    lead_agent_id: str | None = None
+
+    # -----------------------------------------------------------------------
+    # Hard constraints — block or modify actions
+    # -----------------------------------------------------------------------
+
+    def check_action(self, action: Action, agent_state: AgentState) -> EnforcementResult:
+        """Check whether an action is allowed under current org rules."""
+        checks = [
+            self._check_communication(action, agent_state),
+            self._check_task_claiming(action, agent_state),
+            self._check_review_requirements(action, agent_state),
+        ]
+        for result in checks:
+            if not result.allowed:
+                return result
+        return EnforcementResult(allowed=True)
+
+    def _check_communication(self, action: Action, agent_state: AgentState) -> EnforcementResult:
+        """Enforce communication topology."""
+        if action.type == ActionType.BROADCAST:
+            if self.dimensions.communication == "whisper":
+                return EnforcementResult(
+                    allowed=False,
+                    reason="Broadcast not allowed in whisper communication mode. Use direct messages.",
+                )
+            if self.dimensions.communication == "hub-spoke" and agent_state.identity.id != self.lead_agent_id:
+                return EnforcementResult(
+                    allowed=False,
+                    reason="Only the lead agent can broadcast in hub-spoke communication.",
+                )
+
+        if action.type == ActionType.COMMUNICATE:
+            if self.dimensions.communication == "hub-spoke":
+                # Non-lead agents can only message the lead
+                if (agent_state.identity.id != self.lead_agent_id
+                        and action.target_agents
+                        and action.target_agents[0] != self.lead_agent_id):
+                    return EnforcementResult(
+                        allowed=False,
+                        reason="In hub-spoke communication, messages must go through the lead agent.",
+                    )
+
+        return EnforcementResult(allowed=True)
+
+    def _check_task_claiming(self, action: Action, agent_state: AgentState) -> EnforcementResult:
+        """Enforce task allocation rules."""
+        if action.type == ActionType.CLAIM_TASK:
+            if self.parameters.task_claim_mode == "assigned":
+                # Only lead can assign tasks
+                if self.dimensions.authority == "hierarchy" and agent_state.identity.id != self.lead_agent_id:
+                    return EnforcementResult(
+                        allowed=False,
+                        reason="In hierarchical authority with assigned tasks, only the lead assigns tasks.",
+                    )
+            # Check concurrent task limit
+            if agent_state.current_focus and self.parameters.max_concurrent_tasks <= 1:
+                return EnforcementResult(
+                    allowed=False,
+                    reason=f"Already working on: {agent_state.current_focus}. Release current task first.",
+                )
+
+        return EnforcementResult(allowed=True)
+
+    def _check_review_requirements(self, action: Action, agent_state: AgentState) -> EnforcementResult:
+        """Enforce review requirements before certain actions."""
+        # When review is required, writing files to already-reviewed paths
+        # should trigger re-review. For now, just log.
+        return EnforcementResult(allowed=True)
+
+    # -----------------------------------------------------------------------
+    # Filtering — control what agents see
+    # -----------------------------------------------------------------------
+
+    def filter_messages(
+        self,
+        messages: list[Message],
+        agent_id: str,
+    ) -> list[Message]:
+        """Filter messages based on communication topology and information rules."""
+        if self.dimensions.communication == "mesh" and self.dimensions.information == "transparent":
+            # Everyone sees everything
+            return [m for m in messages if m.sender_id != agent_id]
+
+        filtered = []
+        for msg in messages:
+            if msg.sender_id == agent_id:
+                continue
+
+            # Direct messages always delivered
+            if not msg.is_broadcast and agent_id in (msg.receiver_ids or []):
+                filtered.append(msg)
+                continue
+
+            # Broadcast delivery rules
+            if msg.is_broadcast:
+                if self.dimensions.communication in ("mesh", "broadcast"):
+                    filtered.append(msg)
+                elif self.dimensions.communication == "hub-spoke":
+                    # Only delivered to/from lead
+                    if msg.sender_id == self.lead_agent_id or agent_id == self.lead_agent_id:
+                        filtered.append(msg)
+                elif self.dimensions.communication == "whisper":
+                    # Broadcasts converted to nothing in whisper mode
+                    pass
+                elif self.dimensions.communication == "clustered":
+                    # Delivered within same group
+                    if self._in_same_group(msg.sender_id, agent_id):
+                        filtered.append(msg)
+
+            # Mesh: direct messages + broadcasts all pass
+            elif self.dimensions.communication == "mesh":
+                filtered.append(msg)
+
+        return filtered
+
+    def filter_files(
+        self,
+        files: list[dict[str, Any]],
+        agent_state: AgentState,
+    ) -> list[dict[str, Any]]:
+        """Filter file visibility based on information dimension."""
+        if self.dimensions.information == "transparent":
+            return files
+
+        if self.dimensions.information == "need-to-know":
+            # Only see files you've touched or that relate to your focus
+            touched = {m.related_files[0] for m in agent_state.memories
+                       if m.related_files}
+            return [f for f in files if f["path"] in touched or self._file_relevant_to_focus(f, agent_state)]
+
+        if self.dimensions.information == "curated":
+            # Lead decides what's visible — for now, show all to lead, recent to others
+            if agent_state.identity.id == self.lead_agent_id:
+                return files
+            # Others see recently modified files only
+            return files[:10]
+
+        if self.dimensions.information == "filtered":
+            # Only see files in your role's domain
+            role = self.agent_roles.get(agent_state.identity.id, "general")
+            return [f for f in files if self._file_matches_role(f, role)]
+
+        return files
+
+    def filter_agent_visibility(
+        self,
+        agents: list[dict[str, Any]],
+        agent_id: str,
+    ) -> list[dict[str, Any]]:
+        """Control whether agents know about each other."""
+        if self.dimensions.information == "transparent":
+            return [a for a in agents if a.get("id") != agent_id]
+
+        if self.dimensions.communication == "whisper":
+            # Can only see agents you've communicated with
+            return []  # TODO: track communication history
+
+        return [a for a in agents if a.get("id") != agent_id]
+
+    # -----------------------------------------------------------------------
+    # Soft shaping — augment system prompts based on org structure
+    # -----------------------------------------------------------------------
+
+    def shape_system_prompt(self, base_prompt: str, agent_state: AgentState) -> str:
+        """Add org-specific instructions to the system prompt.
+
+        These are behavioural nudges, not hard constraints — the model can
+        still reason freely, but it understands its role in the organisation.
+        """
+        additions: list[str] = []
+
+        # Authority
+        if self.dimensions.authority == "hierarchy":
+            if agent_state.identity.id == self.lead_agent_id:
+                additions.append(
+                    "You are the lead agent. Coordinate the team: assign tasks, "
+                    "review work, and make final decisions. Other agents report to you."
+                )
+            else:
+                additions.append(
+                    "You report to the lead agent. Check with them before starting "
+                    "major work. Follow their task assignments."
+                )
+        elif self.dimensions.authority == "flat":
+            additions.append(
+                "This is a flat organisation. No one is in charge — coordinate "
+                "as equals. Claim tasks voluntarily and negotiate when priorities conflict."
+            )
+        elif self.dimensions.authority == "consensus":
+            additions.append(
+                "Decisions require consensus. Before making significant changes, "
+                "propose your plan and wait for agreement from other agents."
+            )
+        elif self.dimensions.authority == "distributed":
+            additions.append(
+                "Authority is distributed by expertise. Defer to whoever has "
+                "the most experience with the relevant part of the codebase."
+            )
+
+        # Communication
+        if self.dimensions.communication == "whisper":
+            additions.append(
+                "Communication is private. Only send direct messages to specific agents. "
+                "Broadcasting is not allowed."
+            )
+        elif self.dimensions.communication == "hub-spoke":
+            if agent_state.identity.id == self.lead_agent_id:
+                additions.append(
+                    "All communication flows through you. Relay important information "
+                    "between agents as needed."
+                )
+            else:
+                additions.append(
+                    "Send messages through the lead agent. Direct agent-to-agent "
+                    "communication is limited."
+                )
+
+        # Incentives
+        if self.dimensions.incentives == "competitive":
+            additions.append(
+                "You're evaluated individually. Focus on producing the best work "
+                "you can. Your contributions are tracked separately."
+            )
+        elif self.dimensions.incentives == "collaborative":
+            additions.append(
+                "Success is shared. Help other agents when they're stuck. "
+                "The team's output matters more than individual contributions."
+            )
+        elif self.dimensions.incentives == "reputation":
+            additions.append(
+                "Your reputation is built through quality work and helpful reviews. "
+                "Other agents will defer to you on topics where you've proven expertise."
+            )
+
+        # Roles
+        role = self.agent_roles.get(agent_state.identity.id)
+        if role:
+            additions.append(f"Your assigned role: {role}.")
+        elif self.dimensions.roles == "emergent":
+            if agent_state.skills:
+                top_skill = max(agent_state.skills.values(), key=lambda s: s.action_count)
+                additions.append(
+                    f"You've naturally specialised in {top_skill.name} "
+                    f"({top_skill.tier} level). Lean into this expertise."
+                )
+
+        if not additions:
+            return base_prompt
+
+        return base_prompt + "\n\n" + " ".join(additions)
+
+    # -----------------------------------------------------------------------
+    # Role assignment
+    # -----------------------------------------------------------------------
+
+    def assign_initial_roles(self, agent_ids: list[str]) -> None:
+        """Assign roles based on the roles dimension."""
+        if self.dimensions.roles == "assigned" and self.dimensions.authority == "hierarchy":
+            # First agent is lead
+            if agent_ids:
+                self.lead_agent_id = agent_ids[0]
+                self.agent_roles[agent_ids[0]] = "lead"
+                for aid in agent_ids[1:]:
+                    self.agent_roles[aid] = "contributor"
+
+        elif self.dimensions.authority in ("hierarchy", "rotating"):
+            if agent_ids:
+                self.lead_agent_id = agent_ids[0]
+
+        elif self.dimensions.authority in ("flat", "distributed", "consensus", "anarchic"):
+            self.lead_agent_id = None
+
+    # -----------------------------------------------------------------------
+    # Helpers
+    # -----------------------------------------------------------------------
+
+    def _in_same_group(self, agent_a: str, agent_b: str) -> bool:
+        """Check if two agents are in the same group (for clustered communication)."""
+        # TODO: implement group tracking
+        return True
+
+    def _file_relevant_to_focus(self, file_info: dict[str, Any], agent_state: AgentState) -> bool:
+        """Check if a file is relevant to an agent's current focus."""
+        if not agent_state.current_focus:
+            return False
+        path = file_info.get("path", "").lower()
+        focus_words = agent_state.current_focus.lower().split()
+        return any(word in path for word in focus_words if len(word) > 3)
+
+    def _file_matches_role(self, file_info: dict[str, Any], role: str) -> bool:
+        """Check if a file matches an agent's role domain."""
+        path = file_info.get("path", "").lower()
+        role_patterns = {
+            "testing": ["test", "spec", "fixture"],
+            "frontend": ["src", "component", "page", "style", "css", "html"],
+            "backend": ["api", "server", "route", "model", "db", "migration"],
+            "devops": ["docker", "ci", "deploy", "config", "yaml", "toml"],
+        }
+        patterns = role_patterns.get(role, [])
+        return not patterns or any(p in path for p in patterns)
