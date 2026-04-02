@@ -16,6 +16,7 @@ from .core.attention import AttentionMap
 from .core.engine import Engine
 from .core.event_bus import EventBus
 from .core.types import AgentIdentity, AgentState, Event, EventType
+from .gardener import Gardener
 from .llm.client import create_client
 from .org.config import EngineConfig
 from .org.enforcer import OrgEnforcer
@@ -48,6 +49,7 @@ def build_cli() -> argparse.ArgumentParser:
     solve.add_argument("--config", "-c", help="YAML config file (overrides other flags)")
     solve.add_argument("--max-ticks", type=int, default=50, help="Maximum ticks")
     solve.add_argument("--verbose", "-v", action="store_true", help="Show agent reasoning")
+    solve.add_argument("--gardener", "-g", action="store_true", help="Enable mid-run human intervention")
 
     # --- info ---
     sub.add_parser("info", help="Show available presets and dimensions")
@@ -197,6 +199,13 @@ async def run_solve(args: argparse.Namespace) -> None:
         )
         print(f"  Lead agent: {lead_name}\n")
 
+    # Set up gardener if requested
+    gardener = None
+    if args.gardener:
+        gardener = Gardener()
+        gardener.enable()
+        print(f"  Gardener mode: ON (type instructions between ticks, Enter to continue)\n")
+
     # Create and run engine
     engine = Engine(
         config=config,
@@ -205,14 +214,122 @@ async def run_solve(args: argparse.Namespace) -> None:
         event_bus=event_bus,
         enforcer=enforcer,
         attention=attention,
+        gardener=gardener,
     )
 
-    await engine.run()
+    if gardener:
+        # Gardener mode: run tick by tick with prompts between
+        await _run_with_gardener(engine, gardener)
+    else:
+        await engine.run()
 
     # Print chronicle report
     if engine.chronicle:
         report = engine.chronicle.generate_report()
         print(report.to_terminal())
+
+
+async def _run_with_gardener(engine: Engine, gardener: Gardener) -> None:
+    """Run engine tick by tick with gardener prompts between ticks.
+
+    After each tick, the user can type an instruction:
+      <text>              → message to all agents
+      /redirect <text>    → change task focus
+      /meta               → force a meta-tick
+      /set <param> <val>  → adjust a parameter
+      /stop               → stop the engine
+      (Enter)             → continue to next tick
+    """
+    import sys
+
+    # Manual engine initialisation (normally done inside engine.run)
+    engine.running = True
+    # Trigger the initialisation that run() does
+    await engine.run.__wrapped__(engine) if hasattr(engine.run, '__wrapped__') else None
+
+    # We need to replicate the init from run() without the tick loop
+    if engine.enforcer is None:
+        from .org.enforcer import OrgEnforcer
+        engine.enforcer = OrgEnforcer(
+            dimensions=engine.config.org_dimensions,
+            parameters=engine.config.parameters,
+        )
+        engine.enforcer.assign_initial_roles(
+            [a.state.identity.id for a in engine.agents]
+        )
+
+    # Init subsystems (same as engine.run)
+    from .core.types import Event, EventType
+    from .org.auto import AutoOrgManager
+    from .chronicle.observer import Chronicle
+    from .workspace.git import GitManager
+
+    if engine.config.parameters.meta_tick_interval > 0 and engine.auto_org is None:
+        engine.auto_org = AutoOrgManager(
+            dimensions=engine.config.org_dimensions,
+            parameters=engine.config.parameters,
+            agent_count=len(engine.agents),
+        )
+
+    if engine.config.parameters.enable_git_branches and engine.git is None:
+        if await GitManager.is_available():
+            engine.git = GitManager(engine.workspace.project_dir)
+            await engine.git.init()
+
+    if engine.config.enable_chronicle and engine.chronicle is None:
+        agent_names = {
+            a.state.identity.id: a.state.identity.name
+            for a in engine.agents
+        }
+        engine.chronicle = Chronicle(
+            task=engine.config.task,
+            org_preset=engine.config.org_preset,
+            agent_count=len(engine.agents),
+            agent_names=agent_names,
+        )
+        engine.event_bus.subscribe(None, engine.chronicle.observe)
+
+    for agent in engine.agents:
+        engine.attention.register_agent(
+            agent.state.identity.id,
+            agent.state.identity.name,
+        )
+
+    engine.event_bus.emit(Event(
+        type=EventType.ENGINE_STARTED,
+        tick=0,
+        data={"config": engine.config.org_preset, "agents": engine.config.agent_count},
+    ))
+
+    try:
+        for engine.tick in range(1, engine.config.max_ticks + 1):
+            if not engine.running:
+                break
+
+            await engine._execute_tick()
+
+            # Gardener prompt
+            try:
+                raw = input("  gardener> ")
+            except (EOFError, KeyboardInterrupt):
+                print("\n  Gardener ended the run.")
+                break
+
+            intervention = Gardener.parse_input(raw, tick=engine.tick)
+            if intervention:
+                if intervention.type == "stop":
+                    print("  Stopping engine...")
+                    break
+                gardener.submit(intervention)
+                print(f"  → {intervention.type}: queued for next tick")
+    finally:
+        engine.running = False
+        if engine.git:
+            await engine.git.cleanup_all()
+        engine.event_bus.emit(Event(
+            type=EventType.ENGINE_STOPPED,
+            tick=engine.tick,
+        ))
 
 
 def show_info() -> None:

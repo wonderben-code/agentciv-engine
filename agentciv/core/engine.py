@@ -31,6 +31,7 @@ from .types import (
     Relationship,
 )
 from ..chronicle.observer import Chronicle
+from ..gardener import Gardener, Intervention
 from ..org.auto import AutoOrgManager
 from ..org.config import EngineConfig, OrgDimensions
 from ..org.enforcer import OrgEnforcer
@@ -53,6 +54,7 @@ class Engine:
     auto_org: AutoOrgManager | None = None
     git: GitManager | None = None
     chronicle: Chronicle | None = None
+    gardener: Gardener | None = None
     tick: int = 0
     running: bool = False
 
@@ -152,10 +154,22 @@ class Engine:
 
     async def _execute_tick(self) -> None:
         """Execute a single tick — all agents act."""
+        # Process gardener interventions before the tick
+        force_meta = False
+        if self.gardener and self.gardener.is_enabled:
+            for intervention in self.gardener.drain():
+                result = self._apply_intervention(intervention)
+                if result == "force_meta":
+                    force_meta = True
+                elif result == "stop":
+                    self.running = False
+                    return
+
         # Detect meta-tick (restructuring discussion for --org auto)
-        is_meta_tick = False
-        if self.auto_org and self.auto_org.is_meta_tick(self.tick):
+        is_meta_tick = force_meta  # gardener can force a meta-tick
+        if not is_meta_tick and self.auto_org and self.auto_org.is_meta_tick(self.tick):
             is_meta_tick = True
+        if is_meta_tick and self.auto_org:
             self.auto_org.start_meta_tick(self.tick)
 
         self.event_bus.emit(Event(
@@ -276,6 +290,59 @@ class Engine:
             tick=self.tick,
             data={"actions": len(all_actions), "is_meta_tick": is_meta_tick},
         ))
+
+    def _apply_intervention(self, intervention: Intervention) -> str | None:
+        """Apply a gardener intervention. Returns a signal string or None."""
+        match intervention.type:
+            case "message":
+                # Inject as a message from "gardener" visible to all agents
+                self._messages.append(Message(
+                    sender_id="gardener",
+                    receiver_ids=[],
+                    content=f"[GARDENER] {intervention.content}",
+                    tick=self.tick,
+                    is_broadcast=True,
+                ))
+                self._events.append(Event(
+                    type=EventType.BROADCAST_SENT,
+                    tick=self.tick,
+                    agent_id="gardener",
+                    data={"content_preview": intervention.content[:100]},
+                ))
+                log.info("Gardener message: %s", intervention.content[:100])
+
+            case "redirect":
+                # Update the task description — agents see the new task next tick
+                old_task = self.workspace.task_description
+                self.workspace.task_description = intervention.content
+                self.config.task = intervention.content
+                log.info(
+                    "Gardener redirected: '%s' → '%s'",
+                    old_task[:50], intervention.content[:50],
+                )
+
+            case "meta_tick":
+                log.info("Gardener forced meta-tick")
+                return "force_meta"
+
+            case "adjust":
+                # Adjust org dimensions or parameters live
+                for key, value in intervention.parameters.items():
+                    if hasattr(self.config.org_dimensions, key):
+                        setattr(self.config.org_dimensions, key, value)
+                        log.info("Gardener adjusted dimension: %s → %s", key, value)
+                    elif hasattr(self.config.parameters, key):
+                        setattr(self.config.parameters, key, value)
+                        log.info("Gardener adjusted parameter: %s → %s", key, value)
+                    else:
+                        self.config.org_dimensions.extra[key] = value
+                        log.info("Gardener set custom dimension: %s → %s", key, value)
+
+            case "stop":
+                log.info("Gardener stopped the engine")
+                return "stop"
+
+        return None
 
     async def _merge_agent_branches(self) -> None:
         """Merge each agent's worktree branch back to main.
