@@ -51,6 +51,18 @@ def build_cli() -> argparse.ArgumentParser:
     solve.add_argument("--verbose", "-v", action="store_true", help="Show agent reasoning")
     solve.add_argument("--gardener", "-g", action="store_true", help="Enable mid-run human intervention")
 
+    # --- experiment ---
+    exp = sub.add_parser("experiment", help="Run same task under multiple org configs and compare")
+    exp.add_argument("--task", "-t", required=True, help="What the community should build/solve")
+    exp.add_argument("--orgs", required=True, help="Comma-separated org presets to compare")
+    exp.add_argument("--runs", type=int, default=1, help="Runs per org config (for statistical validity)")
+    exp.add_argument("--agents", "-a", type=int, default=4, help="Number of agents")
+    exp.add_argument("--model", "-m", default="claude-sonnet-4-6", help="LLM model")
+    exp.add_argument("--dir", "-d", default=".", help="Source project directory")
+    exp.add_argument("--max-ticks", type=int, default=30, help="Maximum ticks per run")
+    exp.add_argument("--output", "-O", help="Save JSON results to file")
+    exp.add_argument("--verbose", "-v", action="store_true", help="Show details")
+
     # --- info ---
     sub.add_parser("info", help="Show available presets and dimensions")
 
@@ -332,6 +344,34 @@ async def _run_with_gardener(engine: Engine, gardener: Gardener) -> None:
         ))
 
 
+async def run_experiment_cmd(args: argparse.Namespace) -> None:
+    """Execute the experiment command."""
+    import json
+    from .experiment import run_experiment
+
+    orgs = [o.strip() for o in args.orgs.split(",")]
+
+    result = await run_experiment(
+        task=args.task,
+        orgs=orgs,
+        runs_per_org=args.runs,
+        agent_count=args.agents,
+        model=args.model,
+        max_ticks=args.max_ticks,
+        source_dir=args.dir,
+        verbose=args.verbose,
+    )
+
+    # Print comparison report
+    print(result.to_terminal())
+
+    # Save JSON if requested
+    if args.output:
+        with open(args.output, "w") as f:
+            json.dump(result.to_dict(), f, indent=2)
+        print(f"  Results saved to {args.output}\n")
+
+
 def show_info() -> None:
     """Show available presets, dimensions, and feature toggles."""
     import yaml
@@ -397,6 +437,13 @@ def main() -> None:
             format="%(name)s: %(message)s",
         )
         asyncio.run(run_solve(args))
+
+    elif args.command == "experiment":
+        logging.basicConfig(
+            level=logging.DEBUG if args.verbose else logging.WARNING,
+            format="%(name)s: %(message)s",
+        )
+        asyncio.run(run_experiment_cmd(args))
 
     elif args.command == "info":
         show_info()
