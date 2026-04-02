@@ -1,0 +1,24 @@
+# AgentCiv Engine — Competitive Preset
+#
+# Agents race independently. Each works on the full problem in isolation.
+# Best solution wins. Minimal communication. Individual reward.
+# Good for problems with clear success criteria where diverse approaches help.
+
+organization:
+  authority: "anarchic"
+  communication: "whisper"
+  roles: "fixed"
+  decisions: "autonomous"
+  incentives: "competitive"
+  information: "filtered"
+  conflict: "adjudicated"
+  groups: "imposed"
+  adaptation: "static"
+
+parameters:
+  communication_range: "direct-only"
+  message_visibility: "direct-only"
+  task_claim_mode: "voluntary"
+  require_review: false
+  enable_specialisation: false
+  max_messages_per_tick: 1

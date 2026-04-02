@@ -1,0 +1,23 @@
+# AgentCiv Engine — Collaborative Preset
+#
+# Flat authority, mesh communication, emergent roles, shared reward.
+# Agents see everything, talk to everyone, self-organise around the problem.
+# The default showcase configuration.
+
+organization:
+  authority: "flat"
+  communication: "mesh"
+  roles: "emergent"
+  decisions: "consensus"
+  incentives: "collaborative"
+  information: "transparent"
+  conflict: "negotiated"
+  groups: "self-selected"
+  adaptation: "evolving"
+
+parameters:
+  communication_range: "all"
+  message_visibility: "all"
+  task_claim_mode: "voluntary"
+  require_review: false
+  enable_specialisation: true

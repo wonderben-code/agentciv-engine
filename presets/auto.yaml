@@ -1,0 +1,28 @@
+# AgentCiv Engine — Auto Preset (The Crown Jewel)
+#
+# Agents design their own organisational structure. Starts with a planning
+# meta-tick where agents discuss how to organise. Every N ticks, agents can
+# propose and vote on restructuring. The human sets the goal; the agents
+# design the team.
+#
+# Initial dimensions are neutral starting points — agents will override them.
+
+organization:
+  authority: "consensus"
+  communication: "mesh"
+  roles: "emergent"
+  decisions: "consensus"
+  incentives: "collaborative"
+  information: "transparent"
+  conflict: "negotiated"
+  groups: "self-selected"
+  adaptation: "real-time"
+
+parameters:
+  communication_range: "all"
+  message_visibility: "all"
+  task_claim_mode: "voluntary"
+  require_review: false
+  enable_specialisation: true
+  meta_tick_interval: 10
+  restructure_threshold: 0.6

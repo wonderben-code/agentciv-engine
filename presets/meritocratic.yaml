@@ -1,0 +1,25 @@
+# AgentCiv Engine — Meritocratic Preset
+#
+# Influence earned through demonstrated quality. Agents who produce better
+# code have their architectural suggestions carry more weight. Peer review
+# is mandatory. Reputation builds over the project lifetime.
+
+organization:
+  authority: "distributed"
+  communication: "mesh"
+  roles: "emergent"
+  decisions: "meritocratic"
+  incentives: "reputation"
+  information: "transparent"
+  conflict: "voted"
+  groups: "self-selected"
+  adaptation: "evolving"
+
+parameters:
+  communication_range: "all"
+  message_visibility: "all"
+  task_claim_mode: "voluntary"
+  require_review: true
+  review_mode: "peer"
+  min_reviewers: 1
+  enable_specialisation: true
