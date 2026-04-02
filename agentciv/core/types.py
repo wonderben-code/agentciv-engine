@@ -169,6 +169,10 @@ class EventType(Enum):
     RESTRUCTURE_ADOPTED = auto()
     SPECIALISATION_GAINED = auto()
 
+    # Git integration
+    BRANCH_MERGED = auto()
+    MERGE_CONFLICT = auto()
+
     # Engine
     TICK_START = auto()
     TICK_END = auto()

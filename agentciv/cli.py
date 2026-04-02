@@ -109,6 +109,14 @@ def print_event(event: Event, verbose: bool = False) -> None:
         case EventType.BUILD_FAILED:
             print(f"  {tick} ✗ build failing")
 
+        case EventType.BRANCH_MERGED:
+            count = event.data.get("count", 0)
+            print(f"  {tick}{agent} merged ({count} files)")
+
+        case EventType.MERGE_CONFLICT:
+            conflicts = event.data.get("conflicts", [])
+            print(f"  {tick}{agent} ✗ MERGE CONFLICT: {', '.join(conflicts)}")
+
         case EventType.RESTRUCTURE_PROPOSED:
             preview = event.data.get("content_preview", "")
             print(f"  {tick}{agent} proposes restructure: {preview}")

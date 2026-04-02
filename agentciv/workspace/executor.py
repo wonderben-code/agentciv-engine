@@ -18,22 +18,34 @@ log = logging.getLogger(__name__)
 
 
 class WorkspaceExecutor:
-    """Executes agent actions against the real file system."""
+    """Executes agent actions against the real file system.
+
+    When git branching is enabled, `working_dir` is set to the agent's
+    worktree. All file operations and commands run in that directory,
+    giving each agent true isolation during their tick.
+    """
 
     def __init__(
         self,
         workspace: Workspace,
         attention: AttentionMap | None = None,
         allowed_commands: list[str] | None = None,
+        working_dir: Path | None = None,
     ):
         self.workspace = workspace
         self.attention = attention
+        self.working_dir = working_dir  # None = use workspace.project_dir
         # Whitelist of allowed shell commands (safety)
         self.allowed_commands = allowed_commands or [
             "python", "python3", "pip", "npm", "node", "npx",
             "pytest", "ruff", "mypy", "tsc", "eslint",
             "cargo", "go", "make", "cat", "ls", "grep",
         ]
+
+    @property
+    def effective_dir(self) -> Path:
+        """The directory where file operations and commands run."""
+        return self.working_dir or self.workspace.project_dir
 
     async def execute(self, action: Action) -> ActionResult:
         """Execute an action and return the result."""
@@ -71,9 +83,12 @@ class WorkspaceExecutor:
         if not action.file_path:
             return ActionResult(success=False, error="No file path specified")
 
-        content = self.workspace.read_file(action.file_path)
-        if content is None:
+        # Read from agent's working directory (worktree or main)
+        full_path = self.effective_dir / action.file_path
+        if not full_path.exists():
             return ActionResult(success=False, error=f"File not found: {action.file_path}")
+
+        content = full_path.read_text(errors="replace")
 
         # Truncate very large files for context window sanity
         if len(content) > 50_000:
@@ -87,9 +102,10 @@ class WorkspaceExecutor:
         if not action.content:
             return ActionResult(success=False, error="No content to write")
 
-        # Safety: don't write outside project dir
-        full_path = (self.workspace.project_dir / action.file_path).resolve()
-        if not str(full_path).startswith(str(self.workspace.project_dir.resolve())):
+        # Safety: don't write outside working dir
+        base = self.effective_dir.resolve()
+        full_path = (self.effective_dir / action.file_path).resolve()
+        if not str(full_path).startswith(str(base)):
             return ActionResult(success=False, error="Path escapes project directory")
 
         # Contention warning via attention map
@@ -101,7 +117,13 @@ class WorkspaceExecutor:
             if other:
                 warning = f" WARNING: {other} is also working on this file."
 
-        self.workspace.write_file(action.file_path, action.content, action.agent_id, action.tick)
+        # Write to agent's working directory (worktree or main)
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(action.content)
+        # Update workspace metadata centrally
+        self.workspace.update_file_metadata(
+            action.file_path, action.agent_id, action.tick, len(action.content),
+        )
         return ActionResult(
             success=True,
             output=f"Written {len(action.content)} chars to {action.file_path}.{warning}",
@@ -111,15 +133,20 @@ class WorkspaceExecutor:
         if not action.file_path:
             return ActionResult(success=False, error="No file path specified")
 
-        full_path = (self.workspace.project_dir / action.file_path).resolve()
-        if not str(full_path).startswith(str(self.workspace.project_dir.resolve())):
+        base = self.effective_dir.resolve()
+        full_path = (self.effective_dir / action.file_path).resolve()
+        if not str(full_path).startswith(str(base)):
             return ActionResult(success=False, error="Path escapes project directory")
 
         if full_path.exists():
             return ActionResult(success=False, error=f"File already exists: {action.file_path}")
 
         content = action.content or ""
-        self.workspace.write_file(action.file_path, content, action.agent_id, action.tick)
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(content)
+        self.workspace.update_file_metadata(
+            action.file_path, action.agent_id, action.tick, len(content),
+        )
         return ActionResult(
             success=True,
             output=f"Created {action.file_path} ({len(content)} chars)",
@@ -129,7 +156,7 @@ class WorkspaceExecutor:
         if not action.file_path:
             return ActionResult(success=False, error="No file path specified")
 
-        full_path = self.workspace.project_dir / action.file_path
+        full_path = self.effective_dir / action.file_path
         if not full_path.exists():
             return ActionResult(success=False, error=f"File not found: {action.file_path}")
 
@@ -154,7 +181,7 @@ class WorkspaceExecutor:
                 action.command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                cwd=str(self.workspace.project_dir),
+                cwd=str(self.effective_dir),
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
 

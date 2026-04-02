@@ -33,6 +33,7 @@ from .types import (
 from ..org.auto import AutoOrgManager
 from ..org.config import EngineConfig, OrgDimensions
 from ..org.enforcer import OrgEnforcer
+from ..workspace.git import GitManager
 from ..workspace.workspace import Workspace
 
 log = logging.getLogger(__name__)
@@ -49,6 +50,7 @@ class Engine:
     enforcer: OrgEnforcer | None = None
     attention: AttentionMap = field(default_factory=AttentionMap)
     auto_org: AutoOrgManager | None = None
+    git: GitManager | None = None
     tick: int = 0
     running: bool = False
 
@@ -79,6 +81,20 @@ class Engine:
             )
             log.info("Auto-organisation enabled (meta-tick interval: %d)", self.config.parameters.meta_tick_interval)
 
+        # Initialise git integration if enabled
+        if self.config.parameters.enable_git_branches and self.git is None:
+            if await GitManager.is_available():
+                self.git = GitManager(self.workspace.project_dir)
+                await self.git.init()
+                log.info(
+                    "Git branch-per-agent enabled (strategy: %s)",
+                    self.config.parameters.contention_strategy,
+                )
+            else:
+                log.warning(
+                    "Git not available — falling back to optimistic contention handling"
+                )
+
         # Register all agents in the attention map
         for agent in self.agents:
             self.attention.register_agent(
@@ -104,6 +120,9 @@ class Engine:
                 await self._execute_tick()
         finally:
             self.running = False
+            # Clean up git worktrees
+            if self.git:
+                await self.git.cleanup_all()
             self.event_bus.emit(Event(
                 type=EventType.ENGINE_STOPPED,
                 tick=self.tick,
@@ -134,6 +153,16 @@ class Engine:
         self._events.clear()
         self._messages.clear()
 
+        # Set up git worktrees — each agent gets an isolated working directory
+        if self.git:
+            for agent in self.agents:
+                worktree = await self.git.create_agent_worktree(
+                    agent.state.identity.id,
+                    agent.state.identity.name,
+                    self.tick,
+                )
+                agent.executor.working_dir = worktree
+
         # Run all agents (concurrency bounded by agent count)
         all_actions: list[Action] = []
         tasks = [
@@ -162,6 +191,10 @@ class Engine:
             all_actions.extend(result)
 
         # --- Post-tick updates ---
+
+        # Merge agent branches back to main
+        if self.git:
+            await self._merge_agent_branches()
 
         # Handle auto-org proposals and votes
         if self.auto_org:
@@ -226,6 +259,58 @@ class Engine:
             tick=self.tick,
             data={"actions": len(all_actions), "is_meta_tick": is_meta_tick},
         ))
+
+    async def _merge_agent_branches(self) -> None:
+        """Merge each agent's worktree branch back to main.
+
+        Agents are merged in order. If Agent B's changes conflict with
+        Agent A's already-merged changes, Agent B gets a conflict report.
+        """
+        for agent in self.agents:
+            aid = agent.state.identity.id
+            name = agent.state.identity.name
+
+            merge = await self.git.commit_and_merge(aid, name, self.tick)
+
+            # Reset the executor to the main working directory
+            agent.executor.working_dir = None
+
+            if merge.files_changed:
+                if merge.success:
+                    self.event_bus.emit(Event(
+                        type=EventType.BRANCH_MERGED,
+                        tick=self.tick,
+                        agent_id=aid,
+                        data={
+                            "files": merge.files_changed,
+                            "count": len(merge.files_changed),
+                        },
+                    ))
+                else:
+                    # Conflict — emit event so the agent sees it next tick
+                    conflict_event = Event(
+                        type=EventType.MERGE_CONFLICT,
+                        tick=self.tick,
+                        agent_id=aid,
+                        data={
+                            "conflicts": merge.conflicts,
+                            "files_attempted": merge.files_changed,
+                            "summary": (
+                                f"{name}'s changes to "
+                                f"{', '.join(merge.conflicts)} conflicted "
+                                f"with another agent's merged changes."
+                            ),
+                        },
+                    )
+                    self.event_bus.emit(conflict_event)
+                    self._events.append(conflict_event)
+                    log.warning(
+                        "Merge conflict for %s: %s",
+                        name, merge.conflicts,
+                    )
+
+        # Rescan workspace to pick up merged file changes
+        self.workspace.scan()
 
     def _process_auto_org_actions(self, actions: list[Action]) -> None:
         """Process propose_restructure and vote actions through AutoOrgManager."""

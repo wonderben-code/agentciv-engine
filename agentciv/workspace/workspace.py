@@ -139,15 +139,26 @@ class Workspace:
         full_path = self.project_dir / path
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(content)
+        self.update_file_metadata(path, agent_id, tick, len(content))
+        return True
 
-        # Update file index
+    def update_file_metadata(
+        self, path: str, agent_id: str, tick: int, size: int,
+    ) -> None:
+        """Update file index metadata without writing to disk.
+
+        Used by the executor when files are written to a worktree
+        (different directory) but metadata should still be tracked centrally.
+        """
         rel_path = str(Path(path))
         if rel_path not in self.files:
-            self.files[rel_path] = FileInfo(path=rel_path)
+            self.files[rel_path] = FileInfo(
+                path=rel_path,
+                language=self._detect_language(Path(path).name),
+            )
         self.files[rel_path].last_modified_tick = tick
         self.files[rel_path].last_modified_by = agent_id
-        self.files[rel_path].size = len(content)
-        return True
+        self.files[rel_path].size = size
 
     @staticmethod
     def _detect_language(filename: str) -> str:
