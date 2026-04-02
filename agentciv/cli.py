@@ -197,22 +197,58 @@ async def run_solve(args: argparse.Namespace) -> None:
 
 
 def show_info() -> None:
-    """Show available presets and dimensions."""
+    """Show available presets, dimensions, and feature toggles."""
+    import yaml
     from .org.config import KNOWN_DIMENSIONS
 
     print("\n  AgentCiv Engine — Organisational Configurations\n")
+
+    # Presets with descriptions (read from YAML comments)
     print("  Presets:")
     presets_dir = Path(__file__).parent.parent / "presets"
     if presets_dir.exists():
         for p in sorted(presets_dir.glob("*.yaml")):
-            print(f"    --org {p.stem}")
+            # Extract description from comment block (skip title and blank comment lines)
+            desc = ""
+            with open(p) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line == "#":
+                        continue
+                    if "AgentCiv Engine" in line:
+                        continue
+                    if line.startswith("#"):
+                        desc = line.lstrip("# ").strip()
+                        break
+                    else:
+                        break
+            print(f"    --org {p.stem:20s} {desc}")
     print()
 
-    print("  Organisational Dimensions:")
+    # Dimensions
+    print("  Organisational Dimensions (9 built-in, community-expandable):")
     for dim, values in KNOWN_DIMENSIONS.items():
-        print(f"    {dim}: {' → '.join(values)}")
+        print(f"    {dim:16s} {' → '.join(values)}")
     print()
-    print("  All dimensions are community-expandable. Add your own in YAML config.\n")
+
+    # Feature toggles
+    print("  Feature Toggles (all configurable in YAML):")
+    toggles = [
+        ("enable_specialisation", "Agents develop skills through practice"),
+        ("specialisation_visible", "Other agents can see your skills"),
+        ("enable_relationships", "Track collaboration history and trust"),
+        ("prefer_known_collaborators", "Agents prefer past partners"),
+        ("enable_attention_map", "Shared view of who's working on what"),
+        ("enable_git_branches", "Branch-per-agent with auto-merge"),
+        ("enable_gardener_mode", "Human-in-the-loop mid-run intervention"),
+        ("require_review", "Mandatory peer review before merge"),
+    ]
+    for name, desc in toggles:
+        print(f"    {name:32s} {desc}")
+    print()
+
+    print("  Add custom dimensions, presets, and parameters in your YAML config.")
+    print("  Everything is expandable. See presets/ directory for examples.\n")
 
 
 def main() -> None:
