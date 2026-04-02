@@ -132,6 +132,23 @@ class RawParameters:
     # Specialisation
     enable_specialisation: bool = True
     specialisation_threshold: int = 10  # actions before "familiar"
+    specialisation_visible: bool = True  # other agents can see your specialisations
+
+    # Relationships
+    enable_relationships: bool = True  # agents track collaboration history
+    relationship_decay: float = 0.95  # per-tick decay (1.0 = no decay)
+    prefer_known_collaborators: bool = True  # agents prefer working with past partners
+
+    # Attention map
+    enable_attention_map: bool = True  # shared view of who's working on what
+
+    # Git integration
+    enable_git_branches: bool = True  # branch-per-agent with auto-merge
+    contention_strategy: str = "branch-per-agent"  # "branch-per-agent", "lock", "optimistic"
+
+    # Human-in-the-loop
+    enable_gardener_mode: bool = True  # allow mid-run intervention
+    pause_on_conflict: bool = False  # pause and ask human when agents conflict
 
     # Auto-org (for --org auto mode)
     meta_tick_interval: int = 10  # ticks between org restructure votes
