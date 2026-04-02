@@ -131,8 +131,16 @@ class Agent:
     async def _reason_and_decide(self, tick: int, step: int) -> Action | None:
         """Ask the LLM what to do next. Returns an Action or None to stop."""
         prompt = self._build_prompt(tick, step)
-        response = await self.llm.complete(prompt)
-        return self._parse_action(response, tick)
+        response = await self.llm.complete(
+            prompt,
+            system=(
+                "You are an AI agent in a collaborative software engineering community. "
+                "You observe the project state, reason about what's needed, and take action. "
+                "End your response with a clear action line like: ACTION: READ_FILE src/main.py"
+            ),
+        )
+        self.state.token_budget_remaining -= response.total_tokens
+        return self._parse_action(response.content, tick)
 
     def _build_prompt(self, tick: int, step: int) -> str:
         """Construct the full prompt for the LLM.
@@ -243,18 +251,9 @@ class Agent:
         return "\n\n".join(sections)
 
     def _parse_action(self, response: str, tick: int) -> Action | None:
-        """Parse the LLM response into a concrete Action.
-
-        TODO: Implement robust parsing with fallback strategies.
-        This is a placeholder that will be fully built in Phase 1.
-        """
-        # Placeholder — returns IDLE. Full implementation in next session.
-        return Action(
-            type=ActionType.IDLE,
-            agent_id=self.state.identity.id,
-            tick=tick,
-            reasoning=response,
-        )
+        """Parse the LLM response into a concrete Action."""
+        from .parser import parse_action
+        return parse_action(response, self.state.identity.id, tick)
 
     # -----------------------------------------------------------------------
     # Reflect — update memory and skills after acting
