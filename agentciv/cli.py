@@ -77,6 +77,12 @@ def build_cli() -> argparse.ArgumentParser:
     bench.add_argument("--verbose", "-v", action="store_true", help="Show per-run details")
     bench.add_argument("--list-tasks", action="store_true", help="List available benchmark tasks and exit")
 
+    # --- history ---
+    hist = sub.add_parser("history", help="View or manage the learning history")
+    hist.add_argument("--clear", action="store_true", help="Clear all run history")
+    hist.add_argument("--similar", help="Find similar runs to a task description")
+    hist.add_argument("--json", action="store_true", help="Output as JSON")
+
     # --- info ---
     sub.add_parser("info", help="Show available presets and dimensions")
 
@@ -492,6 +498,60 @@ def show_info() -> None:
     print("  Everything is expandable. See presets/ directory for examples.\n")
 
 
+def show_history(args: argparse.Namespace) -> None:
+    """Show or manage learning history."""
+    import json as json_mod
+    from .learning.history import RunHistory
+    from .learning.insights import generate_insights
+
+    history = RunHistory()
+
+    if args.clear:
+        history.clear()
+        print("  Run history cleared.\n")
+        return
+
+    if args.similar:
+        insights = generate_insights(args.similar, history)
+        if args.json:
+            print(json_mod.dumps(insights.to_dict(), indent=2))
+        else:
+            print(f"\n  Learning Insights for: \"{args.similar}\"")
+            print(f"  {'─' * 50}")
+            print(f"  Keywords: {', '.join(insights.task_keywords)}")
+            print(f"  Matching runs: {insights.matching_runs} / {insights.total_history}")
+            if insights.preset_rankings:
+                print(f"\n  Preset rankings:")
+                for p in insights.preset_rankings[:10]:
+                    print(f"    {p.preset:20s} quality: {p.avg_quality:.3f} ({p.run_count} runs)")
+            if insights.dimension_insights:
+                print(f"\n  Best dimension values:")
+                for d in insights.dimension_insights:
+                    print(f"    {d.dimension:20s} → {d.value} (quality: {d.avg_quality:.3f})")
+            if not insights.has_data():
+                print(f"\n  Not enough similar runs for recommendations yet.")
+            print()
+        return
+
+    # Default: show stats
+    stats = history.get_stats()
+    if args.json:
+        print(json_mod.dumps(stats, indent=2))
+    else:
+        print(f"\n  AgentCiv Learning History")
+        print(f"  {'─' * 40}")
+        print(f"  Total runs: {stats['total_runs']}")
+        if stats['total_runs'] > 0:
+            print(f"  Successful: {stats['successful_runs']}")
+            print(f"  Unique presets: {stats['unique_presets']}")
+            print(f"\n  Average quality by preset:")
+            for preset, avg in stats['preset_avg_quality'].items():
+                print(f"    {preset:20s} {avg:.3f}")
+        else:
+            print(f"  No runs recorded yet. Run some tasks to build up learning data.")
+        print()
+
+
 def main() -> None:
     parser = build_cli()
     args = parser.parse_args()
@@ -516,6 +576,9 @@ def main() -> None:
             format="%(name)s: %(message)s",
         )
         asyncio.run(run_benchmark_cmd(args))
+
+    elif args.command == "history":
+        show_history(args)
 
     elif args.command == "info":
         show_info()

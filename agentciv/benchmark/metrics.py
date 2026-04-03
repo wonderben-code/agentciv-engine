@@ -102,6 +102,12 @@ def extract_metrics(
     wall_time: float = 0.0,
 ) -> RunMetrics:
     """Extract structured metrics from a chronicle report + verification."""
+    # File completeness (computed first — used in completion fallback)
+    if verification.expected_files_total > 0:
+        file_comp = verification.expected_files_present / verification.expected_files_total
+    else:
+        file_comp = 1.0
+
     # Completion: based on verification test results
     if verification.tests_total > 0:
         completion = verification.tests_passed / verification.tests_total
@@ -112,12 +118,6 @@ def extract_metrics(
         # (having files isn't the same as having working code)
         completion = 0.0 if not verification.passed else min(0.5, file_comp)
         test_pass_rate = 0.0
-
-    # File completeness
-    if verification.expected_files_total > 0:
-        file_comp = verification.expected_files_present / verification.expected_files_total
-    else:
-        file_comp = 1.0
 
     # Communication volume
     comm_volume = report.total_messages + report.total_broadcasts

@@ -79,11 +79,15 @@ class AutoOrgManager:
     """Manages the self-organisation process for --org auto mode.
 
     Tracks proposals, collects votes, applies adopted changes.
+    When learning data is available, provides empirical recommendations.
     """
 
     dimensions: OrgDimensions
     parameters: RawParameters
     agent_count: int = 0
+
+    # Learning insights (injected from engine, empty string if no data)
+    learning_prompt: str = ""
 
     # State
     _proposals: list[Proposal] = field(default_factory=list)
@@ -250,14 +254,21 @@ class AutoOrgManager:
         return "\n".join(lines)
 
     def get_meta_tick_system_prompt(self) -> str:
-        """Additional system prompt during meta-ticks."""
-        return (
+        """Additional system prompt during meta-ticks.
+
+        Includes learning insights when available, giving agents
+        empirical data to inform restructuring decisions.
+        """
+        prompt = (
             "\n\nThis is a META-TICK — a restructuring discussion. "
             "Reflect on how the team has been working. Is the current "
             "organisational structure effective? Consider proposing changes "
             "using 'propose_restructure' or voting on existing proposals. "
             "You can also do regular work during a meta-tick."
         )
+        if self.learning_prompt:
+            prompt += self.learning_prompt
+        return prompt
 
     @property
     def current_org_summary(self) -> str:

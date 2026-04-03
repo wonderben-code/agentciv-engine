@@ -35,6 +35,7 @@ from .core.attention import AttentionMap
 from .core.engine import Engine
 from .core.event_bus import EventBus
 from .core.types import AgentIdentity, AgentState
+from .learning.recorder import save_run
 from .llm.client import create_client
 from .org.config import EngineConfig
 from .org.enforcer import OrgEnforcer
@@ -216,7 +217,20 @@ async def run_single(
     )
 
     await engine.run()
-    return engine.chronicle.generate_report()
+    report = engine.chronicle.generate_report()
+
+    # Save to learning history
+    try:
+        save_run(
+            report=report,
+            org_dimensions=config.org_dimensions,
+            model=model,
+            max_ticks=max_ticks,
+        )
+    except Exception as e:
+        log.warning("Failed to save learning record: %s", e)
+
+    return report
 
 
 async def run_experiment(

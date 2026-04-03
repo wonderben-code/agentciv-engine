@@ -33,6 +33,7 @@ from .types import (
 )
 from ..chronicle.observer import Chronicle
 from ..gardener import Gardener, Intervention
+from ..learning.insights import generate_insights
 from ..org.auto import AutoOrgManager
 from ..org.config import EngineConfig, OrgDimensions
 from ..org.enforcer import OrgEnforcer
@@ -84,10 +85,24 @@ class Engine:
 
         # Initialise auto-org manager if meta-ticks are enabled
         if self.config.parameters.meta_tick_interval > 0 and self.auto_org is None:
+            # Generate learning insights from run history
+            learning_prompt = ""
+            try:
+                insights = generate_insights(self.config.task)
+                if insights.has_data():
+                    learning_prompt = insights.prompt
+                    log.info(
+                        "Learning: %d matching runs found for task",
+                        insights.matching_runs,
+                    )
+            except Exception as e:
+                log.debug("Learning insights unavailable: %s", e)
+
             self.auto_org = AutoOrgManager(
                 dimensions=self.config.org_dimensions,
                 parameters=self.config.parameters,
                 agent_count=len(self.agents),
+                learning_prompt=learning_prompt,
             )
             log.info("Auto-organisation enabled (meta-tick interval: %d)", self.config.parameters.meta_tick_interval)
 
@@ -186,10 +201,19 @@ class Engine:
 
         # Auto-org
         if self.config.parameters.meta_tick_interval > 0 and self.auto_org is None:
+            learning_prompt = ""
+            try:
+                insights = generate_insights(self.config.task)
+                if insights.has_data():
+                    learning_prompt = insights.prompt
+            except Exception:
+                pass
+
             self.auto_org = AutoOrgManager(
                 dimensions=self.config.org_dimensions,
                 parameters=self.config.parameters,
                 agent_count=len(self.agents),
+                learning_prompt=learning_prompt,
             )
 
         # Git
