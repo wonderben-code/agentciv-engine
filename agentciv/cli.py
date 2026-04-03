@@ -50,6 +50,7 @@ def build_cli() -> argparse.ArgumentParser:
     solve.add_argument("--max-ticks", type=int, default=50, help="Maximum ticks")
     solve.add_argument("--verbose", "-v", action="store_true", help="Show agent reasoning")
     solve.add_argument("--gardener", "-g", action="store_true", help="Enable mid-run human intervention")
+    solve.add_argument("--no-tips", action="store_true", help="Suppress contextual feature tips")
 
     # --- experiment ---
     exp = sub.add_parser("experiment", help="Run same task under multiple org configs and compare")
@@ -62,6 +63,7 @@ def build_cli() -> argparse.ArgumentParser:
     exp.add_argument("--max-ticks", type=int, default=30, help="Maximum ticks per run")
     exp.add_argument("--output", "-O", help="Save JSON results to file")
     exp.add_argument("--verbose", "-v", action="store_true", help="Show details")
+    exp.add_argument("--no-tips", action="store_true", help="Suppress contextual feature tips")
 
     # --- benchmark ---
     bench = sub.add_parser("benchmark", help="Run standardised tasks across all presets with statistical analysis")
@@ -266,6 +268,26 @@ async def run_solve(args: argparse.Namespace) -> None:
         report = engine.chronicle.generate_report()
         print(report.to_terminal())
 
+        # Contextual tip
+        if not args.no_tips:
+            from .discovery import FeatureTracker, generate_post_run_tip
+            tracker = FeatureTracker()
+            tracker.mark_used("solve")
+            if args.org == "auto":
+                tracker.mark_used("auto")
+            if args.gardener:
+                tracker.mark_used("gardener")
+            tip = generate_post_run_tip(
+                org_preset=args.org,
+                merge_conflicts=report.merge_conflicts,
+                total_messages=report.total_messages,
+                restructures_adopted=report.restructures_adopted,
+                agent_count=args.agents,
+                tracker=tracker,
+            )
+            if tip:
+                print(f"  {tip.text}\n")
+
 
 async def _run_with_gardener(engine: Engine, gardener: Gardener) -> None:
     """Run engine tick by tick with gardener prompts between ticks.
@@ -390,6 +412,15 @@ async def run_experiment_cmd(args: argparse.Namespace) -> None:
 
     # Print comparison report
     print(result.to_terminal())
+
+    # Contextual tip
+    if not args.no_tips:
+        from .discovery import FeatureTracker, generate_post_experiment_tip
+        tracker = FeatureTracker()
+        tracker.mark_used("experiment")
+        tip = generate_post_experiment_tip(orgs_tested=orgs, tracker=tracker)
+        if tip:
+            print(f"  {tip.text}\n")
 
     # Save JSON if requested
     if args.output:

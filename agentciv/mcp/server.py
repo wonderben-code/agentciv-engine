@@ -28,6 +28,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from ..discovery import generate_mcp_hints
 from ..gardener import Intervention
 from ..org.config import KNOWN_DIMENSIONS, EngineConfig
 from .session import SessionManager
@@ -118,6 +119,7 @@ async def agentciv_solve(
             f"Use agentciv_status(session_id='{session.id}') to monitor progress. "
             f"Use agentciv_intervene(session_id='{session.id}', message='...') to guide them."
         ),
+        "hints": generate_mcp_hints("solve_started"),
     }, indent=2)
 
 
@@ -155,6 +157,10 @@ async def agentciv_status(session_id: str | None = None) -> str:
     ):
         report = session.engine.chronicle.generate_report()
         result["chronicle"] = report.to_dict()
+        result["hints"] = generate_mcp_hints("solve_completed", {
+            "merge_conflicts": report.merge_conflicts,
+            "org_preset": report.org_preset,
+        })
 
     return json.dumps(result, indent=2)
 
@@ -299,6 +305,7 @@ async def agentciv_info() -> str:
             "Use agentciv_solve(task='...', org='collaborative') to start. "
             "Override specific dimensions with the 'overrides' parameter."
         ),
+        "hints": generate_mcp_hints("info"),
     }, indent=2)
 
 
