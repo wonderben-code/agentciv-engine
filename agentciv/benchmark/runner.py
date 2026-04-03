@@ -271,13 +271,23 @@ def _verify(task: BenchmarkTask, project_dir: Path) -> VerificationResult:
         output = result.stdout.strip()
 
         # Parse JSON output from verification script
-        try:
-            data = json.loads(output)
-        except json.JSONDecodeError:
+        # The last line should be JSON; earlier lines may be warnings/errors
+        data = None
+        for line in reversed(output.split("\n")):
+            line = line.strip()
+            if line.startswith("{"):
+                try:
+                    data = json.loads(line)
+                    break
+                except json.JSONDecodeError:
+                    continue
+
+        if data is None:
+            # Can't parse verification output — treat as failed
             return VerificationResult(
-                passed=result.returncode == 0,
+                passed=False,
                 output=output,
-                error=result.stderr.strip() if result.stderr else None,
+                error=result.stderr.strip() if result.stderr else "Verification output not parseable",
             )
 
         tests_total = data.get("tests_total", 0)

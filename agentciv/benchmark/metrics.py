@@ -102,12 +102,15 @@ def extract_metrics(
     wall_time: float = 0.0,
 ) -> RunMetrics:
     """Extract structured metrics from a chronicle report + verification."""
-    # Completion: 1.0 if all verification tests pass, else fraction
+    # Completion: based on verification test results
     if verification.tests_total > 0:
         completion = verification.tests_passed / verification.tests_total
         test_pass_rate = verification.tests_passed / verification.tests_total
     else:
-        completion = 1.0 if verification.passed else 0.0
+        # No tests ran — verification couldn't import/run the code
+        # Use file completeness as a partial signal, but cap at 0.5
+        # (having files isn't the same as having working code)
+        completion = 0.0 if not verification.passed else min(0.5, file_comp)
         test_pass_rate = 0.0
 
     # File completeness
