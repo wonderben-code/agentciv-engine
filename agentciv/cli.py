@@ -604,10 +604,12 @@ def run_setup(args: argparse.Namespace) -> None:
     import sys
 
     print()
-    print(f"  ╔══════════════════════════════════════════════════╗")
-    print(f"  ║          AgentCiv Engine — Setup                 ║")
-    print(f"  ║  Organisational arrangement as a design parameter║")
-    print(f"  ╚══════════════════════════════════════════════════╝")
+    print(f"  ╔══════════════════════════════════════════════════════╗")
+    print(f"  ║                                                      ║")
+    print(f"  ║   Welcome to AgentCiv Engine!                        ║")
+    print(f"  ║   Let's get your custom AI agent team set up.        ║")
+    print(f"  ║                                                      ║")
+    print(f"  ╚══════════════════════════════════════════════════════════╝")
     print()
 
     # 1. Environment check
@@ -620,7 +622,7 @@ def run_setup(args: argparse.Namespace) -> None:
 
     import platform
     print(f"  ✓ Python {platform.python_version()}")
-    print(f"  ✓ 13 organisational presets loaded")
+    print(f"  ✓ 13 team structures ready to go")
     print(f"  ✓ 9 organisational dimensions available")
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -631,9 +633,9 @@ def run_setup(args: argparse.Namespace) -> None:
     print()
 
     # 2. Mode selection — user explicitly chooses, no auto-detection
-    print(f"  AgentCiv has two modes. Choose how you want to use it:")
+    print(f"  How would you like to run your agent teams?")
     print()
-    print(f"  [1] MAX PLAN — Free (recommended)")
+    print(f"  [1] MAX PLAN — Free")
     print(f"      Works inside Claude Code / Cursor via MCP.")
     print(f"      Your AI assistant drives the agents — no API key needed.")
     print(f"      Zero additional cost beyond your existing subscription.")
@@ -739,28 +741,33 @@ def run_setup(args: argparse.Namespace) -> None:
 
     # 4. Celebration and next steps
     print()
-    print(f"  ╔══════════════════════════════════════════════════╗")
-    print(f"  ║                                                  ║")
-    print(f"  ║    SETUP COMPLETE — AgentCiv Engine is ready!    ║")
-    print(f"  ║                                                  ║")
-    print(f"  ╚══════════════════════════════════════════════════╝")
+    print(f"  ╔══════════════════════════════════════════════════════╗")
+    print(f"  ║                                                      ║")
+    print(f"  ║   CONGRATULATIONS! Your AI agent team is ready.      ║")
+    print(f"  ║                                                      ║")
+    print(f"  ║   You now have 13 team structures, 9 organisational  ║")
+    print(f"  ║   dimensions, and the ability to let your agents     ║")
+    print(f"  ║   design their own organisation.                     ║")
+    print(f"  ║                                                      ║")
+    print(f"  ╚══════════════════════════════════════════════════════════╝")
     print()
 
     if wants_mcp:
-        print(f"  GET STARTED (Max Plan mode — free):")
+        print(f"  YOUR FIRST RUN")
         print(f"  ─────────────────────────────────────")
         print(f"  Open Claude Code in this directory and say:")
         print()
         print(f"    \"Use agentciv to build a REST API with 4 agents\"")
         print()
-        print(f"  Or try different organisational structures:")
+        print(f"  You can shape your team however you want:")
         print()
-        print(f"    \"Use agentciv with a meritocratic team to refactor this module\"")
-        print(f"    \"Use agentciv with --org auto to let agents self-organise\"")
+        print(f"    \"Use a meritocratic team to refactor this module\"")
+        print(f"    \"Set up a pair-programming duo for this bug\"")
+        print(f"    \"Use --org auto and let the agents figure it out\"")
         print()
 
     if wants_api:
-        print(f"  GET STARTED (API mode):")
+        print(f"  YOUR FIRST RUN")
         print(f"  ─────────────────────────────────────")
         print(f"  agentciv solve --task \"Build a REST API\" --org collaborative")
         print(f"  agentciv solve --task \"Build a CLI tool\" --org auto")
@@ -768,11 +775,11 @@ def run_setup(args: argparse.Namespace) -> None:
         print()
 
     print(f"  THE CROWN JEWEL: --org auto")
-    print(f"    Agents design their own organisational structure through")
-    print(f"    proposals and votes. Self-organisation in real time.")
+    print(f"    Agents design their own team structure through proposals")
+    print(f"    and votes. Self-organisation in real time. Try it.")
     print()
-    print(f"  13 presets available. Run 'agentciv info' to explore them.")
-    print(f"  ══════════════════════════════════════════════════")
+    print(f"  Run 'agentciv info' to explore all 13 team structures.")
+    print(f"  ══════════════════════════════════════════════════════")
 
 
 def main() -> None:
