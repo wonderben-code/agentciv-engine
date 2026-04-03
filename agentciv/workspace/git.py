@@ -136,7 +136,10 @@ class GitManager:
                 )
             except Exception:
                 shutil.rmtree(worktree_dir, ignore_errors=True)
-                await self._run_git("worktree", "prune")
+                try:
+                    await self._run_git("worktree", "prune")
+                except Exception as prune_err:
+                    log.warning("Worktree prune failed: %s", prune_err)
 
         # Delete branch if it exists from a previous run
         try:
@@ -323,7 +326,11 @@ class GitManager:
             stderr=asyncio.subprocess.PIPE,
             cwd=str(cwd or self.project_dir),
         )
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
+        except asyncio.TimeoutError:
+            proc.kill()
+            raise RuntimeError(f"git {' '.join(args)} timed out after 30s")
 
         if proc.returncode != 0:
             error = stderr.decode(errors="replace").strip()

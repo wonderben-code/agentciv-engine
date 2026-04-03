@@ -20,7 +20,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from .config import OrgDimensions, RawParameters, KNOWN_DIMENSIONS
+from .config import OrgDimensions, RawParameters
 
 log = logging.getLogger(__name__)
 

@@ -80,7 +80,7 @@ class LLMClient(ABC):
         ...
 
     @abstractmethod
-    def format_tool_results(self, results: list[ToolResult]) -> dict[str, Any]:
+    def format_tool_results(self, results: list[ToolResult]) -> dict[str, Any] | list[dict[str, Any]]:
         """Format tool execution results as a message for the conversation."""
         ...
 

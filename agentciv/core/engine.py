@@ -71,6 +71,8 @@ class Engine:
 
     async def run(self) -> None:
         """Run the engine for max_ticks or until convergence."""
+        if not self.agents:
+            raise ValueError("Cannot run engine with 0 agents")
         self.running = True
 
         # Initialise org enforcer

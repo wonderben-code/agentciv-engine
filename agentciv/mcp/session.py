@@ -102,6 +102,8 @@ class Session:
     def _summarise_event(self, event: Event) -> str:
         """One-line summary of an event."""
         agent = event.agent_id or ""
+        if not isinstance(event.data, dict):
+            event.data = {}
         match event.type.name:
             case "TICK_START":
                 meta = " [META-TICK]" if event.data.get("is_meta_tick") else ""

@@ -78,14 +78,14 @@ class OrgEnforcer:
                     allowed=False,
                     reason="Broadcast not allowed in whisper communication mode. Use direct messages.",
                 )
-            if self.dimensions.communication == "hub-spoke" and agent_state.identity.id != self.lead_agent_id:
+            if self.dimensions.communication == "hub-spoke" and self.lead_agent_id and agent_state.identity.id != self.lead_agent_id:
                 return EnforcementResult(
                     allowed=False,
                     reason="Only the lead agent can broadcast in hub-spoke communication.",
                 )
 
         if action.type == ActionType.COMMUNICATE:
-            if self.dimensions.communication == "hub-spoke":
+            if self.dimensions.communication == "hub-spoke" and self.lead_agent_id:
                 # Non-lead agents can only message the lead
                 if (agent_state.identity.id != self.lead_agent_id
                         and action.target_agents
@@ -162,9 +162,7 @@ class OrgEnforcer:
                     if self._in_same_group(msg.sender_id, agent_id):
                         filtered.append(msg)
 
-            # Mesh: direct messages + broadcasts all pass
-            elif self.dimensions.communication == "mesh":
-                filtered.append(msg)
+            # Non-broadcast messages not addressed to this agent are not delivered
 
         return filtered
 

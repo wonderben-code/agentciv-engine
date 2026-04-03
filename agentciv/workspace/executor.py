@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import shlex
 from pathlib import Path
 
 from ..core.types import Action, ActionResult, ActionType
@@ -96,6 +97,16 @@ class WorkspaceExecutor:
 
         return ActionResult(success=True, output=content)
 
+    def _path_is_safe(self, file_path: str) -> tuple[bool, Path]:
+        """Check if a file path stays within the working directory. Returns (safe, resolved_path)."""
+        base = self.effective_dir.resolve()
+        full_path = (self.effective_dir / file_path).resolve()
+        try:
+            full_path.relative_to(base)
+            return True, full_path
+        except ValueError:
+            return False, full_path
+
     def _write_file(self, action: Action) -> ActionResult:
         if not action.file_path:
             return ActionResult(success=False, error="No file path specified")
@@ -106,9 +117,8 @@ class WorkspaceExecutor:
             )
 
         # Safety: don't write outside working dir
-        base = self.effective_dir.resolve()
-        full_path = (self.effective_dir / action.file_path).resolve()
-        if not str(full_path).startswith(str(base)):
+        safe, full_path = self._path_is_safe(action.file_path)
+        if not safe:
             return ActionResult(success=False, error="Path escapes project directory")
 
         # Contention warning via attention map
@@ -136,9 +146,8 @@ class WorkspaceExecutor:
         if not action.file_path:
             return ActionResult(success=False, error="No file path specified")
 
-        base = self.effective_dir.resolve()
-        full_path = (self.effective_dir / action.file_path).resolve()
-        if not str(full_path).startswith(str(base)):
+        safe, full_path = self._path_is_safe(action.file_path)
+        if not safe:
             return ActionResult(success=False, error="Path escapes project directory")
 
         if full_path.exists():
@@ -171,12 +180,20 @@ class WorkspaceExecutor:
         if not action.command:
             return ActionResult(success=False, error="No command specified")
 
-        # Safety: check command against whitelist
-        first_word = action.command.split()[0]
-        if first_word not in self.allowed_commands:
+        # Parse command safely — no shell injection
+        try:
+            parts = shlex.split(action.command)
+        except ValueError as e:
+            return ActionResult(success=False, error=f"Invalid command syntax: {e}")
+
+        if not parts:
+            return ActionResult(success=False, error="Empty command")
+
+        # Safety: check executable against whitelist
+        if parts[0] not in self.allowed_commands:
             return ActionResult(
                 success=False,
-                error=f"Command '{first_word}' not in allowed list: {self.allowed_commands}",
+                error=f"Command '{parts[0]}' not in allowed list: {self.allowed_commands}",
             )
 
         # Ensure the working directory exists (worktree may not have been created yet)
@@ -188,9 +205,10 @@ class WorkspaceExecutor:
             )
             run_dir = self.workspace.project_dir
 
+        proc = None
         try:
-            proc = await asyncio.create_subprocess_shell(
-                action.command,
+            proc = await asyncio.create_subprocess_exec(
+                *parts,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=str(run_dir),
@@ -219,6 +237,8 @@ class WorkspaceExecutor:
                     side_effects=[f"exit code {proc.returncode}"],
                 )
         except asyncio.TimeoutError:
+            if proc:
+                proc.kill()
             return ActionResult(success=False, error="Command timed out (60s)")
 
     def _communicate(self, action: Action) -> ActionResult:
