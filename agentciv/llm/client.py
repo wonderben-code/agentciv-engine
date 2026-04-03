@@ -206,7 +206,6 @@ class OpenAIClient(LLMClient):
         self.model = model
         self.max_tokens = max_tokens
         self._client: Any = None
-        self._last_raw_tool_calls: Any = None  # Store raw for format_assistant_message
 
     def _get_client(self) -> Any:
         if self._client is None:

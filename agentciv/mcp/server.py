@@ -530,10 +530,10 @@ async def agentciv_orchestrate_act(
     """
     step = manager.get_step_session(session_id)
     if not step:
-        return json.dumps({"error": f"Step session '{session_id}' not found"})
+        return json.dumps({"error": f"Step session '{session_id}' not found"}, indent=2)
 
     if not tool_calls:
-        return json.dumps({"error": "No tool_calls provided"})
+        return json.dumps({"error": "No tool_calls provided"}, indent=2)
 
     result = await step.act(
         agent_id=agent_id,
@@ -560,7 +560,7 @@ async def agentciv_orchestrate_tick(session_id: str) -> str:
     """
     step = manager.get_step_session(session_id)
     if not step:
-        return json.dumps({"error": f"Step session '{session_id}' not found"})
+        return json.dumps({"error": f"Step session '{session_id}' not found"}, indent=2)
 
     # Complete current tick
     tick_result = await step.complete_tick()
@@ -598,7 +598,7 @@ async def agentciv_orchestrate_status(session_id: str) -> str:
     """
     step = manager.get_step_session(session_id)
     if not step:
-        return json.dumps({"error": f"Step session '{session_id}' not found"})
+        return json.dumps({"error": f"Step session '{session_id}' not found"}, indent=2)
 
     return json.dumps(step.get_status(), indent=2)
 
@@ -625,7 +625,7 @@ async def get_preset(name: str) -> str:
     presets_dir = Path(__file__).parent.parent.parent / "presets"
     preset_file = presets_dir / f"{name}.yaml"
     if not preset_file.exists():
-        return json.dumps({"error": f"Preset '{name}' not found"})
+        return json.dumps({"error": f"Preset '{name}' not found"}, indent=2)
     return preset_file.read_text()
 
 

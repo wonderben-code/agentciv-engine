@@ -179,7 +179,7 @@ class OrgEnforcer:
             # Only see files you've touched or that relate to your focus
             touched = {m.related_files[0] for m in agent_state.memories
                        if m.related_files}
-            return [f for f in files if f["path"] in touched or self._file_relevant_to_focus(f, agent_state)]
+            return [f for f in files if f.get("path", "") in touched or self._file_relevant_to_focus(f, agent_state)]
 
         if self.dimensions.information == "curated":
             # Lead decides what's visible — for now, show all to lead, recent to others
@@ -382,14 +382,17 @@ class OrgEnforcer:
 
     def record_communication(self, sender_id: str, receiver_ids: list[str]) -> None:
         """Record that agents communicated — used for whisper visibility."""
+        _CAP = 100  # safety cap — sets are unordered so we can't prune by recency
         if sender_id not in self.communication_history:
             self.communication_history[sender_id] = set()
         for rid in receiver_ids:
-            self.communication_history[sender_id].add(rid)
+            if len(self.communication_history[sender_id]) < _CAP:
+                self.communication_history[sender_id].add(rid)
             # Bidirectional — receiver also knows about sender
             if rid not in self.communication_history:
                 self.communication_history[rid] = set()
-            self.communication_history[rid].add(sender_id)
+            if len(self.communication_history[rid]) < _CAP:
+                self.communication_history[rid].add(sender_id)
 
     def update_task_groups(self, focus_map: dict[str, str | None]) -> None:
         """Update group assignments for task-based grouping.
@@ -422,10 +425,10 @@ class OrgEnforcer:
     def _assign_initial_groups(self, agent_ids: list[str]) -> None:
         """Assign initial groups based on the groups dimension."""
         if self.dimensions.groups in ("imposed", "persistent"):
-            # Split agents into groups of 2-3
-            group_size = max(2, len(agent_ids) // max(1, len(agent_ids) // 3))
+            # Split agents into groups of 2-3 via round-robin
+            group_count = max(1, (len(agent_ids) + 2) // 3)
             for i, aid in enumerate(agent_ids):
-                self.agent_groups[aid] = f"group_{i // group_size}"
+                self.agent_groups[aid] = f"group_{i % group_count}"
         elif self.dimensions.groups == "task-based":
             # All start ungrouped — updated dynamically by update_task_groups
             for aid in agent_ids:

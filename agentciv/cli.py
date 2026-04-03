@@ -309,64 +309,8 @@ async def _run_with_gardener(engine: Engine, gardener: Gardener) -> None:
     """
     import sys
 
-    # Manual engine initialisation (normally done inside engine.run)
-    engine.running = True
-    # Trigger the initialisation that run() does
-    await engine.run.__wrapped__(engine) if hasattr(engine.run, '__wrapped__') else None
-
-    # We need to replicate the init from run() without the tick loop
-    if engine.enforcer is None:
-        from .org.enforcer import OrgEnforcer
-        engine.enforcer = OrgEnforcer(
-            dimensions=engine.config.org_dimensions,
-            parameters=engine.config.parameters,
-        )
-        engine.enforcer.assign_initial_roles(
-            [a.state.identity.id for a in engine.agents]
-        )
-
-    # Init subsystems (same as engine.run)
-    from .core.types import Event, EventType
-    from .org.auto import AutoOrgManager
-    from .chronicle.observer import Chronicle
-    from .workspace.git import GitManager
-
-    if engine.config.parameters.meta_tick_interval > 0 and engine.auto_org is None:
-        engine.auto_org = AutoOrgManager(
-            dimensions=engine.config.org_dimensions,
-            parameters=engine.config.parameters,
-            agent_count=len(engine.agents),
-        )
-
-    if engine.config.parameters.enable_git_branches and engine.git is None:
-        if await GitManager.is_available():
-            engine.git = GitManager(engine.workspace.project_dir)
-            await engine.git.init()
-
-    if engine.config.enable_chronicle and engine.chronicle is None:
-        agent_names = {
-            a.state.identity.id: a.state.identity.name
-            for a in engine.agents
-        }
-        engine.chronicle = Chronicle(
-            task=engine.config.task,
-            org_preset=engine.config.org_preset,
-            agent_count=len(engine.agents),
-            agent_names=agent_names,
-        )
-        engine.event_bus.subscribe(None, engine.chronicle.observe)
-
-    for agent in engine.agents:
-        engine.attention.register_agent(
-            agent.state.identity.id,
-            agent.state.identity.name,
-        )
-
-    engine.event_bus.emit(Event(
-        type=EventType.ENGINE_STARTED,
-        tick=0,
-        data={"config": engine.config.org_preset, "agents": engine.config.agent_count},
-    ))
+    # Use engine.initialize() — the same init path that Max Plan Mode uses
+    await engine.initialize()
 
     try:
         for engine.tick in range(1, engine.config.max_ticks + 1):

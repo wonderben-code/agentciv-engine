@@ -98,7 +98,7 @@ class Engine:
                         insights.matching_runs,
                     )
             except Exception as e:
-                log.debug("Learning insights unavailable: %s", e)
+                log.info("Learning insights unavailable: %s", e)
 
             self.auto_org = AutoOrgManager(
                 dimensions=self.config.org_dimensions,
@@ -208,8 +208,8 @@ class Engine:
                 insights = generate_insights(self.config.task)
                 if insights.has_data():
                     learning_prompt = insights.prompt
-            except Exception:
-                pass
+            except Exception as e:
+                log.info("Learning insights unavailable: %s", e)
 
             self.auto_org = AutoOrgManager(
                 dimensions=self.config.org_dimensions,
@@ -656,7 +656,7 @@ class Engine:
         ))
 
     def _apply_intervention(self, intervention: Intervention) -> str | None:
-        """Apply a gardener intervention. Returns a signal string or None."""
+        """Apply a gardener intervention. Returns "force_meta", "stop", or None."""
         match intervention.type:
             case "message":
                 # Inject as a message from "gardener" visible to all agents

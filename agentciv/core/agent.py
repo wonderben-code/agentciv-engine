@@ -130,18 +130,23 @@ class Agent:
         tick_tools = get_tools_for_tick(is_meta_tick)
 
         # --- Multi-turn loop (model decides when to stop via 'done' tool) ---
+        # Max tool-use steps per tick (prevents infinite loops)
         max_steps = 6
         for step in range(max_steps):
             response = await self.llm.complete_with_tools(
                 conversation, system=system, tools=tick_tools,
             )
             self.state.token_budget_remaining -= response.total_tokens
+            self.state.token_budget_remaining = max(0, self.state.token_budget_remaining)
 
             # Log reasoning
             if response.content:
+                preview = response.content[:200]
+                if len(response.content) > 200:
+                    preview += "..."
                 log.debug(
                     "Agent %s step %d: %s",
-                    self.state.identity.name, step + 1, response.content[:200],
+                    self.state.identity.name, step + 1, preview,
                 )
 
             # No tool call = agent is done thinking

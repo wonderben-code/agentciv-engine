@@ -39,8 +39,8 @@ class EventBus:
                 result = handler(event)
                 if asyncio.iscoroutine(result):
                     asyncio.ensure_future(result)
-            except Exception:
-                log.exception("Event handler failed for %s", event.type.name)
+            except Exception as e:
+                log.debug("Event handler error: %s", e)
 
         # Notify wildcard subscribers
         for handler in self._subscribers.get(None, []):
@@ -48,8 +48,8 @@ class EventBus:
                 result = handler(event)
                 if asyncio.iscoroutine(result):
                     asyncio.ensure_future(result)
-            except Exception:
-                log.exception("Wildcard handler failed for %s", event.type.name)
+            except Exception as e:
+                log.debug("Event handler error: %s", e)
 
     def get_log(self, since_tick: int = 0) -> list[Event]:
         """Get all events since a given tick."""

@@ -1,3 +1,4 @@
+# Legacy text-parsing fallback — kept for non-tool-use model support.
 """Action parser — converts LLM natural language responses into concrete Actions.
 
 The agent's LLM response is free-form text containing reasoning and a chosen

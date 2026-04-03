@@ -193,6 +193,7 @@ class GitManager:
 
         worktree_dir = self.worktree_base / agent_id
         if not worktree_dir.exists():
+            log.warning("Worktree %s does not exist at merge time for %s", worktree_dir, agent_name)
             return MergeResult(
                 agent_id=agent_id, agent_name=agent_name,
                 branch=branch, success=True,
