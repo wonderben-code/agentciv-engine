@@ -178,6 +178,14 @@ class Engine:
             data={"is_meta_tick": is_meta_tick},
         ))
 
+        # Update task-based groups from agent focus
+        if self.enforcer and self.enforcer.dimensions.groups == "task-based":
+            focus_map = {
+                a.state.identity.id: a.state.current_focus
+                for a in self.agents
+            }
+            self.enforcer.update_task_groups(focus_map)
+
         # Snapshot messages and events for this tick
         tick_events = list(self._events)
         tick_messages = list(self._messages)
@@ -255,6 +263,11 @@ class Engine:
                     tick=self.tick,
                     is_broadcast=action.type.name == "BROADCAST",
                 ))
+                # Track communication history for whisper visibility
+                if self.enforcer and action.target_agents:
+                    self.enforcer.record_communication(
+                        action.agent_id, action.target_agents,
+                    )
 
         # Resolve proposals at end of meta-tick
         if is_meta_tick and self.auto_org:

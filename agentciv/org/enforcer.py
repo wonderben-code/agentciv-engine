@@ -49,6 +49,10 @@ class OrgEnforcer:
     agent_roles: dict[str, str] = field(default_factory=dict)
     # Lead agent (for hierarchical modes). None if flat/anarchic/distributed
     lead_agent_id: str | None = None
+    # Group assignments — maps agent_id → group_name (for clustered communication)
+    agent_groups: dict[str, str] = field(default_factory=dict)
+    # Communication history — maps agent_id → set of agent_ids they've communicated with
+    communication_history: dict[str, set[str]] = field(default_factory=dict)
 
     # -----------------------------------------------------------------------
     # Hard constraints — block or modify actions
@@ -203,8 +207,18 @@ class OrgEnforcer:
             return [a for a in agents if a.get("id") != agent_id]
 
         if self.dimensions.communication == "whisper":
-            # Can only see agents you've communicated with
-            return []  # TODO: track communication history
+            # Can only see agents you've directly communicated with
+            known = self.communication_history.get(agent_id, set())
+            return [a for a in agents if a.get("id") in known]
+
+        if self.dimensions.communication == "clustered":
+            # Can only see agents in the same group
+            my_group = self.agent_groups.get(agent_id)
+            return [
+                a for a in agents
+                if a.get("id") != agent_id
+                and self.agent_groups.get(a.get("id")) == my_group
+            ]
 
         return [a for a in agents if a.get("id") != agent_id]
 
@@ -345,7 +359,7 @@ class OrgEnforcer:
     # -----------------------------------------------------------------------
 
     def assign_initial_roles(self, agent_ids: list[str]) -> None:
-        """Assign roles based on the roles dimension."""
+        """Assign roles and groups based on the org dimensions."""
         if self.dimensions.roles == "assigned" and self.dimensions.authority == "hierarchy":
             # First agent is lead
             if agent_ids:
@@ -361,14 +375,75 @@ class OrgEnforcer:
         elif self.dimensions.authority in ("flat", "distributed", "consensus", "anarchic"):
             self.lead_agent_id = None
 
+        # Assign initial groups
+        self._assign_initial_groups(agent_ids)
+
     # -----------------------------------------------------------------------
     # Helpers
     # -----------------------------------------------------------------------
 
+    def record_communication(self, sender_id: str, receiver_ids: list[str]) -> None:
+        """Record that agents communicated — used for whisper visibility."""
+        if sender_id not in self.communication_history:
+            self.communication_history[sender_id] = set()
+        for rid in receiver_ids:
+            self.communication_history[sender_id].add(rid)
+            # Bidirectional — receiver also knows about sender
+            if rid not in self.communication_history:
+                self.communication_history[rid] = set()
+            self.communication_history[rid].add(sender_id)
+
+    def update_task_groups(self, focus_map: dict[str, str | None]) -> None:
+        """Update group assignments for task-based grouping.
+
+        Agents working on the same task (current_focus) are in the same group.
+        Agents with no focus get their own singleton group.
+        """
+        if self.dimensions.groups != "task-based":
+            return
+
+        task_groups: dict[str, list[str]] = {}
+        no_focus: list[str] = []
+
+        for agent_id, focus in focus_map.items():
+            if focus:
+                task_groups.setdefault(focus, []).append(agent_id)
+            else:
+                no_focus.append(agent_id)
+
+        self.agent_groups.clear()
+        for i, (task, members) in enumerate(task_groups.items()):
+            group_name = f"task_{i}"
+            for agent_id in members:
+                self.agent_groups[agent_id] = group_name
+
+        # Unfocused agents each get their own group (isolated)
+        for agent_id in no_focus:
+            self.agent_groups[agent_id] = f"solo_{agent_id}"
+
+    def _assign_initial_groups(self, agent_ids: list[str]) -> None:
+        """Assign initial groups based on the groups dimension."""
+        if self.dimensions.groups in ("imposed", "persistent"):
+            # Split agents into groups of 2-3
+            group_size = max(2, len(agent_ids) // max(1, len(agent_ids) // 3))
+            for i, aid in enumerate(agent_ids):
+                self.agent_groups[aid] = f"group_{i // group_size}"
+        elif self.dimensions.groups == "task-based":
+            # All start ungrouped — updated dynamically by update_task_groups
+            for aid in agent_ids:
+                self.agent_groups[aid] = "unassigned"
+        else:
+            # self-selected, temporary — all in one group (no restriction)
+            for aid in agent_ids:
+                self.agent_groups[aid] = "all"
+
     def _in_same_group(self, agent_a: str, agent_b: str) -> bool:
         """Check if two agents are in the same group (for clustered communication)."""
-        # TODO: implement group tracking
-        return True
+        group_a = self.agent_groups.get(agent_a)
+        group_b = self.agent_groups.get(agent_b)
+        if group_a is None or group_b is None:
+            return True  # if no groups assigned, allow
+        return group_a == group_b
 
     def _file_relevant_to_focus(self, file_info: dict[str, Any], agent_state: AgentState) -> bool:
         """Check if a file is relevant to an agent's current focus."""

@@ -185,16 +185,19 @@ async def run_solve(args: argparse.Namespace) -> None:
     # Create attention map
     attention = AttentionMap()
 
-    # Create agents
+    # Create agents (with per-agent model overrides from config.models)
     agents: list[Agent] = []
     for i in range(config.agent_count):
         name = AGENT_NAMES[i % len(AGENT_NAMES)]
-        identity = AgentIdentity(id=f"agent_{i}", name=name, model=config.model)
+        agent_id = f"agent_{i}"
+        # Per-agent model: check by agent_id, then by name, then fall back to default
+        agent_model = config.models.get(agent_id) or config.models.get(name) or config.model
+        identity = AgentIdentity(id=agent_id, name=name, model=agent_model)
         state = AgentState(
             identity=identity,
             token_budget_remaining=config.parameters.token_budget_per_agent,
         )
-        llm = create_client(config.model, max_tokens=1024)
+        llm = create_client(agent_model, max_tokens=1024)
         executor = WorkspaceExecutor(workspace, attention=attention)
         agent = Agent(state=state, llm=llm, executor=executor)
         workspace.register_agent(state)
