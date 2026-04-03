@@ -11,6 +11,8 @@ import logging
 import sys
 from pathlib import Path
 
+import os
+
 from .core.agent import Agent
 from .core.attention import AttentionMap
 from .core.engine import Engine
@@ -84,6 +86,11 @@ def build_cli() -> argparse.ArgumentParser:
     hist.add_argument("--clear", action="store_true", help="Clear all run history")
     hist.add_argument("--similar", help="Find similar runs to a task description")
     hist.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # --- setup ---
+    setup = sub.add_parser("setup", help="Configure AgentCiv for your environment (Claude Code, API key, etc.)")
+    setup.add_argument("--dir", "-d", default=".", help="Project directory to configure (default: current)")
+    setup.add_argument("--global", dest="global_config", action="store_true", help="Configure globally in ~/.claude.json instead of project-level")
 
     # --- info ---
     sub.add_parser("info", help="Show available presets and dimensions")
@@ -583,6 +590,94 @@ def show_history(args: argparse.Namespace) -> None:
         print()
 
 
+def run_setup(args: argparse.Namespace) -> None:
+    """Configure AgentCiv for the user's environment."""
+    import json as json_mod
+    import shutil
+
+    print(f"\n  AgentCiv Setup")
+    print(f"  {'─' * 50}")
+
+    # 1. Check agentciv is installed
+    agentciv_path = shutil.which("agentciv")
+    if agentciv_path:
+        print(f"  ✓ CLI installed: {agentciv_path}")
+    else:
+        print(f"  ✗ CLI not on PATH (running via python -m agentciv.cli)")
+
+    # 2. Check API key
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if api_key:
+        masked = api_key[:12] + "..." + api_key[-4:]
+        print(f"  ✓ API key found: {masked}")
+        print(f"    → API mode available (engine makes its own LLM calls)")
+    else:
+        print(f"  ○ No ANTHROPIC_API_KEY set")
+        print(f"    → Max Plan mode available (Claude Code drives agent cognition, zero cost)")
+        print(f"    → Set ANTHROPIC_API_KEY to also enable API mode")
+
+    # 3. Configure MCP for Claude Code
+    project_dir = Path(args.dir).resolve()
+    mcp_config = {
+        "mcpServers": {
+            "agentciv": {
+                "command": agentciv_path or "python3",
+                "args": ["mcp"] if agentciv_path else ["-m", "agentciv.mcp"],
+            }
+        }
+    }
+
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.global_config:
+        config_path = Path.home() / ".claude.json"
+        if config_path.exists():
+            existing = json_mod.loads(config_path.read_text())
+            if "mcpServers" not in existing:
+                existing["mcpServers"] = {}
+            existing["mcpServers"]["agentciv"] = mcp_config["mcpServers"]["agentciv"]
+            config_path.write_text(json_mod.dumps(existing, indent=2))
+            print(f"  ✓ MCP configured globally: ~/.claude.json")
+        else:
+            print(f"  ✗ ~/.claude.json not found — is Claude Code installed?")
+    else:
+        config_path = project_dir / ".mcp.json"
+        if config_path.exists():
+            existing = json_mod.loads(config_path.read_text())
+            existing.setdefault("mcpServers", {})
+            existing["mcpServers"]["agentciv"] = mcp_config["mcpServers"]["agentciv"]
+            config_path.write_text(json_mod.dumps(existing, indent=2) + "\n")
+        else:
+            config_path.write_text(json_mod.dumps(mcp_config, indent=2) + "\n")
+        print(f"  ✓ MCP configured: {config_path}")
+
+    # 4. Print quickstart
+    print(f"\n  {'─' * 50}")
+    print(f"  Setup complete! Here's how to use AgentCiv:\n")
+
+    print(f"  CLI (direct):")
+    print(f"    agentciv solve --task \"Build a REST API\" --org collaborative")
+    print(f"    agentciv experiment --task \"Build X\" --orgs collaborative,meritocratic,auto")
+    print(f"    agentciv info                    # see all 13 presets")
+    print()
+
+    print(f"  Claude Code (MCP — just talk naturally):")
+    print(f"    \"Use agentciv to build a REST API with a meritocratic team\"")
+    print(f"    \"Compare collaborative vs auto on this task\"")
+    print()
+
+    if not api_key:
+        print(f"  Max Plan mode (no API key needed):")
+        print(f"    Claude Code drives agent cognition through its own subscription.")
+        print(f"    Just use the MCP tools — zero additional cost.")
+        print()
+
+    print(f"  Crown jewel: --org auto")
+    print(f"    Agents design their own organisational structure through")
+    print(f"    proposals and votes. Self-organisation in real time.")
+    print(f"  {'─' * 50}\n")
+
+
 def main() -> None:
     parser = build_cli()
     args = parser.parse_args()
@@ -610,6 +705,9 @@ def main() -> None:
 
     elif args.command == "history":
         show_history(args)
+
+    elif args.command == "setup":
+        run_setup(args)
 
     elif args.command == "info":
         show_info()

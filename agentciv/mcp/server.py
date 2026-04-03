@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -39,14 +40,26 @@ log = logging.getLogger(__name__)
 # MCP server instance
 # ---------------------------------------------------------------------------
 
+_has_api_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
+
 mcp = FastMCP(
     "AgentCiv Engine",
     instructions=(
         "AgentCiv Engine treats organisational arrangement as a first-class "
         "design parameter for multi-agent AI systems. You can spawn communities "
         "of agents under different organisational structures and watch them "
-        "self-organise to solve tasks. Use agentciv_info() first to see "
-        "available presets, then agentciv_solve() to spawn a community."
+        "self-organise to solve tasks.\n\n"
+        + (
+            "API key detected — use agentciv_solve() to spawn communities. "
+            "The engine makes its own LLM calls. Use agentciv_info() first "
+            "to see available presets."
+            if _has_api_key else
+            "No API key detected — use Max Plan mode. Call "
+            "agentciv_orchestrate_start() to begin, then drive each agent's "
+            "cognition yourself by sending their context to your LLM and "
+            "submitting tool calls via agentciv_orchestrate_act(). This uses "
+            "YOUR subscription — zero additional API cost."
+        )
     ),
 )
 
