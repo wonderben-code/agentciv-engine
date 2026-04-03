@@ -22,6 +22,7 @@ from ..core.agent import Agent
 from ..core.attention import AttentionMap
 from ..core.engine import Engine
 from ..core.event_bus import EventBus
+from ..core.stepper import StepSession
 from ..core.types import AgentIdentity, AgentState, Event
 from ..gardener import Gardener, Intervention
 from ..llm.client import create_client
@@ -177,6 +178,7 @@ class SessionManager:
 
     def __init__(self) -> None:
         self._sessions: dict[str, Session] = {}
+        self._step_sessions: dict[str, StepSession] = {}
 
     @property
     def sessions(self) -> dict[str, Session]:
@@ -351,7 +353,7 @@ class SessionManager:
 
     def list_sessions(self) -> list[dict[str, Any]]:
         """List all sessions with summary info."""
-        return [
+        result = [
             {
                 "id": s.id,
                 "task": s.task[:80],
@@ -359,6 +361,123 @@ class SessionManager:
                 "status": s.status.value,
                 "tick": f"{s.current_tick}/{s.max_ticks}",
                 "agents": s.agent_count,
+                "mode": "api",
             }
             for s in self._sessions.values()
         ]
+        # Include step sessions
+        for sid, ss in self._step_sessions.items():
+            result.append({
+                "id": sid,
+                "task": ss.engine.config.task[:80],
+                "org": ss.engine.config.org_preset,
+                "status": ss.phase.value,
+                "tick": f"{ss.engine.tick}/{ss.engine.config.max_ticks}",
+                "agents": len(ss.engine.agents),
+                "mode": "max_plan",
+            })
+        return result
+
+    # -------------------------------------------------------------------
+    # Max Plan Mode — step sessions
+    # -------------------------------------------------------------------
+
+    async def create_step_session(
+        self,
+        task: str,
+        org_preset: str = "collaborative",
+        agent_count: int = 4,
+        max_ticks: int = 50,
+        project_dir: str = ".",
+        dimension_overrides: dict[str, str] | None = None,
+    ) -> tuple[str, dict[str, Any]]:
+        """Create a step session for Max Plan Mode.
+
+        Unlike create_session(), this does NOT start a background task or
+        make any LLM calls. The MCP client drives everything.
+
+        Returns (session_id, init_result).
+        """
+        session_id = uuid.uuid4().hex[:8]
+        project = Path(project_dir).resolve()
+
+        # Build config
+        config = EngineConfig.from_preset(org_preset)
+        config.task = task
+        config.agent_count = agent_count
+        config.max_ticks = max_ticks
+        config.project_dir = str(project)
+        config.enable_chronicle = True
+
+        # Apply dimension overrides
+        if dimension_overrides:
+            dims = config.org_dimensions
+            for key, value in dimension_overrides.items():
+                if hasattr(dims, key) and key != "extra":
+                    setattr(dims, key, value)
+                else:
+                    dims.extra[key] = value
+
+        # Workspace
+        workspace = Workspace(
+            project_dir=project,
+            task_description=task,
+        )
+        workspace.scan()
+
+        # Event bus
+        event_bus = EventBus()
+
+        # Attention map
+        attention = AttentionMap()
+
+        # Create agents — NO LLM client needed in Max Plan Mode
+        agents: list[Agent] = []
+        for i in range(agent_count):
+            name = AGENT_NAMES[i % len(AGENT_NAMES)]
+            agent_id = f"agent_{i}"
+            # Model field is informational in Max Plan Mode
+            identity = AgentIdentity(id=agent_id, name=name, model="max_plan")
+            state = AgentState(
+                identity=identity,
+                token_budget_remaining=config.parameters.token_budget_per_agent,
+            )
+            # No LLM client — pass None (Max Plan Mode doesn't use it)
+            executor = WorkspaceExecutor(workspace, attention=attention)
+            agent = Agent(state=state, llm=None, executor=executor)  # type: ignore[arg-type]
+            workspace.register_agent(state)
+            agents.append(agent)
+
+        # Org enforcer
+        enforcer = OrgEnforcer(
+            dimensions=config.org_dimensions,
+            parameters=config.parameters,
+        )
+        enforcer.assign_initial_roles([a.state.identity.id for a in agents])
+
+        # Gardener
+        gardener = Gardener()
+        gardener.enable()
+
+        # Engine
+        engine = Engine(
+            config=config,
+            workspace=workspace,
+            agents=agents,
+            event_bus=event_bus,
+            enforcer=enforcer,
+            attention=attention,
+            gardener=gardener,
+        )
+
+        # Step session
+        step = StepSession(engine=engine)
+        init_result = await step.start()
+
+        self._step_sessions[session_id] = step
+        log.info("Created step session %s (Max Plan Mode)", session_id)
+
+        return session_id, init_result
+
+    def get_step_session(self, session_id: str) -> StepSession | None:
+        return self._step_sessions.get(session_id)

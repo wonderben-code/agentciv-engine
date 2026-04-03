@@ -430,6 +430,173 @@ async def agentciv_experiment(
 
 
 # ---------------------------------------------------------------------------
+# Max Plan Mode — step-by-step orchestration tools
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def agentciv_orchestrate_start(
+    task: str,
+    org: str = "collaborative",
+    agents: int = 4,
+    max_ticks: int = 50,
+    project_dir: str = ".",
+    overrides: dict[str, str] | None = None,
+) -> str:
+    """Start a Max Plan Mode session — NO API key needed.
+
+    In Max Plan Mode, the engine is a pure orchestrator. It does NOT make
+    LLM calls — YOU (the MCP client) drive agent cognition. This means
+    users on a Claude Max subscription can run AgentCiv with zero API costs.
+
+    The flow:
+      1. orchestrate_start → returns session_id and agent contexts
+      2. For each agent context, YOU make the LLM call and get tool calls
+      3. orchestrate_act → engine executes tool calls, returns results
+      4. Repeat 2-3 until agent signals 'done'
+      5. orchestrate_tick → engine does post-tick processing
+      6. Repeat 2-5 until should_continue is False
+
+    Args:
+        task: What the community should build or solve
+        org: Organisational preset (default: collaborative)
+        agents: Number of agents, 2-20 (default: 4)
+        max_ticks: Maximum execution rounds (default: 50)
+        project_dir: Working directory (default: current dir)
+        overrides: Dimension overrides, e.g. {"authority": "distributed"}
+    """
+    agents = max(2, min(20, agents))
+
+    session_id, init_result = await manager.create_step_session(
+        task=task,
+        org_preset=org,
+        agent_count=agents,
+        max_ticks=max_ticks,
+        project_dir=project_dir,
+        dimension_overrides=overrides,
+    )
+
+    # Prepare the first tick and return agent contexts
+    step = manager.get_step_session(session_id)
+    contexts = await step.prepare_tick()
+
+    return json.dumps({
+        "session_id": session_id,
+        "mode": "max_plan",
+        "init": init_result,
+        "tick": 1,
+        "agent_contexts": contexts,
+        "instructions": (
+            "For each agent_context above:\n"
+            "1. Send system_prompt + user_prompt + tools to your LLM\n"
+            "2. Extract tool_use blocks from the response\n"
+            "3. Call agentciv_orchestrate_act(session_id, agent_id, tool_calls)\n"
+            "4. If agent_done is False, repeat with the updated context\n"
+            "5. When all agents are done, call agentciv_orchestrate_tick(session_id)"
+        ),
+    }, indent=2)
+
+
+@mcp.tool()
+async def agentciv_orchestrate_act(
+    session_id: str,
+    agent_id: str,
+    tool_calls: list[dict] | None = None,
+    tokens_used: int = 0,
+) -> str:
+    """Submit tool calls for an agent in Max Plan Mode.
+
+    After making an LLM call with the agent's context, extract the tool_use
+    blocks and submit them here. The engine executes the tools and returns
+    results that you feed back into the next LLM call.
+
+    Each tool_call dict should have:
+      - tool_call_id (or id): unique ID from the LLM response
+      - tool_name (or name): the tool that was called
+      - arguments (or input): the tool's input parameters
+
+    Args:
+        session_id: The step session ID
+        agent_id: Which agent is acting (e.g. "agent_0")
+        tool_calls: List of tool calls from the LLM response
+        tokens_used: Tokens consumed by the LLM call (optional, for budget tracking)
+    """
+    step = manager.get_step_session(session_id)
+    if not step:
+        return json.dumps({"error": f"Step session '{session_id}' not found"})
+
+    if not tool_calls:
+        return json.dumps({"error": "No tool_calls provided"})
+
+    result = await step.act(
+        agent_id=agent_id,
+        tool_calls=tool_calls,
+        tokens_used=tokens_used,
+    )
+
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def agentciv_orchestrate_tick(session_id: str) -> str:
+    """Complete the current tick and prepare the next one.
+
+    Call this after all agents have finished acting. The engine does
+    post-tick processing (git merge, attention map, relationships,
+    auto-org proposals, chronicle) and prepares agent contexts for
+    the next tick.
+
+    Returns tick summary + next tick's agent contexts (if continuing).
+
+    Args:
+        session_id: The step session ID
+    """
+    step = manager.get_step_session(session_id)
+    if not step:
+        return json.dumps({"error": f"Step session '{session_id}' not found"})
+
+    # Complete current tick
+    tick_result = await step.complete_tick()
+
+    response: dict = {
+        "tick_summary": tick_result,
+    }
+
+    # Prepare next tick if we should continue
+    if tick_result.get("should_continue", True):
+        next_contexts = await step.prepare_tick()
+        if next_contexts:
+            response["next_tick"] = step.engine.tick
+            response["agent_contexts"] = next_contexts
+        else:
+            response["finished"] = True
+            final = await step.finish()
+            response["final"] = final
+    else:
+        response["finished"] = True
+        final = await step.finish()
+        response["final"] = final
+
+    return json.dumps(response, indent=2)
+
+
+@mcp.tool()
+async def agentciv_orchestrate_status(session_id: str) -> str:
+    """Check the status of a Max Plan Mode step session.
+
+    Shows current phase, tick, and per-agent progress.
+
+    Args:
+        session_id: The step session ID
+    """
+    step = manager.get_step_session(session_id)
+    if not step:
+        return json.dumps({"error": f"Step session '{session_id}' not found"})
+
+    return json.dumps(step.get_status(), indent=2)
+
+
+# ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
 

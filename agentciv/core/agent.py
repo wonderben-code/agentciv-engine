@@ -24,6 +24,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from .context import AgentContext, ToolCallSubmission, ToolCallResult
 from .types import (
     Action,
     ActionResult,
@@ -202,6 +203,134 @@ class Agent:
                 conversation.append(result_msg)
 
         return actions_taken
+
+    # -----------------------------------------------------------------------
+    # Max Plan Mode — public methods for external orchestration
+    # -----------------------------------------------------------------------
+
+    def prepare_context(
+        self,
+        workspace: Workspace,
+        org: OrgDimensions,
+        enforcer: OrgEnforcer | None,
+        attention: AttentionMap | None,
+        events: list[Event],
+        messages: list[Message],
+        tick: int,
+        step: int = 0,
+        is_meta_tick: bool = False,
+        auto_org: AutoOrgManager | None = None,
+        conversation: list[dict[str, Any]] | None = None,
+    ) -> AgentContext:
+        """Prepare everything an external LLM client needs to drive this agent.
+
+        This is the Max Plan Mode entry point. Instead of calling the LLM
+        ourselves (as tick() does), we package the full context and return it.
+        The MCP client sends this to its own LLM and submits tool calls back.
+
+        On step 0, this also runs the observe phase (updating internal state).
+        On subsequent steps, observation is skipped — the conversation continues.
+        """
+        if step == 0:
+            self.state.ticks_active += 1
+            self._observe(workspace, org, enforcer, attention, events, messages)
+
+        # Build prompts
+        system = self._build_system_prompt()
+        if enforcer:
+            system = enforcer.shape_system_prompt(system, self.state)
+        if is_meta_tick and auto_org:
+            system += auto_org.get_meta_tick_system_prompt()
+
+        user_prompt = self._build_prompt(
+            workspace.task_description, tick, auto_org=auto_org,
+        )
+
+        # Select tools
+        from .tools import get_tools_for_tick
+        tick_tools = get_tools_for_tick(is_meta_tick)
+
+        return AgentContext(
+            agent_id=self.state.identity.id,
+            agent_name=self.state.identity.name,
+            tick=tick,
+            step=step,
+            system_prompt=system,
+            user_prompt=user_prompt,
+            tools=tick_tools,
+            conversation=conversation or [],
+            is_meta_tick=is_meta_tick,
+            token_budget_remaining=self.state.token_budget_remaining,
+        )
+
+    async def apply_tool_calls(
+        self,
+        tool_calls: list[ToolCallSubmission],
+        tick: int,
+        enforcer: OrgEnforcer | None = None,
+    ) -> tuple[list[ToolCallResult], list[Action], bool]:
+        """Execute tool calls submitted by an external LLM client.
+
+        Returns:
+            - Tool call results (to feed back into the conversation)
+            - Actions taken (for engine bookkeeping)
+            - Whether the agent signalled 'done'
+        """
+        from ..llm.client import ToolCall as TC
+
+        results: list[ToolCallResult] = []
+        actions: list[Action] = []
+        agent_done = False
+
+        for submission in tool_calls:
+            # Convert submission to internal ToolCall format
+            tc = TC(
+                id=submission.tool_call_id,
+                name=submission.tool_name,
+                arguments=submission.arguments,
+            )
+            action = self._tool_call_to_action(tc, tick, "")
+
+            # 'done' means stop
+            if action.type == ActionType.IDLE:
+                actions.append(action)
+                results.append(ToolCallResult(
+                    tool_call_id=submission.tool_call_id,
+                    output="Agent signalled done.",
+                    agent_done=True,
+                ))
+                agent_done = True
+                continue
+
+            # Org enforcement
+            if enforcer:
+                check = enforcer.check_action(action, self.state)
+                if not check.allowed:
+                    log.info(
+                        "Agent %s action %s blocked: %s",
+                        self.state.identity.name, action.type.name, check.reason,
+                    )
+                    results.append(ToolCallResult(
+                        tool_call_id=submission.tool_call_id,
+                        output=f"Action blocked by organisation rules: {check.reason}",
+                        is_error=True,
+                    ))
+                    continue
+
+            # Execute
+            result = await self.executor.execute(action)
+            actions.append(action)
+
+            # Reflect
+            self._reflect(action, result, tick)
+
+            results.append(ToolCallResult(
+                tool_call_id=submission.tool_call_id,
+                output=result.output if result.success else f"Error: {result.error}",
+                is_error=not result.success,
+            ))
+
+        return results, actions, agent_done
 
     # -----------------------------------------------------------------------
     # Observe

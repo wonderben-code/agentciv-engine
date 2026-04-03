@@ -19,6 +19,7 @@ from typing import Any
 
 from .agent import Agent
 from .attention import AttentionMap
+from .context import AgentContext, TickSummary
 from .event_bus import EventBus
 from .types import (
     Action,
@@ -61,6 +62,11 @@ class Engine:
     # Per-tick state
     _messages: list[Message] = field(default_factory=list)
     _events: list[Event] = field(default_factory=list)
+
+    # Max Plan Mode scratch (set by prepare_tick, read by complete_tick)
+    _tick_events: list[Event] = field(default_factory=list)
+    _tick_messages: list[Message] = field(default_factory=list)
+    _tick_is_meta: bool = False
 
     async def run(self) -> None:
         """Run the engine for max_ticks or until convergence."""
@@ -151,6 +157,325 @@ class Engine:
     def stop(self) -> None:
         """Signal the engine to stop after the current tick."""
         self.running = False
+
+    # -------------------------------------------------------------------
+    # Max Plan Mode — step-by-step orchestration API
+    # -------------------------------------------------------------------
+
+    async def initialize(self) -> dict:
+        """Initialise the engine without starting the run loop.
+
+        Sets up org enforcer, auto-org, git, chronicle, attention map —
+        everything that run() does before the tick loop. Returns a summary
+        of the initialised state.
+
+        For Max Plan Mode: call this once, then use prepare_tick() /
+        complete_tick() in a loop driven by the MCP client.
+        """
+        self.running = True
+
+        # Org enforcer
+        if self.enforcer is None:
+            self.enforcer = OrgEnforcer(
+                dimensions=self.config.org_dimensions,
+                parameters=self.config.parameters,
+            )
+            self.enforcer.assign_initial_roles(
+                [a.state.identity.id for a in self.agents]
+            )
+
+        # Auto-org
+        if self.config.parameters.meta_tick_interval > 0 and self.auto_org is None:
+            self.auto_org = AutoOrgManager(
+                dimensions=self.config.org_dimensions,
+                parameters=self.config.parameters,
+                agent_count=len(self.agents),
+            )
+
+        # Git
+        if self.config.parameters.enable_git_branches and self.git is None:
+            if await GitManager.is_available():
+                self.git = GitManager(self.workspace.project_dir)
+                await self.git.init()
+
+        # Chronicle
+        if self.config.enable_chronicle and self.chronicle is None:
+            agent_names = {
+                a.state.identity.id: a.state.identity.name
+                for a in self.agents
+            }
+            self.chronicle = Chronicle(
+                task=self.config.task,
+                org_preset=self.config.org_preset,
+                agent_count=len(self.agents),
+                agent_names=agent_names,
+            )
+            self.event_bus.subscribe(None, self.chronicle.observe)
+
+        # Attention map
+        for agent in self.agents:
+            self.attention.register_agent(
+                agent.state.identity.id,
+                agent.state.identity.name,
+            )
+
+        self.event_bus.emit(Event(
+            type=EventType.ENGINE_STARTED,
+            tick=0,
+            data={"config": self.config.org_preset, "agents": self.config.agent_count},
+        ))
+
+        log.info(
+            "Engine initialised (Max Plan): %d agents, org=%s, max_ticks=%d",
+            len(self.agents), self.config.org_preset, self.config.max_ticks,
+        )
+
+        return {
+            "agents": [
+                {
+                    "id": a.state.identity.id,
+                    "name": a.state.identity.name,
+                    "model": a.state.identity.model,
+                }
+                for a in self.agents
+            ],
+            "org_preset": self.config.org_preset,
+            "max_ticks": self.config.max_ticks,
+            "git_enabled": self.git is not None,
+            "auto_org": self.auto_org is not None,
+        }
+
+    async def prepare_tick(self) -> tuple[list[AgentContext], bool]:
+        """Prepare the next tick and return agent contexts.
+
+        Returns:
+            - List of AgentContext, one per agent (ready for external LLM)
+            - Whether this is a meta-tick
+
+        The MCP client iterates the contexts, sends each to its LLM,
+        and submits tool calls via agent.apply_tool_calls().
+        """
+        self.tick += 1
+
+        if self.tick > self.config.max_ticks or not self.running:
+            return [], False
+
+        # Gardener interventions
+        force_meta = False
+        if self.gardener and self.gardener.is_enabled:
+            for intervention in self.gardener.drain():
+                result = self._apply_intervention(intervention)
+                if result == "force_meta":
+                    force_meta = True
+                elif result == "stop":
+                    self.running = False
+                    return [], False
+
+        # Detect meta-tick
+        is_meta_tick = force_meta
+        if not is_meta_tick and self.auto_org and self.auto_org.is_meta_tick(self.tick):
+            is_meta_tick = True
+        if is_meta_tick and self.auto_org:
+            self.auto_org.start_meta_tick(self.tick)
+
+        self.event_bus.emit(Event(
+            type=EventType.TICK_START,
+            tick=self.tick,
+            data={"is_meta_tick": is_meta_tick},
+        ))
+
+        # Update task-based groups
+        if self.enforcer and self.enforcer.dimensions.groups == "task-based":
+            focus_map = {
+                a.state.identity.id: a.state.current_focus
+                for a in self.agents
+            }
+            self.enforcer.update_task_groups(focus_map)
+
+        # Snapshot and clear per-tick state
+        tick_events = list(self._events)
+        tick_messages = list(self._messages)
+        self._events.clear()
+        self._messages.clear()
+
+        # Store for complete_tick()
+        self._tick_events = tick_events
+        self._tick_messages = tick_messages
+        self._tick_is_meta = is_meta_tick
+
+        # Set up git worktrees
+        if self.git:
+            for agent in self.agents:
+                worktree = await self.git.create_agent_worktree(
+                    agent.state.identity.id,
+                    agent.state.identity.name,
+                    self.tick,
+                )
+                agent.executor.working_dir = worktree
+
+        # Build agent contexts
+        contexts: list[AgentContext] = []
+        for agent in self.agents:
+            ctx = agent.prepare_context(
+                workspace=self.workspace,
+                org=self.config.org_dimensions,
+                enforcer=self.enforcer,
+                attention=self.attention,
+                events=tick_events,
+                messages=tick_messages,
+                tick=self.tick,
+                step=0,
+                is_meta_tick=is_meta_tick,
+                auto_org=self.auto_org,
+            )
+            contexts.append(ctx)
+
+        return contexts, is_meta_tick
+
+    async def complete_tick(self, all_actions: list[Action]) -> TickSummary:
+        """Complete the current tick after all agents have acted.
+
+        Handles: git merge, auto-org proposals, attention map, relationships,
+        events, messages, chronicle. Returns a summary.
+
+        The MCP client collects actions from apply_tool_calls() for each
+        agent and passes the combined list here.
+        """
+        is_meta_tick = getattr(self, "_tick_is_meta", False)
+        tick_events_out: list[dict] = []
+        org_changes: list[dict] = []
+        merge_summaries: list[dict] = []
+
+        # Merge agent branches
+        if self.git:
+            for agent in self.agents:
+                aid = agent.state.identity.id
+                name = agent.state.identity.name
+
+                merge = await self.git.commit_and_merge(aid, name, self.tick)
+                agent.executor.working_dir = None
+
+                if merge.files_changed:
+                    merge_summaries.append({
+                        "agent": name,
+                        "success": merge.success,
+                        "files_changed": merge.files_changed,
+                        "conflicts": merge.conflicts,
+                    })
+                    if merge.success:
+                        self.event_bus.emit(Event(
+                            type=EventType.BRANCH_MERGED,
+                            tick=self.tick,
+                            agent_id=aid,
+                            data={
+                                "files": merge.files_changed,
+                                "count": len(merge.files_changed),
+                            },
+                        ))
+                    else:
+                        conflict_event = Event(
+                            type=EventType.MERGE_CONFLICT,
+                            tick=self.tick,
+                            agent_id=aid,
+                            data={
+                                "conflicts": merge.conflicts,
+                                "files_attempted": merge.files_changed,
+                                "summary": (
+                                    f"{name}'s changes to "
+                                    f"{', '.join(merge.conflicts)} conflicted."
+                                ),
+                            },
+                        )
+                        self.event_bus.emit(conflict_event)
+                        self._events.append(conflict_event)
+
+            self.workspace.scan()
+
+        # Auto-org proposals and votes
+        if self.auto_org:
+            self._process_auto_org_actions(all_actions)
+
+        # Attention map
+        self._update_attention(all_actions)
+
+        # Relationships
+        if self.config.parameters.enable_relationships:
+            self._update_relationships(all_actions)
+
+        # Convert actions to events
+        for action in all_actions:
+            event = self._action_to_event(action)
+            if event:
+                self._events.append(event)
+                self.event_bus.emit(event)
+                tick_events_out.append({
+                    "type": event.type.name,
+                    "agent": event.agent_id,
+                    "tick": event.tick,
+                })
+
+        # Collect messages
+        for action in all_actions:
+            if action.type.name in ("COMMUNICATE", "BROADCAST") and action.content:
+                self._messages.append(Message(
+                    sender_id=action.agent_id,
+                    receiver_ids=action.target_agents,
+                    content=action.content,
+                    tick=self.tick,
+                    is_broadcast=action.type.name == "BROADCAST",
+                ))
+                if self.enforcer and action.target_agents:
+                    self.enforcer.record_communication(
+                        action.agent_id, action.target_agents,
+                    )
+
+        # Resolve proposals at end of meta-tick
+        if is_meta_tick and self.auto_org:
+            adopted = self.auto_org.resolve_proposals(self.tick)
+            for evt in adopted:
+                change = {
+                    "dimension": evt.dimension,
+                    "old_value": evt.old_value,
+                    "new_value": evt.new_value,
+                    "proposer": evt.proposer,
+                }
+                org_changes.append(change)
+                self.event_bus.emit(Event(
+                    type=EventType.RESTRUCTURE_ADOPTED,
+                    tick=self.tick,
+                    data=change,
+                ))
+
+        # Tick idle counters
+        self.attention.tick_idle(self.tick)
+
+        self.event_bus.emit(Event(
+            type=EventType.TICK_END,
+            tick=self.tick,
+            data={"actions": len(all_actions), "is_meta_tick": is_meta_tick},
+        ))
+
+        should_continue = self.running and self.tick < self.config.max_ticks
+
+        return TickSummary(
+            tick=self.tick,
+            actions_count=len(all_actions),
+            merge_results=merge_summaries,
+            events=tick_events_out,
+            org_changes=org_changes,
+            should_continue=should_continue,
+        )
+
+    async def cleanup(self) -> None:
+        """Clean up engine resources. Call when the run is finished."""
+        self.running = False
+        if self.git:
+            await self.git.cleanup_all()
+        self.event_bus.emit(Event(
+            type=EventType.ENGINE_STOPPED,
+            tick=self.tick,
+        ))
+        log.info("Engine cleaned up at tick %d", self.tick)
 
     async def _execute_tick(self) -> None:
         """Execute a single tick — all agents act."""
