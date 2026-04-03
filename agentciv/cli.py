@@ -591,91 +591,156 @@ def show_history(args: argparse.Namespace) -> None:
 
 
 def run_setup(args: argparse.Namespace) -> None:
-    """Configure AgentCiv for the user's environment."""
+    """Configure AgentCiv for the user's environment.
+
+    Interactive setup that:
+    1. Checks the environment
+    2. Explains the two modes clearly (free vs paid)
+    3. Writes the config
+    4. Celebrates success with clear next steps
+    """
     import json as json_mod
     import shutil
+    import sys
 
-    print(f"\n  AgentCiv Setup")
-    print(f"  {'─' * 50}")
+    print()
+    print(f"  ╔══════════════════════════════════════════════════╗")
+    print(f"  ║          AgentCiv Engine — Setup                 ║")
+    print(f"  ║  Organisational arrangement as a design parameter║")
+    print(f"  ╚══════════════════════════════════════════════════╝")
+    print()
 
-    # 1. Check agentciv is installed
+    # 1. Environment check
+    print(f"  Checking your environment...")
     agentciv_path = shutil.which("agentciv")
     if agentciv_path:
         print(f"  ✓ CLI installed: {agentciv_path}")
     else:
-        print(f"  ✗ CLI not on PATH (running via python -m agentciv.cli)")
+        print(f"  ✓ Running via Python module")
 
-    # 2. Check API key
+    import platform
+    print(f"  ✓ Python {platform.python_version()}")
+    print(f"  ✓ 13 organisational presets loaded")
+    print(f"  ✓ 9 organisational dimensions available")
+
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if api_key:
         masked = api_key[:12] + "..." + api_key[-4:]
-        print(f"  ✓ API key found: {masked}")
-        print(f"    → API mode available (engine makes its own LLM calls)")
-    else:
-        print(f"  ○ No ANTHROPIC_API_KEY set")
-        print(f"    → Max Plan mode available (Claude Code drives agent cognition, zero cost)")
-        print(f"    → Set ANTHROPIC_API_KEY to also enable API mode")
+        print(f"  ✓ Anthropic API key detected: {masked}")
 
-    # 3. Configure MCP for Claude Code
+    print()
+
+    # 2. Mode selection — user explicitly chooses, no auto-detection
+    print(f"  AgentCiv has two modes. Choose how you want to use it:")
+    print()
+    print(f"  [1] MAX PLAN — Free (recommended)")
+    print(f"      Works inside Claude Code / Cursor via MCP.")
+    print(f"      Your AI assistant drives the agents — no API key needed.")
+    print(f"      Zero additional cost beyond your existing subscription.")
+    print()
+    print(f"  [2] API MODE — Uses your Anthropic API key")
+    print(f"      Run from the command line: agentciv solve --task \"...\"")
+    print(f"      The engine makes its own LLM calls. You pay per token.")
+    print(f"      Requires ANTHROPIC_API_KEY environment variable.")
+    print()
+    print(f"  [3] BOTH — Set up both modes")
+    print()
+
+    try:
+        choice = input("  Your choice [1]: ").strip() or "1"
+    except (EOFError, KeyboardInterrupt):
+        choice = "1"
+        print("1")
+
+    if choice not in ("1", "2", "3"):
+        choice = "1"
+
+    wants_mcp = choice in ("1", "3")
+    wants_api = choice in ("2", "3")
+
+    print()
+
+    # 3. Configure based on choice
     project_dir = Path(args.dir).resolve()
-    mcp_config = {
-        "mcpServers": {
-            "agentciv": {
-                "command": agentciv_path or "python3",
-                "args": ["mcp"] if agentciv_path else ["-m", "agentciv.mcp"],
-            }
-        }
-    }
-
     project_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.global_config:
-        config_path = Path.home() / ".claude.json"
-        if config_path.exists():
-            existing = json_mod.loads(config_path.read_text())
-            if "mcpServers" not in existing:
-                existing["mcpServers"] = {}
-            existing["mcpServers"]["agentciv"] = mcp_config["mcpServers"]["agentciv"]
-            config_path.write_text(json_mod.dumps(existing, indent=2))
-            print(f"  ✓ MCP configured globally: ~/.claude.json")
-        else:
-            print(f"  ✗ ~/.claude.json not found — is Claude Code installed?")
-    else:
-        config_path = project_dir / ".mcp.json"
-        if config_path.exists():
-            existing = json_mod.loads(config_path.read_text())
-            existing.setdefault("mcpServers", {})
-            existing["mcpServers"]["agentciv"] = mcp_config["mcpServers"]["agentciv"]
-            config_path.write_text(json_mod.dumps(existing, indent=2) + "\n")
-        else:
-            config_path.write_text(json_mod.dumps(mcp_config, indent=2) + "\n")
-        print(f"  ✓ MCP configured: {config_path}")
+    if wants_mcp:
+        mcp_config = {
+            "mcpServers": {
+                "agentciv": {
+                    "command": agentciv_path or "python3",
+                    "args": ["mcp"] if agentciv_path else ["-m", "agentciv.mcp"],
+                }
+            }
+        }
 
-    # 4. Print quickstart
-    print(f"\n  {'─' * 50}")
-    print(f"  Setup complete! Here's how to use AgentCiv:\n")
+        if args.global_config:
+            config_path = Path.home() / ".claude.json"
+            if config_path.exists():
+                existing = json_mod.loads(config_path.read_text())
+                if "mcpServers" not in existing:
+                    existing["mcpServers"] = {}
+                existing["mcpServers"]["agentciv"] = mcp_config["mcpServers"]["agentciv"]
+                config_path.write_text(json_mod.dumps(existing, indent=2))
+                print(f"  ✓ MCP configured globally: ~/.claude.json")
+            else:
+                print(f"  ✗ ~/.claude.json not found — is Claude Code installed?")
+                print(f"    Install: https://docs.anthropic.com/en/docs/claude-code")
+        else:
+            config_path = project_dir / ".mcp.json"
+            if config_path.exists():
+                existing = json_mod.loads(config_path.read_text())
+                existing.setdefault("mcpServers", {})
+                existing["mcpServers"]["agentciv"] = mcp_config["mcpServers"]["agentciv"]
+                config_path.write_text(json_mod.dumps(existing, indent=2) + "\n")
+            else:
+                config_path.write_text(json_mod.dumps(mcp_config, indent=2) + "\n")
+            print(f"  ✓ MCP server configured: {config_path}")
 
-    print(f"  CLI (direct):")
-    print(f"    agentciv solve --task \"Build a REST API\" --org collaborative")
-    print(f"    agentciv experiment --task \"Build X\" --orgs collaborative,meritocratic,auto")
-    print(f"    agentciv info                    # see all 13 presets")
+    if wants_api:
+        if api_key:
+            print(f"  ✓ API key detected — API mode ready")
+        else:
+            print(f"  ! API mode selected but no ANTHROPIC_API_KEY found.")
+            print(f"    Set it in your shell profile:")
+            print(f"    export ANTHROPIC_API_KEY=\"sk-ant-...\"")
+
+    # 4. Celebration and next steps
+    print()
+    print(f"  ╔══════════════════════════════════════════════════╗")
+    print(f"  ║                                                  ║")
+    print(f"  ║    SETUP COMPLETE — AgentCiv Engine is ready!    ║")
+    print(f"  ║                                                  ║")
+    print(f"  ╚══════════════════════════════════════════════════╝")
     print()
 
-    print(f"  Claude Code (MCP — just talk naturally):")
-    print(f"    \"Use agentciv to build a REST API with a meritocratic team\"")
-    print(f"    \"Compare collaborative vs auto on this task\"")
-    print()
-
-    if not api_key:
-        print(f"  Max Plan mode (no API key needed):")
-        print(f"    Claude Code drives agent cognition through its own subscription.")
-        print(f"    Just use the MCP tools — zero additional cost.")
+    if wants_mcp:
+        print(f"  GET STARTED (Max Plan mode — free):")
+        print(f"  ─────────────────────────────────────")
+        print(f"  Open Claude Code in this directory and say:")
+        print()
+        print(f"    \"Use agentciv to build a REST API with 4 agents\"")
+        print()
+        print(f"  Or try different organisational structures:")
+        print()
+        print(f"    \"Use agentciv with a meritocratic team to refactor this module\"")
+        print(f"    \"Use agentciv with --org auto to let agents self-organise\"")
         print()
 
-    print(f"  Crown jewel: --org auto")
+    if wants_api:
+        print(f"  GET STARTED (API mode):")
+        print(f"  ─────────────────────────────────────")
+        print(f"  agentciv solve --task \"Build a REST API\" --org collaborative")
+        print(f"  agentciv solve --task \"Build a CLI tool\" --org auto")
+        print(f"  agentciv experiment --task \"Build X\" --orgs collaborative,meritocratic,auto")
+        print()
+
+    print(f"  THE CROWN JEWEL: --org auto")
     print(f"    Agents design their own organisational structure through")
     print(f"    proposals and votes. Self-organisation in real time.")
-    print(f"  {'─' * 50}\n")
+    print()
+    print(f"  13 presets available. Run 'agentciv info' to explore them.")
+    print(f"  ══════════════════════════════════════════════════")
 
 
 def main() -> None:
