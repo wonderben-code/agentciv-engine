@@ -123,7 +123,7 @@ Community-expandable: add your own dimensions, values, and presets by dropping a
 | **How** | Inside Claude Code / Cursor via MCP | CLI: `agentciv solve` |
 | **Cost** | Free (uses your existing subscription) | Pay per token (your API key) |
 | **Who drives** | Your AI assistant drives agent cognition | Engine makes its own LLM calls |
-| **Best for** | Everyday use | Research, experiments, benchmarks |
+| **Best for** | Everyday use | Research, experiments, test tasks |
 | **Setup** | `agentciv setup` | `export ANTHROPIC_API_KEY=...` |
 
 ## Features
@@ -175,7 +175,7 @@ agentciv experiment   Compare team structures on the same task
 agentciv info         Show all presets, dimensions, and features
 agentciv history      View learning data from past runs
 agentciv setup        Configure AgentCiv for your project
-agentciv benchmark    Run internal benchmark suite
+agentciv test-tasks   Run built-in test tasks across org presets
 agentciv mcp          Start the MCP server (for Claude Code / Cursor)
 ```
 

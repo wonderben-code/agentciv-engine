@@ -11,7 +11,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from .history import RunHistory, RunRecord, extract_keywords, keyword_similarity
+from .history import RunHistory, RunRecord, extract_keywords
 
 log = logging.getLogger(__name__)
 

@@ -20,8 +20,6 @@ Produces:
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 import shutil
 import tempfile
@@ -75,7 +73,7 @@ class ExperimentResult:
         """Render comparison table for the terminal."""
         lines: list[str] = []
         lines.append("")
-        lines.append(f"  Experiment Report")
+        lines.append("  Experiment Report")
         lines.append(f"  {'─' * 60}")
         lines.append(f"  Task: {self.task}")
         lines.append(f"  Agents: {self.agent_count} | Max ticks: {self.max_ticks} | Model: {self.model}")
@@ -260,14 +258,18 @@ async def run_experiment(
     source = Path(source_dir).resolve()
     total_runs = len(orgs) * runs_per_org
 
-    print(f"\n  Experiment: {total_runs} runs ({len(orgs)} orgs × {runs_per_org} each)")
-    print(f"  {'─' * 50}\n")
+    from . import display
+    display.console.print(
+        f"\n  [bold]Experiment:[/bold] {total_runs} runs "
+        f"[dim]({len(orgs)} orgs × {runs_per_org} each)[/dim]"
+    )
+    display.console.print(f"  [dim]{'─' * 50}[/dim]\n")
 
     run_number = 0
     for org in orgs:
         for run_idx in range(runs_per_org):
             run_number += 1
-            print(f"  [{run_number}/{total_runs}] {org} (run {run_idx + 1})...", end="", flush=True)
+            display.show_experiment_progress(run_number, total_runs, org, run_idx)
 
             try:
                 # Fresh project copy for each run
@@ -306,7 +308,7 @@ async def run_experiment(
                         run_index=run_idx,
                         report=report,
                     ))
-                    print(f" done ({report.total_ticks} ticks)")
+                    display.show_experiment_run_done(report.total_ticks)
 
             except Exception as e:
                 log.exception("Run failed: %s run %d", org, run_idx)
@@ -317,6 +319,6 @@ async def run_experiment(
                     success=False,
                     error=str(e),
                 ))
-                print(f" FAILED: {e}")
+                display.show_experiment_run_failed(str(e))
 
     return result

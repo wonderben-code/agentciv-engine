@@ -137,11 +137,11 @@ def generate_post_run_tip(
             text="Tip: Use --gardener to intervene mid-run — guide agents, force meta-ticks, or adjust parameters live.",
         ))
 
-    # Multiple agents → mention benchmark
-    if agent_count >= 3 and not tracker.has_used("benchmark"):
+    # Multiple agents → mention test-tasks
+    if agent_count >= 3 and not tracker.has_used("test-tasks"):
         tips.append(Tip(
-            feature="tip:benchmark",
-            text="Tip: Run standardised benchmarks with `agentciv benchmark --tasks all --presets all` to compare all 13 configs.",
+            feature="tip:test-tasks",
+            text="Tip: Run built-in test tasks with `agentciv test-tasks --tasks all --presets all` to compare all 13 configs.",
         ))
 
     # History exists → mention it

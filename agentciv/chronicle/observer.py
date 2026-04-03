@@ -88,7 +88,7 @@ class ChronicleReport:
         """Render a clean terminal summary."""
         lines: list[str] = []
         lines.append("")
-        lines.append(f"  Chronicle Report")
+        lines.append("  Chronicle Report")
         lines.append(f"  {'─' * 50}")
         lines.append(f"  Task: {self.task}")
         lines.append(f"  Org: {self.org_preset} | Agents: {self.agent_count} | Ticks: {self.total_ticks}")

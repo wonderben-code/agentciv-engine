@@ -1,9 +1,9 @@
-"""Benchmark suite — standardised tasks across all presets with statistics.
+"""Test tasks suite — built-in tasks across all presets with statistics.
 
 Usage:
-  agentciv benchmark --tasks all --presets all --runs 3
-  agentciv benchmark --tasks fizzbuzz --presets collaborative,competitive --mock
-  agentciv benchmark --dry-run
+  agentciv test-tasks --tasks all --presets all --runs 3
+  agentciv test-tasks --tasks fizzbuzz --presets collaborative,competitive --mock
+  agentciv test-tasks --dry-run
 """
 
 from .runner import run_benchmark, BenchmarkConfig

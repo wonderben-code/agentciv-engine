@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
-import sys
 from pathlib import Path
 
 import os
@@ -18,6 +17,7 @@ from .core.attention import AttentionMap
 from .core.engine import Engine
 from .core.event_bus import EventBus
 from .core.types import AgentIdentity, AgentState, Event, EventType
+from . import display
 from .gardener import Gardener
 from .llm.client import create_client
 from .org.config import EngineConfig
@@ -67,8 +67,8 @@ def build_cli() -> argparse.ArgumentParser:
     exp.add_argument("--verbose", "-v", action="store_true", help="Show details")
     exp.add_argument("--no-tips", action="store_true", help="Suppress contextual feature tips")
 
-    # --- benchmark ---
-    bench = sub.add_parser("benchmark", help="Run standardised tasks across all presets with statistical analysis")
+    # --- test-tasks ---
+    bench = sub.add_parser("test-tasks", help="Run built-in test tasks across org presets and compare results")
     bench.add_argument("--tasks", default="all", help="Comma-separated task IDs, difficulty level (simple/medium/hard), or 'all'")
     bench.add_argument("--presets", default="all", help="Comma-separated preset names or 'all'")
     bench.add_argument("--runs", type=int, default=3, help="Runs per (task, preset) combination (default: 3)")
@@ -79,7 +79,7 @@ def build_cli() -> argparse.ArgumentParser:
     bench.add_argument("--dry-run", action="store_true", help="Print execution plan without running")
     bench.add_argument("--mock", action="store_true", help="Use mock LLM (no API calls, for testing the pipeline)")
     bench.add_argument("--verbose", "-v", action="store_true", help="Show per-run details")
-    bench.add_argument("--list-tasks", action="store_true", help="List available benchmark tasks and exit")
+    bench.add_argument("--list-tasks", action="store_true", help="List available test tasks and exit")
 
     # --- history ---
     hist = sub.add_parser("history", help="View or manage the learning history")
@@ -101,87 +101,101 @@ def build_cli() -> argparse.ArgumentParser:
     return parser
 
 
-def print_event(event: Event, verbose: bool = False) -> None:
-    """Pretty-print an event to the terminal."""
-    tick = f"[tick {event.tick:3d}]"
-    agent = f" {event.agent_id}" if event.agent_id else ""
+def make_event_handler(agent_names: dict[str, str], verbose: bool = False):
+    """Create an event handler that resolves agent IDs to names and uses rich display.
 
-    match event.type:
-        case EventType.ENGINE_STARTED:
-            agents = event.data.get("agents", "?")
-            org = event.data.get("config", "?")
-            print(f"\n  AgentCiv Engine")
-            print(f"  {agents} agents | org: {org}")
-            print(f"  {'─' * 40}\n")
+    Returns a callable suitable for event_bus.subscribe().
+    """
+    def _resolve(agent_id: str | None) -> str:
+        if not agent_id:
+            return ""
+        return agent_names.get(agent_id, agent_id)
 
-        case EventType.TICK_START:
-            meta = " [META-TICK]" if event.data.get("is_meta_tick") else ""
-            print(f"  {tick} ────────────────────{meta}")
+    def handle_event(event: Event) -> None:
+        name = _resolve(event.agent_id)
 
-        case EventType.TICK_END:
-            actions = event.data.get("actions", 0)
-            print(f"  {tick} {actions} actions taken\n")
+        match event.type:
+            # Engine lifecycle — handled by show_engine_start, not here
+            case EventType.ENGINE_STARTED:
+                pass  # displayed by run_solve directly
 
-        case EventType.FILE_CREATED:
-            f = event.data.get("file", "?")
-            print(f"  {tick}{agent} created {f}")
+            case EventType.TICK_START:
+                display.show_tick_start(event.tick, event.data.get("is_meta_tick", False))
 
-        case EventType.FILE_MODIFIED:
-            f = event.data.get("file", "?")
-            print(f"  {tick}{agent} modified {f}")
+            case EventType.TICK_END:
+                display.show_tick_end(event.tick, event.data.get("actions", 0))
 
-        case EventType.MESSAGE_SENT:
-            targets = event.data.get("targets", [])
-            preview = event.data.get("content_preview", "")
-            print(f"  {tick}{agent} → {', '.join(targets)}: {preview}")
+            case EventType.FILE_CREATED:
+                display.show_file_created(event.tick, name, event.data.get("file", "?"))
 
-        case EventType.BROADCAST_SENT:
-            preview = event.data.get("content_preview", "")
-            print(f"  {tick}{agent} → all: {preview}")
+            case EventType.FILE_MODIFIED:
+                display.show_file_modified(event.tick, name, event.data.get("file", "?"))
 
-        case EventType.TASK_CLAIMED:
-            preview = event.data.get("content_preview", "")
-            print(f"  {tick}{agent} claimed: {preview}")
+            case EventType.MESSAGE_SENT:
+                targets = event.data.get("targets", [])
+                target_names = [_resolve(t) for t in targets]
+                display.show_message_sent(
+                    event.tick, name, target_names,
+                    event.data.get("content_preview", ""),
+                )
 
-        case EventType.TESTS_PASSED:
-            print(f"  {tick} ✓ tests passing")
+            case EventType.BROADCAST_SENT:
+                display.show_broadcast(
+                    event.tick, name,
+                    event.data.get("content_preview", ""),
+                )
 
-        case EventType.TESTS_FAILED:
-            print(f"  {tick} ✗ tests failing")
+            case EventType.TASK_CLAIMED:
+                display.show_task_claimed(
+                    event.tick, name,
+                    event.data.get("content_preview", ""),
+                )
 
-        case EventType.BUILD_SUCCEEDED:
-            print(f"  {tick} ✓ build passing")
+            case EventType.TESTS_PASSED:
+                display.show_tests_passed(event.tick)
 
-        case EventType.BUILD_FAILED:
-            print(f"  {tick} ✗ build failing")
+            case EventType.TESTS_FAILED:
+                display.show_tests_failed(event.tick)
 
-        case EventType.BRANCH_MERGED:
-            count = event.data.get("count", 0)
-            print(f"  {tick}{agent} merged ({count} files)")
+            case EventType.BUILD_SUCCEEDED:
+                display.show_build_passed(event.tick)
 
-        case EventType.MERGE_CONFLICT:
-            conflicts = event.data.get("conflicts", [])
-            print(f"  {tick}{agent} ✗ MERGE CONFLICT: {', '.join(conflicts)}")
+            case EventType.BUILD_FAILED:
+                display.show_build_failed(event.tick)
 
-        case EventType.RESTRUCTURE_PROPOSED:
-            preview = event.data.get("content_preview", "")
-            print(f"  {tick}{agent} proposes restructure: {preview}")
+            case EventType.BRANCH_MERGED:
+                display.show_branch_merged(event.tick, name, event.data.get("count", 0))
 
-        case EventType.RESTRUCTURE_ADOPTED:
-            dim = event.data.get("dimension", "?")
-            old = event.data.get("old_value", "?")
-            new = event.data.get("new_value", "?")
-            yes = event.data.get("yes_votes", 0)
-            no = event.data.get("no_votes", 0)
-            print(f"  {tick} ★ RESTRUCTURED: {dim} '{old}' → '{new}' ({yes}-{no})")
+            case EventType.MERGE_CONFLICT:
+                display.show_merge_conflict(event.tick, name, event.data.get("conflicts", []))
 
-        case EventType.ENGINE_STOPPED:
-            print(f"\n  Engine stopped at tick {event.tick}")
-            print(f"  {'─' * 40}\n")
+            case EventType.RESTRUCTURE_PROPOSED:
+                display.show_restructure_proposed(
+                    event.tick, name,
+                    event.data.get("content_preview", ""),
+                )
 
-        case _:
-            if verbose:
-                print(f"  {tick}{agent} {event.type.name}")
+            case EventType.RESTRUCTURE_ADOPTED:
+                display.show_restructure_adopted(
+                    event.tick,
+                    dimension=event.data.get("dimension", "?"),
+                    old_value=event.data.get("old_value", "?"),
+                    new_value=event.data.get("new_value", "?"),
+                    yes_votes=event.data.get("yes_votes", 0),
+                    no_votes=event.data.get("no_votes", 0),
+                    proposer=_resolve(event.data.get("proposer", "")),
+                )
+
+            case EventType.ENGINE_STOPPED:
+                display.show_engine_stopped(event.tick)
+
+            case _:
+                if verbose:
+                    display.console.print(
+                        f"  [dim][tick {event.tick:3d}] {name} {event.type.name}[/dim]"
+                    )
+
+    return handle_event
 
 
 async def run_solve(args: argparse.Namespace) -> None:
@@ -205,11 +219,11 @@ async def run_solve(args: argparse.Namespace) -> None:
         task_description=config.task,
     )
     workspace.scan()
-    print(f"  Scanned project: {len(workspace.files)} files\n")
+    display.show_scan_result(len(workspace.files))
 
-    # Set up event bus with CLI printer
-    event_bus = EventBus()
-    event_bus.subscribe(None, lambda e: print_event(e, verbose=args.verbose))
+    # Build agent name mapping (agent_id → display name)
+    agent_name_map: dict[str, str] = {}
+    agent_display_names: list[str] = []
 
     # Create attention map
     attention = AttentionMap()
@@ -219,6 +233,8 @@ async def run_solve(args: argparse.Namespace) -> None:
     for i in range(config.agent_count):
         name = AGENT_NAMES[i % len(AGENT_NAMES)]
         agent_id = f"agent_{i}"
+        agent_name_map[agent_id] = name
+        agent_display_names.append(name)
         # Per-agent model: check by agent_id, then by name, then fall back to default
         agent_model = config.models.get(agent_id) or config.models.get(name) or config.model
         identity = AgentIdentity(id=agent_id, name=name, model=agent_model)
@@ -239,19 +255,32 @@ async def run_solve(args: argparse.Namespace) -> None:
     )
     enforcer.assign_initial_roles([a.state.identity.id for a in agents])
 
+    lead_name = None
     if enforcer.lead_agent_id:
-        lead_name = next(
-            a.state.identity.name for a in agents
-            if a.state.identity.id == enforcer.lead_agent_id
-        )
-        print(f"  Lead agent: {lead_name}\n")
+        lead_name = agent_name_map.get(enforcer.lead_agent_id)
 
     # Set up gardener if requested
     gardener = None
     if args.gardener:
         gardener = Gardener()
         gardener.enable()
-        print(f"  Gardener mode: ON (type instructions between ticks, Enter to continue)\n")
+
+    # Set up event bus with rich display handler
+    event_bus = EventBus()
+    event_handler = make_event_handler(agent_name_map, verbose=args.verbose)
+    event_bus.subscribe(None, event_handler)
+
+    # Show the beautiful engine start header
+    display.show_engine_start(
+        task=config.task,
+        agent_count=config.agent_count,
+        org_preset=args.org,
+        max_ticks=config.max_ticks,
+        agent_names=agent_display_names,
+        model=config.model,
+        lead_agent=lead_name,
+        gardener=args.gardener,
+    )
 
     # Create and run engine
     engine = Engine(
@@ -270,10 +299,10 @@ async def run_solve(args: argparse.Namespace) -> None:
     else:
         await engine.run()
 
-    # Print chronicle report
+    # Print chronicle report (rich version)
     if engine.chronicle:
         report = engine.chronicle.generate_report()
-        print(report.to_terminal())
+        display.show_chronicle_report(report)
 
         # Contextual tip
         if not args.no_tips:
@@ -293,7 +322,7 @@ async def run_solve(args: argparse.Namespace) -> None:
                 tracker=tracker,
             )
             if tip:
-                print(f"  {tip.text}\n")
+                display.show_tip(tip.text)
 
 
 async def _run_with_gardener(engine: Engine, gardener: Gardener) -> None:
@@ -307,8 +336,6 @@ async def _run_with_gardener(engine: Engine, gardener: Gardener) -> None:
       /stop               → stop the engine
       (Enter)             → continue to next tick
     """
-    import sys
-
     # Use engine.initialize() — the same init path that Max Plan Mode uses
     await engine.initialize()
 
@@ -319,20 +346,18 @@ async def _run_with_gardener(engine: Engine, gardener: Gardener) -> None:
 
             await engine._execute_tick()
 
-            # Gardener prompt
-            try:
-                raw = input("  gardener> ")
-            except (EOFError, KeyboardInterrupt):
-                print("\n  Gardener ended the run.")
+            # Gardener prompt (rich display)
+            raw = display.show_gardener_prompt()
+            if not raw:
                 break
 
             intervention = Gardener.parse_input(raw, tick=engine.tick)
             if intervention:
                 if intervention.type == "stop":
-                    print("  Stopping engine...")
+                    display.console.print("  [dim]Stopping engine...[/dim]")
                     break
                 gardener.submit(intervention)
-                print(f"  → {intervention.type}: queued for next tick")
+                display.show_gardener_queued(intervention.type)
     finally:
         engine.running = False
         if engine.git:
@@ -361,8 +386,8 @@ async def run_experiment_cmd(args: argparse.Namespace) -> None:
         verbose=args.verbose,
     )
 
-    # Print comparison report
-    print(result.to_terminal())
+    # Rich comparison report
+    display.show_experiment_report(result)
 
     # Contextual tip
     if not args.no_tips:
@@ -371,13 +396,13 @@ async def run_experiment_cmd(args: argparse.Namespace) -> None:
         tracker.mark_used("experiment")
         tip = generate_post_experiment_tip(orgs_tested=orgs, tracker=tracker)
         if tip:
-            print(f"  {tip.text}\n")
+            display.show_tip(tip.text)
 
     # Save JSON if requested
     if args.output:
         with open(args.output, "w") as f:
             json.dump(result.to_dict(), f, indent=2)
-        print(f"  Results saved to {args.output}\n")
+        display.show_success(f"Results saved to {args.output}")
 
 
 async def run_benchmark_cmd(args: argparse.Namespace) -> None:
@@ -386,15 +411,7 @@ async def run_benchmark_cmd(args: argparse.Namespace) -> None:
 
     # Handle --list-tasks
     if args.list_tasks:
-        print("\n  Available Benchmark Tasks:")
-        print(f"  {'─' * 60}")
-        for task in get_all_tasks():
-            print(
-                f"  {task.id:20s} {task.difficulty:8s} "
-                f"{task.max_ticks:3d} ticks  "
-                f"files: {', '.join(task.expected_files)}"
-            )
-        print(f"\n  Use --tasks fizzbuzz,todo-cli or --tasks simple or --tasks all\n")
+        display.show_benchmark_tasks_list(get_all_tasks())
         return
 
     config = BenchmarkConfig(
@@ -416,28 +433,24 @@ async def run_benchmark_cmd(args: argparse.Namespace) -> None:
     if isinstance(result, dict) and result.get("dry_run"):
         return
 
-    # Print terminal report
-    print(result.to_terminal())
+    # Print terminal report (rich)
+    display.show_test_tasks_report(result)
 
     # Save JSON if requested
     if args.output:
         result.to_json(args.output)
-        print(f"  Results saved to {args.output}\n")
+        display.show_success(f"Results saved to {args.output}")
 
 
 def show_info() -> None:
     """Show available presets, dimensions, and feature toggles."""
-    import yaml
     from .org.config import KNOWN_DIMENSIONS
 
-    print("\n  AgentCiv Engine — Organisational Configurations\n")
-
     # Presets with descriptions (read from YAML comments)
-    print("  Presets:")
+    presets: list[tuple[str, str]] = []
     presets_dir = Path(__file__).parent.parent / "presets"
     if presets_dir.exists():
         for p in sorted(presets_dir.glob("*.yaml")):
-            # Extract description from comment block (skip title and blank comment lines)
             desc = ""
             with open(p) as f:
                 for line in f:
@@ -451,17 +464,8 @@ def show_info() -> None:
                         break
                     else:
                         break
-            print(f"    --org {p.stem:20s} {desc}")
-    print()
+            presets.append((p.stem, desc))
 
-    # Dimensions
-    print("  Organisational Dimensions (9 built-in, community-expandable):")
-    for dim, values in KNOWN_DIMENSIONS.items():
-        print(f"    {dim:16s} {' → '.join(values)}")
-    print()
-
-    # Feature toggles
-    print("  Feature Toggles (all configurable in YAML):")
     toggles = [
         ("enable_specialisation", "Agents develop skills through practice"),
         ("specialisation_visible", "Other agents can see your skills"),
@@ -472,12 +476,8 @@ def show_info() -> None:
         ("enable_gardener_mode", "Human-in-the-loop mid-run intervention"),
         ("require_review", "Mandatory peer review before merge"),
     ]
-    for name, desc in toggles:
-        print(f"    {name:32s} {desc}")
-    print()
 
-    print("  Add custom dimensions, presets, and parameters in your YAML config.")
-    print("  Everything is expandable. See presets/ directory for examples.\n")
+    display.show_info(presets, dict(KNOWN_DIMENSIONS), toggles)
 
 
 def show_history(args: argparse.Namespace) -> None:
@@ -490,7 +490,7 @@ def show_history(args: argparse.Namespace) -> None:
 
     if args.clear:
         history.clear()
-        print("  Run history cleared.\n")
+        display.show_success("Run history cleared.")
         return
 
     if args.similar:
@@ -498,21 +498,7 @@ def show_history(args: argparse.Namespace) -> None:
         if args.json:
             print(json_mod.dumps(insights.to_dict(), indent=2))
         else:
-            print(f"\n  Learning Insights for: \"{args.similar}\"")
-            print(f"  {'─' * 50}")
-            print(f"  Keywords: {', '.join(insights.task_keywords)}")
-            print(f"  Matching runs: {insights.matching_runs} / {insights.total_history}")
-            if insights.preset_rankings:
-                print(f"\n  Preset rankings:")
-                for p in insights.preset_rankings[:10]:
-                    print(f"    {p.preset:20s} quality: {p.avg_quality:.3f} ({p.run_count} runs)")
-            if insights.dimension_insights:
-                print(f"\n  Best dimension values:")
-                for d in insights.dimension_insights:
-                    print(f"    {d.dimension:20s} → {d.value} (quality: {d.avg_quality:.3f})")
-            if not insights.has_data():
-                print(f"\n  Not enough similar runs for recommendations yet.")
-            print()
+            display.show_learning_insights(insights)
         return
 
     # Default: show stats
@@ -520,18 +506,7 @@ def show_history(args: argparse.Namespace) -> None:
     if args.json:
         print(json_mod.dumps(stats, indent=2))
     else:
-        print(f"\n  AgentCiv Learning History")
-        print(f"  {'─' * 40}")
-        print(f"  Total runs: {stats['total_runs']}")
-        if stats['total_runs'] > 0:
-            print(f"  Successful: {stats['successful_runs']}")
-            print(f"  Unique presets: {stats['unique_presets']}")
-            print(f"\n  Average quality by preset:")
-            for preset, avg in stats['preset_avg_quality'].items():
-                print(f"    {preset:20s} {avg:.3f}")
-        else:
-            print(f"  No runs recorded yet. Run some tasks to build up learning data.")
-        print()
+        display.show_history_stats(stats)
 
 
 def run_setup(args: argparse.Namespace) -> None:
@@ -545,52 +520,44 @@ def run_setup(args: argparse.Namespace) -> None:
     """
     import json as json_mod
     import shutil
-    import sys
 
-    print()
-    print(f"  ╔══════════════════════════════════════════════════════╗")
-    print(f"  ║                                                      ║")
-    print(f"  ║   Welcome to AgentCiv Engine!                        ║")
-    print(f"  ║   Let's get your custom AI agent team set up.        ║")
-    print(f"  ║                                                      ║")
-    print(f"  ╚══════════════════════════════════════════════════════════╝")
-    print()
+    display.show_setup_welcome()
 
     # 1. Environment check
-    print(f"  Checking your environment...")
+    display.console.print("  [dim]Checking your environment...[/dim]")
     agentciv_path = shutil.which("agentciv")
     if agentciv_path:
-        print(f"  ✓ CLI installed: {agentciv_path}")
+        display.show_setup_check("CLI installed", agentciv_path)
     else:
-        print(f"  ✓ Running via Python module")
+        display.show_setup_check("Running via Python module")
 
     import platform
-    print(f"  ✓ Python {platform.python_version()}")
-    print(f"  ✓ 13 team structures ready to go")
-    print(f"  ✓ 9 organisational dimensions available")
+    display.show_setup_check(f"Python {platform.python_version()}")
+    display.show_setup_check("13 team structures ready to go")
+    display.show_setup_check("9 organisational dimensions available")
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if api_key:
         masked = api_key[:12] + "..." + api_key[-4:]
-        print(f"  ✓ Anthropic API key detected: {masked}")
+        display.show_setup_check("Anthropic API key detected", masked)
 
-    print()
+    display.console.print()
 
     # 2. Mode selection — user explicitly chooses, no auto-detection
-    print(f"  How would you like to run your agent teams?")
-    print()
-    print(f"  [1] MAX PLAN — Free")
-    print(f"      Works inside Claude Code / Cursor via MCP.")
-    print(f"      Your AI assistant drives the agents — no API key needed.")
-    print(f"      Zero additional cost beyond your existing subscription.")
-    print()
-    print(f"  [2] API MODE — Uses your Anthropic API key")
-    print(f"      Run from the command line: agentciv solve --task \"...\"")
-    print(f"      The engine makes its own LLM calls. You pay per token.")
-    print(f"      Requires ANTHROPIC_API_KEY environment variable.")
-    print()
-    print(f"  [3] BOTH — Set up both modes")
-    print()
+    display.console.print("  How would you like to run your agent teams?")
+    display.console.print()
+    display.console.print("  [bold][1] MAX PLAN[/bold] [green]— Free[/green]")
+    display.console.print("      [dim]Works inside Claude Code / Cursor via MCP.[/dim]")
+    display.console.print("      [dim]Your AI assistant drives the agents — no API key needed.[/dim]")
+    display.console.print("      [dim]Zero additional cost beyond your existing subscription.[/dim]")
+    display.console.print()
+    display.console.print("  [bold][2] API MODE[/bold] [yellow]— Uses your Anthropic API key[/yellow]")
+    display.console.print("      [dim]Run from the command line: agentciv solve --task \"...\"[/dim]")
+    display.console.print("      [dim]The engine makes its own LLM calls. You pay per token.[/dim]")
+    display.console.print("      [dim]Requires ANTHROPIC_API_KEY environment variable.[/dim]")
+    display.console.print()
+    display.console.print("  [bold][3] BOTH[/bold] [dim]— Set up both modes[/dim]")
+    display.console.print()
 
     try:
         choice = input("  Your choice [1]: ").strip() or "1"
@@ -604,7 +571,7 @@ def run_setup(args: argparse.Namespace) -> None:
     wants_mcp = choice in ("1", "3")
     wants_api = choice in ("2", "3")
 
-    print()
+    display.console.print()
 
     # 3. Configure based on choice
     project_dir = Path(args.dir).resolve()
@@ -628,10 +595,10 @@ def run_setup(args: argparse.Namespace) -> None:
                     existing["mcpServers"] = {}
                 existing["mcpServers"]["agentciv"] = mcp_config["mcpServers"]["agentciv"]
                 config_path.write_text(json_mod.dumps(existing, indent=2))
-                print(f"  ✓ MCP configured globally: ~/.claude.json")
+                display.show_setup_check("MCP configured globally", "~/.claude.json")
             else:
-                print(f"  ✗ ~/.claude.json not found — is Claude Code installed?")
-                print(f"    Install: https://docs.anthropic.com/en/docs/claude-code")
+                display.show_setup_check("~/.claude.json not found — is Claude Code installed?", success=False)
+                display.console.print("    [dim]Install: https://docs.anthropic.com/en/docs/claude-code[/dim]")
         else:
             config_path = project_dir / ".mcp.json"
             if config_path.exists():
@@ -641,7 +608,7 @@ def run_setup(args: argparse.Namespace) -> None:
                 config_path.write_text(json_mod.dumps(existing, indent=2) + "\n")
             else:
                 config_path.write_text(json_mod.dumps(mcp_config, indent=2) + "\n")
-            print(f"  ✓ MCP server configured: {config_path}")
+            display.show_setup_check("MCP server configured", str(config_path))
 
     if wants_mcp and not args.global_config:
         # Write CLAUDE.md with factual agentciv knowledge so Claude Code
@@ -668,110 +635,95 @@ def run_setup(args: argparse.Namespace) -> None:
             existing = claude_md.read_text()
             if "AgentCiv Engine" not in existing:
                 claude_md.write_text(existing.rstrip() + "\n" + agentciv_block)
-                print(f"  ✓ AgentCiv knowledge added to: {claude_md}")
+                display.show_setup_check("AgentCiv knowledge added to", str(claude_md))
             else:
-                print(f"  ✓ CLAUDE.md already has AgentCiv info: {claude_md}")
+                display.show_setup_check("CLAUDE.md already has AgentCiv info", str(claude_md))
         else:
             claude_md.write_text(agentciv_block.lstrip())
-            print(f"  ✓ CLAUDE.md created: {claude_md}")
+            display.show_setup_check("CLAUDE.md created", str(claude_md))
 
     if wants_api:
         if api_key:
-            print(f"  ✓ API key detected — API mode ready")
+            display.show_setup_check("API key detected — API mode ready")
         else:
-            print(f"  ! API mode selected but no ANTHROPIC_API_KEY found.")
-            print(f"    Set it in your shell profile:")
-            print(f"    export ANTHROPIC_API_KEY=\"sk-ant-...\"")
+            display.show_warning("API mode selected but no ANTHROPIC_API_KEY found.")
+            display.console.print("    [dim]Set it in your shell profile:[/dim]")
+            display.console.print('    [dim]export ANTHROPIC_API_KEY="sk-ant-..."[/dim]')
 
     # 4. Celebration and next steps
-    print()
-    print(f"  ╔═══════════════════════════════════════════════════════════╗")
-    print(f"  ║                                                           ║")
-    print(f"  ║   CONGRATULATIONS! AgentCiv Engine is installed.          ║")
-    print(f"  ║                                                           ║")
-    print(f"  ║   13 team structures await you — with 9 dimensions to      ║")
-    print(f"  ║   shape how your agents communicate, make decisions,      ║")
-    print(f"  ║   and resolve conflicts.                                  ║")
-    print(f"  ║                                                           ║")
-    print(f"  ║   The crown jewel: auto mode — your agents self-organise, ║")
-    print(f"  ║   proposing and voting on their own structure in real     ║")
-    print(f"  ║   time. You just set the goal.                            ║")
-    print(f"  ║                                                           ║")
-    print(f"  ║   Time to spawn your first team!                          ║")
-    print(f"  ║                                                           ║")
-    print(f"  ╚═══════════════════════════════════════════════════════════╝")
-    print()
+    display.show_setup_celebration()
 
     if wants_mcp:
-        print(f"  YOUR FIRST RUN")
-        print(f"  ─────────────────────────────────────")
-        print(f"  Open Claude Code in this directory and say:")
-        print()
-        print(f"    \"Use agentciv to build a REST API with 4 agents\"")
-        print()
-        print(f"  You can shape your team however you want:")
-        print()
-        print(f"    \"Use a meritocratic team to refactor this module\"")
-        print(f"    \"Set up a pair-programming duo for this bug\"")
-        print(f"    \"Use --org auto and let the agents figure it out\"")
-        print()
+        display.show_setup_next_steps_mcp()
 
     if wants_api:
-        print(f"  YOUR FIRST RUN")
-        print(f"  ─────────────────────────────────────")
-        print(f"  agentciv solve --task \"Build a REST API\" --org collaborative")
-        print(f"  agentciv solve --task \"Build a CLI tool\" --org auto")
-        print(f"  agentciv experiment --task \"Build X\" --orgs collaborative,meritocratic,auto")
-        print()
+        display.show_setup_next_steps_api()
 
-    print(f"  THE CROWN JEWEL: --org auto")
-    print(f"    Agents design their own team structure through proposals")
-    print(f"    and votes. Self-organisation in real time. Try it.")
-    print()
-    print(f"  Run 'agentciv info' to explore all 13 team structures.")
-    print(f"  ══════════════════════════════════════════════════════")
+    display.show_setup_crown_jewel()
 
 
 def main() -> None:
     parser = build_cli()
     args = parser.parse_args()
 
-    if args.command == "solve":
-        logging.basicConfig(
-            level=logging.DEBUG if args.verbose else logging.WARNING,
-            format="%(name)s: %(message)s",
+    try:
+        if args.command == "solve":
+            logging.basicConfig(
+                level=logging.DEBUG if args.verbose else logging.WARNING,
+                format="%(name)s: %(message)s",
+            )
+            asyncio.run(run_solve(args))
+
+        elif args.command == "experiment":
+            logging.basicConfig(
+                level=logging.DEBUG if args.verbose else logging.WARNING,
+                format="%(name)s: %(message)s",
+            )
+            asyncio.run(run_experiment_cmd(args))
+
+        elif args.command == "test-tasks":
+            logging.basicConfig(
+                level=logging.DEBUG if args.verbose else logging.WARNING,
+                format="%(name)s: %(message)s",
+            )
+            asyncio.run(run_benchmark_cmd(args))
+
+        elif args.command == "history":
+            show_history(args)
+
+        elif args.command == "setup":
+            run_setup(args)
+
+        elif args.command == "info":
+            show_info()
+
+        elif args.command == "mcp":
+            from .mcp import run_server
+            run_server()
+
+        else:
+            parser.print_help()
+
+    except KeyboardInterrupt:
+        display.console.print("\n  [dim]Run interrupted.[/dim]")
+    except RuntimeError as e:
+        # Teaching errors from LLM client, engine, etc.
+        error_msg = str(e)
+        if "\n" in error_msg:
+            # Multi-line error = already a teaching message
+            title = error_msg.split("\n")[0]
+            body = "\n".join(error_msg.split("\n")[1:]).strip()
+            display.show_error(title, body)
+        else:
+            display.show_error("Error", error_msg)
+        raise SystemExit(1)
+    except Exception as e:
+        display.show_error(
+            "Unexpected error",
+            str(e),
+            suggestion="Run with --verbose for more details, or report this issue.",
         )
-        asyncio.run(run_solve(args))
-
-    elif args.command == "experiment":
-        logging.basicConfig(
-            level=logging.DEBUG if args.verbose else logging.WARNING,
-            format="%(name)s: %(message)s",
-        )
-        asyncio.run(run_experiment_cmd(args))
-
-    elif args.command == "benchmark":
-        logging.basicConfig(
-            level=logging.DEBUG if args.verbose else logging.WARNING,
-            format="%(name)s: %(message)s",
-        )
-        asyncio.run(run_benchmark_cmd(args))
-
-    elif args.command == "history":
-        show_history(args)
-
-    elif args.command == "setup":
-        run_setup(args)
-
-    elif args.command == "info":
-        show_info()
-
-    elif args.command == "mcp":
-        from .mcp import run_server
-        run_server()
-
-    else:
-        parser.print_help()
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

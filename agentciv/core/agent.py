@@ -29,7 +29,6 @@ from .types import (
     Action,
     ActionResult,
     ActionType,
-    AgentIdentity,
     AgentMemoryEntry,
     AgentSkill,
     AgentState,
@@ -39,7 +38,7 @@ from .types import (
 
 if TYPE_CHECKING:
     from .attention import AttentionMap
-    from ..llm.client import LLMClient, ToolCall, ToolResult
+    from ..llm.client import LLMClient, ToolCall
     from ..org.auto import AutoOrgManager
     from ..org.config import OrgDimensions
     from ..org.enforcer import OrgEnforcer

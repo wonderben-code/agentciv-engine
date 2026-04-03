@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import json
 import logging
-import os
-import shutil
 import subprocess
 import tempfile
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -102,7 +100,7 @@ async def run_benchmark(config: BenchmarkConfig) -> dict[str, Any]:
     if config.dry_run:
         return _dry_run_plan(tasks, presets, config, total_runs)
 
-    print(f"\n  AgentCiv Benchmark")
+    print("\n  AgentCiv Test Tasks")
     print(f"  {'─' * 60}")
     print(f"  Tasks: {len(tasks)} | Presets: {len(presets)} | Runs per combo: {config.runs_per_combo}")
     print(f"  Total runs: {total_runs} | Model: {model} | Agents: {config.agent_count}")
@@ -324,7 +322,7 @@ def _dry_run_plan(
     total_runs: int,
 ) -> dict[str, Any]:
     """Print execution plan without running anything."""
-    print(f"\n  AgentCiv Benchmark — DRY RUN")
+    print("\n  AgentCiv Test Tasks — DRY RUN")
     print(f"  {'─' * 60}")
     print(f"  Model: {'mock' if config.mock else config.model}")
     print(f"  Agents: {config.agent_count}")

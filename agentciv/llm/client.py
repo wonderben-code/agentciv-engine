@@ -125,7 +125,10 @@ class AnthropicClient(LLMClient):
         if system:
             kwargs["system"] = system
 
-        response = await client.messages.create(**kwargs)
+        try:
+            response = await client.messages.create(**kwargs)
+        except Exception as e:
+            raise _enhance_api_error(e, provider="Anthropic", model=self.model)
 
         # Extract text and tool calls from response blocks
         text_parts: list[str] = []
@@ -244,12 +247,15 @@ class OpenAIClient(LLMClient):
         else:
             openai_tools = get_openai_tools()
 
-        response = await client.chat.completions.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            messages=api_messages,
-            tools=openai_tools,
-        )
+        try:
+            response = await client.chat.completions.create(
+                model=self.model,
+                max_tokens=self.max_tokens,
+                messages=api_messages,
+                tools=openai_tools,
+            )
+        except Exception as e:
+            raise _enhance_api_error(e, provider="OpenAI", model=self.model)
 
         choice = response.choices[0]
         content = choice.message.content or ""
@@ -406,6 +412,78 @@ class MockClient(LLMClient):
                 block["is_error"] = True
             content.append(block)
         return {"role": "user", "content": content}
+
+
+def _enhance_api_error(error: Exception, provider: str, model: str) -> Exception:
+    """Transform API errors into teaching moments.
+
+    Every error should answer: what happened, why, and what to try.
+    """
+    msg = str(error).lower()
+
+    # Authentication errors
+    if "auth" in msg or "api key" in msg or "401" in msg or "invalid x-api-key" in msg:
+        env_var = "ANTHROPIC_API_KEY" if provider == "Anthropic" else "OPENAI_API_KEY"
+        return RuntimeError(
+            f"{provider} API authentication failed.\n\n"
+            f"Your {env_var} is missing or invalid.\n\n"
+            f"To fix this:\n"
+            f"  1. Get your API key from {'console.anthropic.com' if provider == 'Anthropic' else 'platform.openai.com'}\n"
+            f"  2. Set it: export {env_var}=\"your-key-here\"\n"
+            f"  3. Or add it to your shell profile (~/.zshrc or ~/.bashrc)\n\n"
+            f"If you don't want to use API mode, try Max Plan mode instead — it's free.\n"
+            f"Run: agentciv setup"
+        )
+
+    # Rate limiting
+    if "rate" in msg or "429" in msg or "too many" in msg:
+        return RuntimeError(
+            f"{provider} rate limit hit.\n\n"
+            f"You're making too many API calls too quickly.\n\n"
+            f"To fix this:\n"
+            f"  - Wait a minute and try again\n"
+            f"  - Use fewer agents (--agents 2)\n"
+            f"  - Use --model mock to test without API calls\n"
+            f"  - Check your {provider} usage dashboard for current limits"
+        )
+
+    # Model not found
+    if "model" in msg and ("not found" in msg or "does not exist" in msg or "404" in msg):
+        return RuntimeError(
+            f"Model '{model}' was not found by {provider}.\n\n"
+            f"This usually means:\n"
+            f"  - The model name is misspelled\n"
+            f"  - Your API key doesn't have access to this model\n"
+            f"  - The model has been deprecated\n\n"
+            f"Try one of these instead:\n"
+            f"  {'Anthropic: claude-sonnet-4-6, claude-haiku-4-5-20251001, claude-opus-4-6' if provider == 'Anthropic' else 'OpenAI: gpt-4o, gpt-4o-mini, o1, o3'}\n\n"
+            f"Or use --model mock to test without API calls."
+        )
+
+    # Quota/billing
+    if "quota" in msg or "billing" in msg or "insufficient" in msg:
+        return RuntimeError(
+            f"{provider} billing issue — your account may need credits.\n\n"
+            f"Check your account at {'console.anthropic.com' if provider == 'Anthropic' else 'platform.openai.com'}\n\n"
+            f"To test without API costs, use --model mock."
+        )
+
+    # Connection errors
+    if "connect" in msg or "timeout" in msg or "network" in msg:
+        return RuntimeError(
+            f"Could not connect to {provider} API.\n\n"
+            f"Check your internet connection and try again.\n"
+            f"If the issue persists, check {provider}'s status page."
+        )
+
+    # Default: pass through with context
+    return RuntimeError(
+        f"{provider} API error with model '{model}': {error}\n\n"
+        f"If this keeps happening, try:\n"
+        f"  - A different model (--model claude-sonnet-4-6 or --model gpt-4o)\n"
+        f"  - Mock mode for testing (--model mock)\n"
+        f"  - Check {provider}'s status page for outages"
+    )
 
 
 def create_client(model: str, max_tokens: int = 4096) -> LLMClient:

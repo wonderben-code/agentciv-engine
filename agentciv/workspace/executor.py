@@ -119,7 +119,14 @@ class WorkspaceExecutor:
         # Safety: don't write outside working dir
         safe, full_path = self._path_is_safe(action.file_path)
         if not safe:
-            return ActionResult(success=False, error="Path escapes project directory")
+            return ActionResult(
+                success=False,
+                error=(
+                    f"Cannot write to '{action.file_path}' — it resolves outside the project directory. "
+                    f"All file operations must stay within the project folder. "
+                    f"Use a relative path like 'src/module.py' instead of an absolute path."
+                ),
+            )
 
         # Contention warning via attention map
         warning = ""
@@ -148,10 +155,23 @@ class WorkspaceExecutor:
 
         safe, full_path = self._path_is_safe(action.file_path)
         if not safe:
-            return ActionResult(success=False, error="Path escapes project directory")
+            return ActionResult(
+                success=False,
+                error=(
+                    f"Cannot create '{action.file_path}' — it resolves outside the project directory. "
+                    f"All file operations must stay within the project folder. "
+                    f"Use a relative path like 'src/module.py' instead of an absolute path."
+                ),
+            )
 
         if full_path.exists():
-            return ActionResult(success=False, error=f"File already exists: {action.file_path}")
+            return ActionResult(
+                success=False,
+                error=(
+                    f"File already exists: {action.file_path}. "
+                    f"Use write_file() to modify an existing file, or choose a different filename."
+                ),
+            )
 
         content = action.content or ""
         full_path.parent.mkdir(parents=True, exist_ok=True)
@@ -193,7 +213,12 @@ class WorkspaceExecutor:
         if parts[0] not in self.allowed_commands:
             return ActionResult(
                 success=False,
-                error=f"Command '{parts[0]}' not in allowed list: {self.allowed_commands}",
+                error=(
+                    f"Command '{parts[0]}' is not allowed. "
+                    f"Allowed commands: {', '.join(sorted(self.allowed_commands))}. "
+                    f"Use one of these, or ask the user to add '{parts[0]}' to the allowed list "
+                    f"in the YAML config under 'allowed_commands'."
+                ),
             )
 
         # Ensure the working directory exists (worktree may not have been created yet)

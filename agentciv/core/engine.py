@@ -15,7 +15,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Any
 
 from .agent import Agent
 from .attention import AttentionMap
@@ -24,8 +23,6 @@ from .event_bus import EventBus
 from .types import (
     Action,
     ActionType,
-    AgentIdentity,
-    AgentState,
     Event,
     EventType,
     Message,
@@ -35,7 +32,7 @@ from ..chronicle.observer import Chronicle
 from ..gardener import Gardener, Intervention
 from ..learning.insights import generate_insights
 from ..org.auto import AutoOrgManager
-from ..org.config import EngineConfig, OrgDimensions
+from ..org.config import EngineConfig
 from ..org.enforcer import OrgEnforcer
 from ..workspace.git import GitManager
 from ..workspace.workspace import Workspace

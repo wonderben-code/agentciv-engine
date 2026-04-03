@@ -36,7 +36,7 @@ class BenchmarkResult:
         failed = total_runs - successful
 
         lines.append("")
-        lines.append("  AgentCiv Benchmark Report")
+        lines.append("  AgentCiv Test Tasks Report")
         lines.append(f"  {'─' * 70}")
         lines.append(f"  Tasks: {len(self.tasks)} | Presets: {len(self.presets)} | Runs per combo: {self.config.runs_per_combo}")
         lines.append(f"  Total runs: {total_runs} ({successful} succeeded, {failed} failed)")
@@ -76,10 +76,10 @@ class BenchmarkResult:
 
             lines.append("")
 
-        # Overall rankings
+        # Overall results
         rankings = self._compute_rankings()
         if rankings:
-            lines.append("  Overall Rankings (by completion rate, then avg ticks)")
+            lines.append("  Overall Results (by completion rate, then avg ticks)")
             lines.append(f"  {'─' * 50}")
             for i, (preset, score) in enumerate(rankings[:10], 1):
                 lines.append(
