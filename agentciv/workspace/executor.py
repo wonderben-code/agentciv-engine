@@ -100,7 +100,10 @@ class WorkspaceExecutor:
         if not action.file_path:
             return ActionResult(success=False, error="No file path specified")
         if not action.content:
-            return ActionResult(success=False, error="No content to write")
+            return ActionResult(
+                success=False,
+                error="No content to write — you must include the full file content in the 'content' parameter when calling write_file.",
+            )
 
         # Safety: don't write outside working dir
         base = self.effective_dir.resolve()
@@ -176,12 +179,21 @@ class WorkspaceExecutor:
                 error=f"Command '{first_word}' not in allowed list: {self.allowed_commands}",
             )
 
+        # Ensure the working directory exists (worktree may not have been created yet)
+        run_dir = self.effective_dir
+        if not run_dir.exists():
+            log.warning(
+                "Working directory %s does not exist, falling back to project dir",
+                run_dir,
+            )
+            run_dir = self.workspace.project_dir
+
         try:
             proc = await asyncio.create_subprocess_shell(
                 action.command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                cwd=str(self.effective_dir),
+                cwd=str(run_dir),
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
 

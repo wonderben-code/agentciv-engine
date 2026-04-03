@@ -272,7 +272,7 @@ class SessionManager:
                     identity=identity,
                     token_budget_remaining=config.parameters.token_budget_per_agent,
                 )
-                llm = create_client(agent_model, max_tokens=1024)
+                llm = create_client(agent_model, max_tokens=4096)
                 executor = WorkspaceExecutor(workspace, attention=attention)
                 agent = Agent(state=state, llm=llm, executor=executor)
                 workspace.register_agent(state)

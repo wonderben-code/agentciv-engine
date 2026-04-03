@@ -78,6 +78,9 @@ class GitManager:
         if self._initialized:
             return
 
+        # Ensure the project directory exists
+        self.project_dir.mkdir(parents=True, exist_ok=True)
+
         git_dir = self.project_dir / ".git"
         if not git_dir.exists():
             # Fresh repo — initialise
@@ -87,7 +90,7 @@ class GitManager:
             existing = gitignore.read_text() if gitignore.exists() else ""
             if ".agentciv/" not in existing:
                 with open(gitignore, "a") as f:
-                    f.write("\n# AgentCiv Engine internals\n.agentciv/\n")
+                    f.write("\n# AgentCiv Engine internals\n.agentciv/\n__pycache__/\n*.pyc\n")
             await self._run_git("add", "-A")
             await self._run_git(
                 "commit", "-m", "AgentCiv: initial project state",
@@ -143,9 +146,25 @@ class GitManager:
 
         # Create worktree with new branch from HEAD
         self.worktree_base.mkdir(parents=True, exist_ok=True)
-        await self._run_git(
-            "worktree", "add", "-b", branch, str(worktree_dir),
-        )
+        try:
+            await self._run_git(
+                "worktree", "add", "-b", branch, str(worktree_dir),
+            )
+        except Exception as e:
+            log.warning(
+                "Failed to create worktree for %s: %s — falling back to project dir",
+                agent_name, e,
+            )
+            # Ensure the directory exists even if git worktree add failed
+            worktree_dir.mkdir(parents=True, exist_ok=True)
+
+        # Verify the directory was actually created
+        if not worktree_dir.exists():
+            log.warning(
+                "Worktree dir %s still missing after creation — creating manually",
+                worktree_dir,
+            )
+            worktree_dir.mkdir(parents=True, exist_ok=True)
 
         self._agent_branches[agent_id] = branch
         log.debug(
