@@ -28,7 +28,6 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from ..discovery import generate_mcp_hints
 from ..gardener import Intervention
 from ..org.config import KNOWN_DIMENSIONS, EngineConfig
 from .session import SessionManager
@@ -42,21 +41,26 @@ log = logging.getLogger(__name__)
 mcp = FastMCP(
     "AgentCiv Engine",
     instructions=(
-        "AgentCiv Engine treats organisational arrangement as a first-class "
-        "design parameter for multi-agent AI systems. Spawn communities of "
-        "agents under different organisational structures and watch them "
-        "self-organise to solve tasks.\n\n"
-        "TWO MODES — ask the user which they prefer before proceeding:\n\n"
-        "1. MAX PLAN MODE (free, recommended): Use agentciv_orchestrate_start() "
-        "to begin. YOU drive agent cognition by making LLM calls with the agent "
-        "contexts and submitting tool calls via agentciv_orchestrate_act(). "
-        "Zero additional API cost — uses your existing subscription.\n\n"
-        "2. API MODE (costs money): Use agentciv_solve() to spawn communities. "
-        "The engine makes its own LLM calls using the user's ANTHROPIC_API_KEY. "
-        "The user pays per token. Only use this if the user explicitly asks for "
-        "API mode or has configured it.\n\n"
-        "IMPORTANT: Never auto-select API mode. If unsure, use Max Plan mode "
-        "or ask the user. Use agentciv_info() to see available presets."
+        "AgentCiv Engine — organisational arrangement as a first-class design "
+        "parameter for multi-agent AI systems.\n\n"
+        "Spawns communities of 2-20 AI agents under configurable organisational "
+        "structures to solve tasks. 13 presets, each defining 9 dimensions "
+        "(authority, communication, roles, decisions, incentives, information, "
+        "conflict, groups, adaptation).\n\n"
+        "MODES (confirm with user before proceeding — never auto-select API mode):\n"
+        "- Max Plan: agentciv_orchestrate_start(). You drive agent cognition. "
+        "No API key needed, no cost beyond existing subscription.\n"
+        "- API: agentciv_solve(). Engine makes its own LLM calls via "
+        "ANTHROPIC_API_KEY. User pays per token.\n\n"
+        "DEFAULTS: org='collaborative', agents=4, max_ticks=50. "
+        "Only 'task' is required — everything else is optional.\n\n"
+        "PRESETS: collaborative, competitive, meritocratic, auto, hierarchical, "
+        "startup, pair-programming, open-source, military, research-lab, swarm, "
+        "hackathon, code-review. org='auto' lets agents design their own "
+        "structure through proposals and votes.\n\n"
+        "CAPABILITIES: single runs, comparative experiments across org structures, "
+        "mid-run intervention (gardener mode), custom configs via dimension "
+        "overrides. agentciv_info() has full details."
     ),
 )
 
@@ -124,12 +128,6 @@ async def agentciv_solve(
         "model": model,
         "max_ticks": max_ticks,
         "project_dir": str(session.project_dir),
-        "message": (
-            f"Community spawned! {agents} agents working under '{org}' organisation. "
-            f"Use agentciv_status(session_id='{session.id}') to monitor progress. "
-            f"Use agentciv_intervene(session_id='{session.id}', message='...') to guide them."
-        ),
-        "hints": generate_mcp_hints("solve_started"),
     }, indent=2)
 
 
@@ -167,10 +165,6 @@ async def agentciv_status(session_id: str | None = None) -> str:
     ):
         report = session.engine.chronicle.generate_report()
         result["chronicle"] = report.to_dict()
-        result["hints"] = generate_mcp_hints("solve_completed", {
-            "merge_conflicts": report.merge_conflicts,
-            "org_preset": report.org_preset,
-        })
 
     return json.dumps(result, indent=2)
 
@@ -268,17 +262,13 @@ async def agentciv_intervene(
 
 @mcp.tool()
 async def agentciv_info() -> str:
-    """Show available organisational presets, dimensions, and features.
-
-    Call this first to understand what configurations are possible
-    before spawning a community with agentciv_solve().
-    """
+    """Full reference: all organisational presets, dimensions, and features."""
     # Load preset descriptions from YAML files
     presets_dir = Path(__file__).parent.parent.parent / "presets"
     presets: dict[str, str] = {}
     if presets_dir.exists():
         for p in sorted(presets_dir.glob("*.yaml")):
-            desc = ""
+            lines = []
             with open(p) as f:
                 for line in f:
                     line = line.strip()
@@ -287,11 +277,10 @@ async def agentciv_info() -> str:
                     if "AgentCiv Engine" in line:
                         continue
                     if line.startswith("#"):
-                        desc = line.lstrip("# ").strip()
-                        break
+                        lines.append(line.lstrip("# ").strip())
                     else:
                         break
-            presets[p.stem] = desc
+            presets[p.stem] = " ".join(lines)
 
     return json.dumps({
         "presets": presets,
@@ -306,16 +295,17 @@ async def agentciv_info() -> str:
             "require_review": "Mandatory peer review before merge",
             "meta_tick_interval": "How often agents discuss org restructuring (0=never, default 10 for auto)",
         },
-        "crown_jewel": (
-            "Use org='auto' to let agents design their own organisational structure. "
-            "They propose and vote on changes to authority, communication, roles, "
-            "and more — live restructuring during the run."
+        "auto_mode": (
+            "org='auto' — agents design their own organisational structure. "
+            "Starts with a meta-tick where agents discuss how to organise. "
+            "Every N ticks they can propose and vote on restructuring any "
+            "of the 9 dimensions. Structure evolves based on what works."
         ),
-        "message": (
-            "Use agentciv_solve(task='...', org='collaborative') to start. "
-            "Override specific dimensions with the 'overrides' parameter."
-        ),
-        "hints": generate_mcp_hints("info"),
+        "defaults": {
+            "org": "collaborative",
+            "agents": 4,
+            "max_ticks": 50,
+        },
     }, indent=2)
 
 

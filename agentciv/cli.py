@@ -697,6 +697,38 @@ def run_setup(args: argparse.Namespace) -> None:
                 config_path.write_text(json_mod.dumps(mcp_config, indent=2) + "\n")
             print(f"  ✓ MCP server configured: {config_path}")
 
+    if wants_mcp and not args.global_config:
+        # Write CLAUDE.md with factual agentciv knowledge so Claude Code
+        # is naturally knowledgeable — no scripts, just facts
+        claude_md = project_dir / "CLAUDE.md"
+        agentciv_block = (
+            "\n# AgentCiv Engine\n\n"
+            "This project has AgentCiv Engine configured (MCP tools available).\n\n"
+            "AgentCiv spawns communities of 2-20 AI agents under configurable "
+            "organisational structures. 13 presets, 9 dimensions, two modes "
+            "(Max Plan and API).\n\n"
+            "Presets: collaborative (default), competitive, meritocratic, auto, "
+            "hierarchical, startup, pair-programming, open-source, military, "
+            "research-lab, swarm, hackathon, code-review.\n\n"
+            "org='auto' — agents design their own structure through proposals "
+            "and votes. Restructures live during the run.\n\n"
+            "Dimensions (each overridable): authority, communication, roles, "
+            "decisions, incentives, information, conflict, groups, adaptation.\n\n"
+            "Defaults: org='collaborative', agents=4, max_ticks=50. "
+            "Only 'task' is required.\n\n"
+            "agentciv_info() returns full details on all presets and dimensions.\n"
+        )
+        if claude_md.exists():
+            existing = claude_md.read_text()
+            if "AgentCiv Engine" not in existing:
+                claude_md.write_text(existing.rstrip() + "\n" + agentciv_block)
+                print(f"  ✓ AgentCiv knowledge added to: {claude_md}")
+            else:
+                print(f"  ✓ CLAUDE.md already has AgentCiv info: {claude_md}")
+        else:
+            claude_md.write_text(agentciv_block.lstrip())
+            print(f"  ✓ CLAUDE.md created: {claude_md}")
+
     if wants_api:
         if api_key:
             print(f"  ✓ API key detected — API mode ready")
