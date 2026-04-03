@@ -63,6 +63,20 @@ def build_cli() -> argparse.ArgumentParser:
     exp.add_argument("--output", "-O", help="Save JSON results to file")
     exp.add_argument("--verbose", "-v", action="store_true", help="Show details")
 
+    # --- benchmark ---
+    bench = sub.add_parser("benchmark", help="Run standardised tasks across all presets with statistical analysis")
+    bench.add_argument("--tasks", default="all", help="Comma-separated task IDs, difficulty level (simple/medium/hard), or 'all'")
+    bench.add_argument("--presets", default="all", help="Comma-separated preset names or 'all'")
+    bench.add_argument("--runs", type=int, default=3, help="Runs per (task, preset) combination (default: 3)")
+    bench.add_argument("--agents", "-a", type=int, default=4, help="Number of agents (default: 4)")
+    bench.add_argument("--model", "-m", default="claude-sonnet-4-6", help="LLM model")
+    bench.add_argument("--max-ticks", type=int, default=None, help="Override per-task tick limits")
+    bench.add_argument("--output", "-O", help="Save JSON results to file")
+    bench.add_argument("--dry-run", action="store_true", help="Print execution plan without running")
+    bench.add_argument("--mock", action="store_true", help="Use mock LLM (no API calls, for testing the pipeline)")
+    bench.add_argument("--verbose", "-v", action="store_true", help="Show per-run details")
+    bench.add_argument("--list-tasks", action="store_true", help="List available benchmark tasks and exit")
+
     # --- info ---
     sub.add_parser("info", help="Show available presets and dimensions")
 
@@ -378,6 +392,51 @@ async def run_experiment_cmd(args: argparse.Namespace) -> None:
         print(f"  Results saved to {args.output}\n")
 
 
+async def run_benchmark_cmd(args: argparse.Namespace) -> None:
+    """Execute the benchmark command."""
+    from .benchmark import run_benchmark, BenchmarkConfig, get_all_tasks
+
+    # Handle --list-tasks
+    if args.list_tasks:
+        print("\n  Available Benchmark Tasks:")
+        print(f"  {'─' * 60}")
+        for task in get_all_tasks():
+            print(
+                f"  {task.id:20s} {task.difficulty:8s} "
+                f"{task.max_ticks:3d} ticks  "
+                f"files: {', '.join(task.expected_files)}"
+            )
+        print(f"\n  Use --tasks fizzbuzz,todo-cli or --tasks simple or --tasks all\n")
+        return
+
+    config = BenchmarkConfig(
+        tasks=[t.strip() for t in args.tasks.split(",")],
+        presets=[p.strip() for p in args.presets.split(",")],
+        runs_per_combo=args.runs,
+        agent_count=args.agents,
+        model=args.model,
+        max_ticks_override=args.max_ticks,
+        dry_run=args.dry_run,
+        mock=args.mock,
+        output_path=args.output,
+        verbose=args.verbose,
+    )
+
+    result = await run_benchmark(config)
+
+    # Dry run returns a dict, not a BenchmarkResult
+    if isinstance(result, dict) and result.get("dry_run"):
+        return
+
+    # Print terminal report
+    print(result.to_terminal())
+
+    # Save JSON if requested
+    if args.output:
+        result.to_json(args.output)
+        print(f"  Results saved to {args.output}\n")
+
+
 def show_info() -> None:
     """Show available presets, dimensions, and feature toggles."""
     import yaml
@@ -450,6 +509,13 @@ def main() -> None:
             format="%(name)s: %(message)s",
         )
         asyncio.run(run_experiment_cmd(args))
+
+    elif args.command == "benchmark":
+        logging.basicConfig(
+            level=logging.DEBUG if args.verbose else logging.WARNING,
+            format="%(name)s: %(message)s",
+        )
+        asyncio.run(run_benchmark_cmd(args))
 
     elif args.command == "info":
         show_info()
