@@ -224,7 +224,7 @@ agentciv/
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
 
 ## Author
 
