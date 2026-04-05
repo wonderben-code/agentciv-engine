@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentciv-engine"
-version = "0.1.0"
+version = "0.1.1"
 description = "Organisational arrangement as a design parameter for multi-agent AI systems"
 readme = "README.md"
 license = "MIT"
