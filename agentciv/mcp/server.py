@@ -259,7 +259,7 @@ async def agentciv_intervene(
 async def agentciv_info() -> str:
     """Full reference: all organisational presets, dimensions, and features."""
     # Load preset descriptions from YAML files
-    presets_dir = Path(__file__).parent.parent.parent / "presets"
+    presets_dir = Path(__file__).parent.parent / "presets"
     presets: dict[str, str] = {}
     if presets_dir.exists():
         for p in sorted(presets_dir.glob("*.yaml")):
@@ -857,7 +857,7 @@ async def agentciv_benchmark_verify(session_id: str, run_index: int = 0) -> str:
 @mcp.resource("agentciv://presets")
 async def list_presets() -> str:
     """List all available organisational presets."""
-    presets_dir = Path(__file__).parent.parent.parent / "presets"
+    presets_dir = Path(__file__).parent.parent / "presets"
     presets = []
     if presets_dir.exists():
         for p in sorted(presets_dir.glob("*.yaml")):
@@ -868,7 +868,7 @@ async def list_presets() -> str:
 @mcp.resource("agentciv://presets/{name}")
 async def get_preset(name: str) -> str:
     """Get the full YAML configuration for a specific preset."""
-    presets_dir = Path(__file__).parent.parent.parent / "presets"
+    presets_dir = Path(__file__).parent.parent / "presets"
     preset_file = presets_dir / f"{name}.yaml"
     if not preset_file.exists():
         return json.dumps({"error": f"Preset '{name}' not found"}, indent=2)

@@ -220,7 +220,7 @@ agentciv/
 └── discovery.py    Contextual feature tips
 ```
 
-~11,500 lines of Python across 40 files.
+11,000+ lines of Python across 40+ files.
 
 ## License
 

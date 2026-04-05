@@ -236,7 +236,7 @@ class EngineConfig:
     @classmethod
     def from_preset(cls, preset_name: str, **overrides: Any) -> EngineConfig:
         """Load a named preset from the presets directory."""
-        preset_path = Path(__file__).parent.parent.parent / "presets" / f"{preset_name}.yaml"
+        preset_path = Path(__file__).parent.parent / "presets" / f"{preset_name}.yaml"
         if preset_path.exists():
             config = cls.from_yaml(preset_path)
         else:

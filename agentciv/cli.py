@@ -448,7 +448,7 @@ def show_info() -> None:
 
     # Presets with descriptions (read from YAML comments)
     presets: list[tuple[str, str]] = []
-    presets_dir = Path(__file__).parent.parent / "presets"
+    presets_dir = Path(__file__).parent / "presets"
     if presets_dir.exists():
         for p in sorted(presets_dir.glob("*.yaml")):
             desc = ""
