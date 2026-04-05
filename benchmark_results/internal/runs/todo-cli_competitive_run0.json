@@ -1,0 +1,420 @@
+{
+  "task_id": "todo-cli",
+  "preset": "competitive",
+  "run_index": 0,
+  "success": true,
+  "wall_time_seconds": 5.68,
+  "metrics": {
+    "completion_rate": 0.0,
+    "ticks_used": 15,
+    "files_produced": 0,
+    "test_pass_rate": 0.0,
+    "communication_volume": 0,
+    "merge_conflicts": 0,
+    "emergent_specialisation": 0.0,
+    "file_completeness": 0.2,
+    "total_tokens": 170596,
+    "tokens_per_agent": {
+      "agent_0": 42640,
+      "agent_1": 42652,
+      "agent_2": 42652,
+      "agent_3": 42652
+    }
+  },
+  "analysis": {
+    "network": {
+      "graph_density": 0.0,
+      "in_degree": {},
+      "out_degree": {},
+      "betweenness": {},
+      "reciprocity": 0.0,
+      "hub_spoke_ratio": 0.0,
+      "communication_efficiency": 0.0,
+      "clustering_coefficient": 0.0
+    },
+    "temporal": {
+      "convergence_tick": null,
+      "phase_transitions": [],
+      "activity_curve": [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+      ],
+      "cumulative_progress": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "avg_conflict_resolution_time": null,
+      "conflict_resolution_times": []
+    }
+  },
+  "report": {
+    "task": "Build a command-line todo application with these files:\n1) todo.py \u2014 Todo class with title, done (bool), created_at (datetime). Include toggle() and to_dict() methods. Validate non-empty title.\n2) store.py \u2014 TodoStore class with add(title), remove(index), toggle(index), list(), get(index). Use 1-based indexing. Raise a custom TodoNotFoundError.\n3) main.py \u2014 CLI interface: python main.py add/list/toggle/remove/get/help.\n4) tests/test_store.py \u2014 At least 20 tests covering all methods and edge cases.\n5) README.md \u2014 Usage docs with examples.\nDiscuss who does what, split the work, and build it.",
+    "org_preset": "competitive",
+    "agent_count": 4,
+    "total_ticks": 15,
+    "contributions": [
+      {
+        "agent_id": "agent_0",
+        "agent_name": "Atlas",
+        "files_created": [],
+        "files_modified": [
+          "main.py"
+        ],
+        "messages_sent": 0,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [],
+        "merge_conflicts": 0
+      },
+      {
+        "agent_id": "agent_1",
+        "agent_name": "Nova",
+        "files_created": [],
+        "files_modified": [
+          "main.py"
+        ],
+        "messages_sent": 0,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [],
+        "merge_conflicts": 0
+      },
+      {
+        "agent_id": "agent_2",
+        "agent_name": "Sage",
+        "files_created": [],
+        "files_modified": [
+          "main.py"
+        ],
+        "messages_sent": 0,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [],
+        "merge_conflicts": 0
+      },
+      {
+        "agent_id": "agent_3",
+        "agent_name": "Flux",
+        "files_created": [],
+        "files_modified": [
+          "main.py"
+        ],
+        "messages_sent": 0,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [],
+        "merge_conflicts": 0
+      }
+    ],
+    "communication": {
+      "total_messages": 0,
+      "total_broadcasts": 0,
+      "pairs": {}
+    },
+    "files": {
+      "created": [],
+      "total_modifications": 60
+    },
+    "git": {
+      "merges_succeeded": 4,
+      "merge_conflicts": 0
+    },
+    "organisation": {
+      "restructures_proposed": 0,
+      "restructures_adopted": 0,
+      "restructure_log": []
+    },
+    "build_status": "unknown",
+    "test_status": "unknown",
+    "timeline": [
+      {
+        "tick": 0,
+        "type": "ENGINE_STARTED",
+        "agent": null,
+        "summary": "engine started: 4 agents, org=competitive"
+      },
+      {
+        "tick": 15,
+        "type": "ENGINE_STOPPED",
+        "agent": null,
+        "summary": "engine stopped"
+      }
+    ],
+    "tick_snapshots": [
+      {
+        "tick": 1,
+        "files_created": 0,
+        "files_modified": 4,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 2,
+        "files_created": 0,
+        "files_modified": 8,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 3,
+        "files_created": 0,
+        "files_modified": 12,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 4,
+        "files_created": 0,
+        "files_modified": 16,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 5,
+        "files_created": 0,
+        "files_modified": 20,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 6,
+        "files_created": 0,
+        "files_modified": 24,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 7,
+        "files_created": 0,
+        "files_modified": 28,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 8,
+        "files_created": 0,
+        "files_modified": 32,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 9,
+        "files_created": 0,
+        "files_modified": 36,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 10,
+        "files_created": 0,
+        "files_modified": 40,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 11,
+        "files_created": 0,
+        "files_modified": 44,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 12,
+        "files_created": 0,
+        "files_modified": 48,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 13,
+        "files_created": 0,
+        "files_modified": 52,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 14,
+        "files_created": 0,
+        "files_modified": 56,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 15,
+        "files_created": 0,
+        "files_modified": 60,
+        "messages": 0,
+        "broadcasts": 0,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      }
+    ],
+    "conflict_records": [],
+    "tokens_per_agent": {
+      "agent_0": 42640,
+      "agent_1": 42652,
+      "agent_2": 42652,
+      "agent_3": 42652
+    }
+  },
+  "verification": {
+    "passed": false,
+    "tests_total": 1,
+    "tests_passed": 0
+  }
+}

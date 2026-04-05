@@ -440,7 +440,8 @@ def show_chronicle_report(report: Any) -> None:
             key=lambda x: x[1], reverse=True,
         )
         top = sorted_pairs[0]
-        comm_lines.append(f"[dim]Most active pair: {top[0]} ({top[1]} exchanges)[/dim]")
+        exchange_word = "exchange" if top[1] == 1 else "exchanges"
+        comm_lines.append(f"[dim]Most active pair: {top[0]} ({top[1]} {exchange_word})[/dim]")
 
     # Git summary — plain language
     git_lines = []

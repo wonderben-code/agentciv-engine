@@ -1,0 +1,240 @@
+{
+  "task_id": "fizzbuzz",
+  "preset": "collaborative",
+  "run_index": 0,
+  "success": true,
+  "wall_time_seconds": 2.09,
+  "metrics": {
+    "completion_rate": 0.0,
+    "ticks_used": 5,
+    "files_produced": 0,
+    "test_pass_rate": 0.0,
+    "communication_volume": 20,
+    "merge_conflicts": 0,
+    "emergent_specialisation": 0.0,
+    "file_completeness": 0.0,
+    "total_tokens": 44068,
+    "tokens_per_agent": {
+      "agent_0": 10924,
+      "agent_1": 11000,
+      "agent_2": 11048,
+      "agent_3": 11096
+    }
+  },
+  "analysis": {
+    "network": {
+      "graph_density": 0.0,
+      "in_degree": {},
+      "out_degree": {},
+      "betweenness": {},
+      "reciprocity": 0.0,
+      "hub_spoke_ratio": 0.0,
+      "communication_efficiency": 0.0,
+      "clustering_coefficient": 0.0
+    },
+    "temporal": {
+      "convergence_tick": null,
+      "phase_transitions": [],
+      "activity_curve": [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+      ],
+      "cumulative_progress": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "avg_conflict_resolution_time": null,
+      "conflict_resolution_times": []
+    }
+  },
+  "report": {
+    "task": "Write a Python file fizzbuzz.py with a function fizzbuzz(n) that returns a list of strings for numbers 1 to n: 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, or the number as a string otherwise. Also write test_fizzbuzz.py with at least 5 tests using assert statements. Coordinate with your team on who writes what.",
+    "org_preset": "collaborative",
+    "agent_count": 4,
+    "total_ticks": 5,
+    "contributions": [
+      {
+        "agent_id": "agent_0",
+        "agent_name": "Atlas",
+        "files_created": [],
+        "files_modified": [
+          "main.py"
+        ],
+        "messages_sent": 0,
+        "broadcasts_sent": 5,
+        "tasks_claimed": [],
+        "merge_conflicts": 0
+      },
+      {
+        "agent_id": "agent_1",
+        "agent_name": "Nova",
+        "files_created": [],
+        "files_modified": [
+          "main.py"
+        ],
+        "messages_sent": 0,
+        "broadcasts_sent": 5,
+        "tasks_claimed": [],
+        "merge_conflicts": 0
+      },
+      {
+        "agent_id": "agent_2",
+        "agent_name": "Sage",
+        "files_created": [],
+        "files_modified": [
+          "main.py"
+        ],
+        "messages_sent": 0,
+        "broadcasts_sent": 5,
+        "tasks_claimed": [],
+        "merge_conflicts": 0
+      },
+      {
+        "agent_id": "agent_3",
+        "agent_name": "Flux",
+        "files_created": [],
+        "files_modified": [
+          "main.py"
+        ],
+        "messages_sent": 0,
+        "broadcasts_sent": 5,
+        "tasks_claimed": [],
+        "merge_conflicts": 0
+      }
+    ],
+    "communication": {
+      "total_messages": 0,
+      "total_broadcasts": 20,
+      "pairs": {}
+    },
+    "files": {
+      "created": [],
+      "total_modifications": 20
+    },
+    "git": {
+      "merges_succeeded": 4,
+      "merge_conflicts": 0
+    },
+    "organisation": {
+      "restructures_proposed": 0,
+      "restructures_adopted": 0,
+      "restructure_log": []
+    },
+    "build_status": "unknown",
+    "test_status": "unknown",
+    "timeline": [
+      {
+        "tick": 0,
+        "type": "ENGINE_STARTED",
+        "agent": null,
+        "summary": "engine started: 4 agents, org=collaborative"
+      },
+      {
+        "tick": 5,
+        "type": "ENGINE_STOPPED",
+        "agent": null,
+        "summary": "engine stopped"
+      }
+    ],
+    "tick_snapshots": [
+      {
+        "tick": 1,
+        "files_created": 0,
+        "files_modified": 4,
+        "messages": 0,
+        "broadcasts": 4,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 2,
+        "files_created": 0,
+        "files_modified": 8,
+        "messages": 0,
+        "broadcasts": 8,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 3,
+        "files_created": 0,
+        "files_modified": 12,
+        "messages": 0,
+        "broadcasts": 12,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 4,
+        "files_created": 0,
+        "files_modified": 16,
+        "messages": 0,
+        "broadcasts": 16,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      },
+      {
+        "tick": 5,
+        "files_created": 0,
+        "files_modified": 20,
+        "messages": 0,
+        "broadcasts": 20,
+        "merge_conflicts": 0,
+        "merges_succeeded": 4,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 1,
+          "agent_1": 1,
+          "agent_2": 1,
+          "agent_3": 1
+        }
+      }
+    ],
+    "conflict_records": [],
+    "tokens_per_agent": {
+      "agent_0": 10924,
+      "agent_1": 11000,
+      "agent_2": 11048,
+      "agent_3": 11096
+    }
+  },
+  "verification": {
+    "passed": false,
+    "tests_total": 0,
+    "tests_passed": 0
+  }
+}

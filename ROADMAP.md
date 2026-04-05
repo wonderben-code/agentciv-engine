@@ -169,6 +169,20 @@ Infrastructure changes required before any benchmark can run.
 | 22-0i | Pre-registration commit | Commit methodology (trimmed BENCHMARK_PLAN.md) to `benchmark_results/methodology.md`. Bitcoin timestamp. This locks our approach BEFORE seeing results. | 15 min |
 | 22-0j | Regression test | Run existing test suite + manual smoke test of `agentciv solve` and `agentciv experiment` to confirm all benchmark instrumentation is additive-only and the dev tool UX is unchanged. No benchmark code should affect normal user experience. | 30 min |
 
+#### Step 0.5: MCP Display Parity — Max Plan UX (~1 session)
+
+**BLOCKER for all benchmark runs.** The CLI (`agentciv solve`) has 43 Rich display functions with coloured agent names, panels, tables, status indicators, chronicle reports. MCP mode returns raw JSON — no visual UX at all. Claude Code renders markdown, so we format MCP responses as beautiful unicode/markdown text with data attached.
+
+| Sub-step | What | Detail | Est. |
+|----------|------|--------|------|
+| 22-0.5a | Create `mcp/display.py` | Display formatting module for MCP responses. Converts every tool's JSON data into beautifully formatted text using unicode box-drawing, markdown tables, status indicators (✓/✗), agent names. Parallel to `display.py` (Rich) but outputs plain text/markdown for Claude Code. | 2 hr |
+| 22-0.5b | Wire into all MCP tools | Every tool in `server.py` calls the formatter. Returns formatted display text as the primary response, with JSON data embedded at the end for programmatic use. 12 tools total. | 1 hr |
+| 22-0.5c | Verify MCP connection | Fix `.mcp.json` → ensure `agentciv mcp` starts cleanly, tools appear in Claude Code, no import errors. Test from a fresh terminal. | 30 min |
+| 22-0.5d | Side-by-side comparison | Run the same operation via CLI and MCP. Screenshot both. Verify the MCP version conveys the same information with equal clarity. | 30 min |
+| 22-0.5e | Benchmark tool display | Ensure `agentciv_benchmark_start` and `agentciv_benchmark_verify` have excellent formatted output — these are what the user will see most during benchmark runs. | 30 min |
+
+**Design principle:** Same data, same clarity, different medium. CLI uses Rich panels; MCP uses unicode + markdown tables. Both are beautiful. Neither is a data dump.
+
 #### Step 1: Internal Benchmark Suite — Pipeline Validation (FREE, ~1 session)
 
 5 built-in tasks × (5 priority presets + single-agent baseline) × 2 runs = **60 runs**.

@@ -29,6 +29,7 @@ from mcp.server.fastmcp import FastMCP
 
 from ..gardener import Intervention
 from ..org.config import KNOWN_DIMENSIONS, EngineConfig
+from . import display as mcp_display
 from .session import SessionManager
 
 log = logging.getLogger(__name__)
@@ -118,7 +119,7 @@ async def agentciv_solve(
         dimension_overrides=overrides,
     )
 
-    return json.dumps({
+    data = {
         "session_id": session.id,
         "status": "running",
         "task": task,
@@ -127,7 +128,8 @@ async def agentciv_solve(
         "model": model,
         "max_ticks": max_ticks,
         "project_dir": str(session.project_dir),
-    }, indent=2)
+    }
+    return mcp_display.with_data(mcp_display.format_solve(data), data)
 
 
 @mcp.tool()
@@ -144,15 +146,14 @@ async def agentciv_status(session_id: str | None = None) -> str:
     if session_id is None:
         sessions = manager.list_sessions()
         if not sessions:
-            return json.dumps({
-                "sessions": [],
-                "message": "No active sessions. Use agentciv_solve() to spawn a community.",
-            }, indent=2)
-        return json.dumps({"sessions": sessions}, indent=2)
+            data = {"sessions": [], "message": "No active sessions."}
+            return mcp_display.with_data(mcp_display.format_status_overview(data), data)
+        data = {"sessions": sessions}
+        return mcp_display.with_data(mcp_display.format_status_overview(data), data)
 
     session = manager.get_session(session_id)
     if not session:
-        return json.dumps({"error": f"Session '{session_id}' not found"}, indent=2)
+        return mcp_display.format_error(f"Session '{session_id}' not found")
 
     result = session.to_dict()
 
@@ -165,7 +166,7 @@ async def agentciv_status(session_id: str | None = None) -> str:
         report = session.engine.chronicle.generate_report()
         result["chronicle"] = report.to_dict()
 
-    return json.dumps(result, indent=2)
+    return mcp_display.with_data(mcp_display.format_status_detail(result), result)
 
 
 @mcp.tool()
@@ -196,12 +197,12 @@ async def agentciv_intervene(
     """
     session = manager.get_session(session_id)
     if not session:
-        return json.dumps({"error": f"Session '{session_id}' not found"}, indent=2)
+        return mcp_display.format_error(f"Session '{session_id}' not found")
 
     if session.status.value != "running":
-        return json.dumps({
-            "error": f"Session is {session.status.value}, not running. Cannot intervene.",
-        }, indent=2)
+        return mcp_display.format_error(
+            f"Session is {session.status.value}, not running. Cannot intervene."
+        )
 
     interventions_applied = []
 
@@ -241,22 +242,17 @@ async def agentciv_intervene(
         interventions_applied.append(f"adjust: {adjust}")
 
     if not interventions_applied:
-        return json.dumps({
-            "error": (
-                "No intervention specified. Provide at least one of: "
-                "message, redirect, force_meta_tick, adjust, or stop."
-            ),
-        }, indent=2)
+        return mcp_display.format_error(
+            "No intervention specified.",
+            "Provide at least one of: message, redirect, force_meta_tick, adjust, or stop."
+        )
 
-    return json.dumps({
+    data = {
         "session_id": session_id,
         "current_tick": session.current_tick,
         "interventions": interventions_applied,
-        "message": (
-            f"Applied {len(interventions_applied)} intervention(s). "
-            f"Will take effect at the start of tick {session.current_tick + 1}."
-        ),
-    }, indent=2)
+    }
+    return mcp_display.with_data(mcp_display.format_intervene(data), data)
 
 
 @mcp.tool()
@@ -281,7 +277,7 @@ async def agentciv_info() -> str:
                         break
             presets[p.stem] = " ".join(lines)
 
-    return json.dumps({
+    data = {
         "presets": presets,
         "dimensions": {
             dim: values for dim, values in KNOWN_DIMENSIONS.items()
@@ -305,7 +301,8 @@ async def agentciv_info() -> str:
             "agents": 4,
             "max_ticks": 50,
         },
-    }, indent=2)
+    }
+    return mcp_display.with_data(mcp_display.format_info(data), data)
 
 
 @mcp.tool()
@@ -356,7 +353,7 @@ async def agentciv_configure(
             setattr(dims, dim_name, dim_value)
             overrides_applied[dim_name] = dim_value
 
-    return json.dumps({
+    data = {
         "preset": preset,
         "overrides_applied": overrides_applied,
         "dimensions": {
@@ -378,12 +375,8 @@ async def agentciv_configure(
             "task_claim_mode": config.parameters.task_claim_mode,
             "communication_range": config.parameters.communication_range,
         },
-        "message": (
-            f"Configuration preview for '{preset}'"
-            + (f" with {len(overrides_applied)} override(s)" if overrides_applied else "")
-            + ". Pass these as overrides to agentciv_solve()."
-        ),
-    }, indent=2)
+    }
+    return mcp_display.with_data(mcp_display.format_configure(data), data)
 
 
 @mcp.tool()
@@ -429,10 +422,11 @@ async def agentciv_experiment(
         source_dir=project_dir,
     )
 
-    return json.dumps({
+    data = {
         "summary": result.to_terminal(),
         "data": result.to_dict(),
-    }, indent=2)
+    }
+    return mcp_display.with_data(mcp_display.format_experiment(data), data)
 
 
 # ---------------------------------------------------------------------------
@@ -486,7 +480,7 @@ async def agentciv_orchestrate_start(
     step = manager.get_step_session(session_id)
     contexts = await step.prepare_tick()
 
-    return json.dumps({
+    data = {
         "session_id": session_id,
         "mode": "max_plan",
         "init": init_result,
@@ -500,7 +494,8 @@ async def agentciv_orchestrate_start(
             "4. If agent_done is False, repeat with the updated context\n"
             "5. When all agents are done, call agentciv_orchestrate_tick(session_id)"
         ),
-    }, indent=2)
+    }
+    return mcp_display.with_data(mcp_display.format_orchestrate_start(data), data)
 
 
 @mcp.tool()
@@ -529,10 +524,10 @@ async def agentciv_orchestrate_act(
     """
     step = manager.get_step_session(session_id)
     if not step:
-        return json.dumps({"error": f"Step session '{session_id}' not found"}, indent=2)
+        return mcp_display.format_error(f"Step session '{session_id}' not found")
 
     if not tool_calls:
-        return json.dumps({"error": "No tool_calls provided"}, indent=2)
+        return mcp_display.format_error("No tool_calls provided")
 
     result = await step.act(
         agent_id=agent_id,
@@ -540,7 +535,7 @@ async def agentciv_orchestrate_act(
         tokens_used=tokens_used,
     )
 
-    return json.dumps(result, indent=2)
+    return mcp_display.with_data(mcp_display.format_orchestrate_act(result), result)
 
 
 @mcp.tool()
@@ -559,7 +554,7 @@ async def agentciv_orchestrate_tick(session_id: str) -> str:
     """
     step = manager.get_step_session(session_id)
     if not step:
-        return json.dumps({"error": f"Step session '{session_id}' not found"}, indent=2)
+        return mcp_display.format_error(f"Step session '{session_id}' not found")
 
     # Complete current tick
     tick_result = await step.complete_tick()
@@ -583,7 +578,7 @@ async def agentciv_orchestrate_tick(session_id: str) -> str:
         final = await step.finish()
         response["final"] = final
 
-    return json.dumps(response, indent=2)
+    return mcp_display.with_data(mcp_display.format_orchestrate_tick(response), response)
 
 
 @mcp.tool()
@@ -597,9 +592,10 @@ async def agentciv_orchestrate_status(session_id: str) -> str:
     """
     step = manager.get_step_session(session_id)
     if not step:
-        return json.dumps({"error": f"Step session '{session_id}' not found"}, indent=2)
+        return mcp_display.format_error(f"Step session '{session_id}' not found")
 
-    return json.dumps(step.get_status(), indent=2)
+    status = step.get_status()
+    return mcp_display.with_data(mcp_display.format_orchestrate_status(status), status)
 
 
 # ---------------------------------------------------------------------------
@@ -637,7 +633,7 @@ async def agentciv_benchmark_start(
     # List mode
     if task_id == "all":
         tasks = get_all_tasks()
-        return json.dumps({
+        data = {
             "available_tasks": [
                 {
                     "id": t.id,
@@ -648,11 +644,15 @@ async def agentciv_benchmark_start(
                 }
                 for t in tasks
             ],
-        }, indent=2)
+        }
+        return mcp_display.with_data(mcp_display.format_benchmark_start(data), data)
 
     # Look up task
     if task_id not in TASK_BANK:
-        return json.dumps({"error": f"Unknown task: {task_id}. Use task_id='all' to list."}, indent=2)
+        return mcp_display.format_error(
+            f"Unknown task: {task_id}",
+            "Use task_id='all' to list available tasks."
+        )
 
     task = TASK_BANK[task_id]
     ticks = max_ticks or task.max_ticks
@@ -692,7 +692,7 @@ async def agentciv_benchmark_start(
     step = manager.get_step_session(session_id)
     contexts = await step.prepare_tick()
 
-    return json.dumps({
+    data = {
         "session_id": session_id,
         "mode": "benchmark_max_plan",
         "task": {
@@ -713,7 +713,8 @@ async def agentciv_benchmark_start(
             "(should_continue=False), call agentciv_benchmark_verify(session_id) "
             "to score the result and save data."
         ),
-    }, indent=2)
+    }
+    return mcp_display.with_data(mcp_display.format_benchmark_start(data), data)
 
 
 @mcp.tool()
@@ -736,11 +737,14 @@ async def agentciv_benchmark_verify(session_id: str, run_index: int = 0) -> str:
 
     step = manager.get_step_session(session_id)
     if not step:
-        return json.dumps({"error": f"Session '{session_id}' not found"}, indent=2)
+        return mcp_display.format_error(f"Session '{session_id}' not found")
 
     ctx = manager.get_benchmark_context(session_id)
     if not ctx:
-        return json.dumps({"error": "No benchmark context — was this started with agentciv_benchmark_start?"}, indent=2)
+        return mcp_display.format_error(
+            "No benchmark context",
+            "Was this started with agentciv_benchmark_start()?"
+        )
 
     task = ctx["task"]
     project = Path(ctx["project_dir"])
@@ -758,7 +762,7 @@ async def agentciv_benchmark_verify(session_id: str, run_index: int = 0) -> str:
         }
 
     if not report:
-        return json.dumps({"error": "No chronicle report available"}, indent=2)
+        return mcp_display.format_error("No chronicle report available")
 
     # Run verification
     verification = _verify(task, project)
@@ -816,7 +820,7 @@ async def agentciv_benchmark_verify(session_id: str, run_index: int = 0) -> str:
     # Clean up step session
     await step.finish()
 
-    return json.dumps({
+    result_data = {
         "session_id": session_id,
         "task_id": ctx["task_id"],
         "preset": ctx["preset"],
@@ -841,12 +845,8 @@ async def agentciv_benchmark_verify(session_id: str, run_index: int = 0) -> str:
             "convergence_tick": analysis.temporal.convergence_tick,
         },
         "saved_to": str(filepath),
-        "message": (
-            f"{'PASSED' if verification.passed else 'FAILED'}: "
-            f"{verification.tests_passed}/{verification.tests_total} tests. "
-            f"Data saved to {filepath}"
-        ),
-    }, indent=2)
+    }
+    return mcp_display.with_data(mcp_display.format_benchmark_verify(result_data), result_data)
 
 
 # ---------------------------------------------------------------------------
