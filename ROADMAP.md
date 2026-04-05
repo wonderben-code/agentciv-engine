@@ -17,8 +17,10 @@ The engine is built, tested, polished, and open-sourced. All 5 papers written an
 
 **What's next (immediate):**
 1. **Proofread + upgrade Paper 6** — Ekram reviews v1, sends back notes, iterate until publication-ready
-2. **Build experiment results page** for website (plan at `docs/EXPERIMENT_PAGE_PLAN.md`)
-3. **Then:** Creator Mode v1
+2. **Paper audit** — Review all 8 papers for empirical coverage gaps. Paper 3 (Maslow Machines) covers the 12-agent civilisation simulation but may benefit from deeper analysis. Create new paper(s) if needed.
+3. **Build city grid experiment page** for website (plan at `docs/EXPERIMENT_PAGE_PLAN.md`)
+4. **Website mega-update** — Add all papers, experiment page, simulation paper page
+5. **Then:** Creator Mode v1
 
 ```
 PHASE A: WRITE — Papers 7+8 (DONE — 5 April 2026)
@@ -32,8 +34,23 @@ PHASE B: PROVE — City Grid Experiment / Paper 6
   ✓ 13 robustness fixes (DONE — zero failures)
   ✓ Write Paper 6 v1 draft (DONE — 10,500 words, Bitcoin-stamped)
   → Proofread + upgrade Paper 6 to publication quality (NEXT — IMMEDIATE)
-  → Build experiment results page for website (NEXT — after paper finalised)
   ✓ Bitcoin-timestamp paper + data (DONE — all commits stamped)
+
+PHASE B2: PAPER AUDIT + SIMULATION PAPER (NEXT — after Paper 6 finalised)
+  Review all 8 papers: which have empirical data, which are theoretical?
+  Paper 3 (Maslow Machines) covers 12-agent sim — assess if deep enough
+  If gaps found: write new companion paper with detailed simulation analysis
+    (agent-by-agent breakdowns, network evolution, innovation chains,
+     governance emergence timeline, interview analysis, Maslow drive dynamics)
+  Ensure every experiment we've run has a publication-quality paper behind it
+  Bitcoin-stamp any new papers
+
+PHASE B3: WEBSITE UPDATE — Experiments + Papers
+  Build city grid experiment results page (plan at `docs/EXPERIMENT_PAGE_PLAN.md`)
+  Add simulation experiment page (if new paper written)
+  Add all papers to website (papers wing or dedicated section)
+  Each paper linked with Bitcoin provenance verification
+  Every experiment navigable with progressive disclosure
 
 PHASE C: BUILD — Creator Mode v1 + Recursive Loop v1 (weeks)
   Build Creator Mode v1 (Paper 5 → empirical)
