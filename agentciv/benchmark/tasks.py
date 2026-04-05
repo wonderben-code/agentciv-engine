@@ -522,11 +522,126 @@ print(json.dumps(results))
 
 
 # ---------------------------------------------------------------------------
+# Task 6: City Grid (medium) — Paper 6 benchmark
+# ---------------------------------------------------------------------------
+
+_CITY_GRID = BenchmarkTask(
+    id="city-grid",
+    name="City Grid Design",
+    difficulty="medium",
+    description=(
+        "Design a city on a 10x10 grid. You are city planners working together.\n\n"
+        "## Grid Format\n"
+        "Write the result to `city.txt` — a 10x10 grid where each cell is one character,\n"
+        "separated by spaces, one row per line.\n\n"
+        "## Building Types\n"
+        "  R = Residential (houses, apartments)\n"
+        "  C = Commercial  (shops, offices, restaurants)\n"
+        "  I = Industrial  (factories, warehouses)\n"
+        "  P = Park        (green space, recreation)\n"
+        "  . = Road        (connects everything — buildings need road access)\n"
+        "  H = Hospital    (healthcare)\n"
+        "  S = School      (education)\n"
+        "  _ = Empty       (unused land)\n\n"
+        "## Design Goals\n"
+        "Build a high-quality city that scores well on ALL of these:\n"
+        "1. COVERAGE — use the land (empty cells score zero)\n"
+        "2. ACCESSIBILITY — every building should be adjacent to a road\n"
+        "3. ZONING — good neighbours matter! Residential near parks/schools (+), "
+        "residential near industrial (-), hospitals near roads (+), etc.\n"
+        "4. DIVERSITY — mix of building types, not just one kind\n"
+        "5. CONNECTIVITY — roads should form a connected network, minimal dead-ends\n\n"
+        "## Rules\n"
+        "- Grid is exactly 10 rows x 10 columns\n"
+        "- Each cell is exactly one of: R C I P . H S _\n"
+        "- Roads connect the city — buildings without adjacent roads are inaccessible\n"
+        "- Quality is scored 0-100 on each dimension; aggregate = harmonic mean\n\n"
+        "## Example (3x3 — yours is 10x10)\n"
+        "```\n"
+        ". . .\n"
+        "R P C\n"
+        ". H .\n"
+        "```\n"
+        "This tiny city has roads on top and bottom, with residential, park, commercial,\n"
+        "and hospital all adjacent to roads. Good zoning: residential next to park.\n\n"
+        "## Output\n"
+        "Write your city grid to `city.txt`. Discuss strategy with your team first —\n"
+        "where to put roads, how to zone districts, how to balance coverage and quality.\n"
+        "The city should reflect your team's collective design decisions."
+    ),
+    seed_files={},
+    expected_files=["city.txt"],
+    max_ticks=15,
+    tags=["design", "medium", "coordination", "spatial", "paper-6"],
+    verification_script=r"""
+import sys, os, json
+
+results = {"tests_total": 0, "tests_passed": 0, "files_present": [], "scores": None}
+
+# Check file exists
+if os.path.exists("city.txt"):
+    results["files_present"].append("city.txt")
+
+results["tests_total"] += 1
+if not os.path.exists("city.txt"):
+    results["error"] = "city.txt not found"
+    print(json.dumps(results))
+    sys.exit(0)
+
+# Read and parse the grid
+try:
+    text = open("city.txt").read()
+
+    # Try to import agentciv scoring (installed via pip)
+    try:
+        from agentciv.benchmark.city_grid import CityGrid
+        from agentciv.benchmark.city_scorer import score_city
+    except ImportError:
+        # Fallback: add parent paths
+        for p in ["/Users/ekramalam/agentciv-engine"]:
+            if p not in sys.path:
+                sys.path.insert(0, p)
+        from agentciv.benchmark.city_grid import CityGrid
+        from agentciv.benchmark.city_scorer import score_city
+
+    grid = CityGrid.from_string(text)
+    results["tests_passed"] += 1  # Valid grid parsed
+
+    # Score it
+    scores = score_city(grid)
+    results["scores"] = scores.to_dict()
+
+    # Each dimension above 20 counts as a "test passed"
+    for dim_name, dim_val in [
+        ("coverage", scores.coverage),
+        ("accessibility", scores.accessibility),
+        ("zoning", scores.zoning),
+        ("diversity", scores.diversity),
+        ("connectivity", scores.connectivity),
+    ]:
+        results["tests_total"] += 1
+        if dim_val >= 20.0:
+            results["tests_passed"] += 1
+
+    # Aggregate above 30 = bonus test
+    results["tests_total"] += 1
+    if scores.aggregate >= 30.0:
+        results["tests_passed"] += 1
+
+except Exception as e:
+    results["error"] = str(e)
+
+print(json.dumps(results))
+""",
+)
+
+
+# ---------------------------------------------------------------------------
 # Task Bank Registry
 # ---------------------------------------------------------------------------
 
 TASK_BANK: dict[str, BenchmarkTask] = {
-    t.id: t for t in [_FIZZBUZZ, _KV_STORE, _TODO_CLI, _CALCULATOR, _CHAT_SERVER]
+    t.id: t for t in [_FIZZBUZZ, _KV_STORE, _TODO_CLI, _CALCULATOR, _CHAT_SERVER, _CITY_GRID]
 }
 
 

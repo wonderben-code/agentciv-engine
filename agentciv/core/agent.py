@@ -82,6 +82,10 @@ class Agent:
     _task_description: str = ""
     _attention_context: str = ""
 
+    # Minimum token budget required to make an LLM call (avoids wasting
+    # API calls that will fail or return truncated results).
+    MIN_TOKEN_BUDGET = 1000
+
     async def tick(
         self,
         workspace: Workspace,
@@ -108,6 +112,15 @@ class Agent:
         self.state.ticks_active += 1
         actions_taken: list[Action] = []
 
+        # --- Pre-flight: check token budget before any LLM work ---
+        if self.state.token_budget_remaining < self.MIN_TOKEN_BUDGET:
+            log.warning(
+                "Agent %s skipping tick %d: token budget too low (%d < %d)",
+                self.state.identity.name, tick,
+                self.state.token_budget_remaining, self.MIN_TOKEN_BUDGET,
+            )
+            return actions_taken
+
         # --- OBSERVE (filtered by org enforcer) ---
         self._observe(workspace, org, enforcer, attention, events, messages)
 
@@ -132,6 +145,14 @@ class Agent:
         # Max tool-use steps per tick (prevents infinite loops)
         max_steps = 6
         for step in range(max_steps):
+            # Check token budget before each LLM call in the multi-turn loop
+            if self.state.token_budget_remaining < self.MIN_TOKEN_BUDGET:
+                log.warning(
+                    "Agent %s stopping at step %d: token budget exhausted (%d remaining)",
+                    self.state.identity.name, step + 1,
+                    self.state.token_budget_remaining,
+                )
+                break
             response = await self.llm.complete_with_tools(
                 conversation, system=system, tools=tick_tools,
             )
@@ -361,8 +382,10 @@ class Agent:
 
         self._visible_files = files
         self._other_agents = agents
-        self._recent_events = events
-        self._recent_messages = filtered_messages
+        # Limit events and messages to prevent unbounded context growth over
+        # many ticks. Keep only the most recent items.
+        self._recent_events = events[-20:] if len(events) > 20 else events
+        self._recent_messages = filtered_messages[-20:] if len(filtered_messages) > 20 else filtered_messages
         self._org_description = org.to_prompt_description()
         self._task_description = workspace.task_description
 
@@ -446,9 +469,18 @@ class Agent:
             mem_lines = [f"  [{m.tick}] {m.summary}" for m in sorted_mems]
             sections.append("Recent memory:\n" + "\n".join(mem_lines))
 
-        # Project files
+        # Project files (paths + truncated content previews)
         if self._visible_files:
-            file_lines = [f"  {f['path']}" for f in self._visible_files[:25]]
+            file_lines = []
+            for f in self._visible_files[:25]:
+                line = f"  {f['path']}"
+                # Truncate any inline content preview to prevent bloat
+                if f.get("content"):
+                    preview = f["content"][:500]
+                    if len(f["content"]) > 500:
+                        preview += "... (truncated)"
+                    line += f"\n    {preview}"
+                file_lines.append(line)
             sections.append("Project files:\n" + "\n".join(file_lines))
 
         # Other agents with specialisation visibility
@@ -493,7 +525,26 @@ class Agent:
                 sections.append(history_prompt)
             sections.append(f"Current org: {auto_org.current_org_summary}")
 
-        return "\n\n".join(sections)
+        prompt = "\n\n".join(sections)
+
+        # Guard against context window overflow: if the assembled prompt
+        # exceeds ~150K characters, drop older context sections (events,
+        # messages, memory) to bring it back under the limit.
+        max_prompt_chars = 150_000
+        if len(prompt) > max_prompt_chars:
+            log.warning(
+                "Agent %s prompt too large (%d chars), truncating older context",
+                self.state.identity.name, len(prompt),
+            )
+            # Hard-truncate the assembled prompt to the limit. Also trim
+            # the stored event/message lists so subsequent multi-turn steps
+            # within this tick don't re-inflate.
+            self._recent_events = self._recent_events[-5:]
+            self._recent_messages = self._recent_messages[-5:]
+            prompt = prompt[:max_prompt_chars]
+            prompt += "\n\n(Context truncated to fit token limits.)"
+
+        return prompt
 
     # -----------------------------------------------------------------------
     # Tool call → Action conversion

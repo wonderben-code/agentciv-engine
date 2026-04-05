@@ -226,6 +226,11 @@ class GitManager:
             f.strip() for f in diff_output.strip().split("\n") if f.strip()
         ]
 
+        # Save HEAD before merge so we can recover if everything goes wrong
+        pre_merge_head = (
+            await self._run_git("rev-parse", "HEAD")
+        ).strip()
+
         # Merge into main (from the main working directory)
         try:
             await self._run_git("merge", branch, "--no-edit")
@@ -257,11 +262,16 @@ class GitManager:
             try:
                 await self._run_git("merge", "--abort")
             except Exception:
-                # If abort fails, hard reset to last good state
+                # If abort fails, reset to the known-good pre-merge HEAD
                 try:
-                    await self._run_git("reset", "--hard", "HEAD")
+                    await self._run_git("reset", "--hard", pre_merge_head)
                 except Exception:
-                    pass
+                    log.critical(
+                        "CRITICAL: Failed to recover repo after merge conflict "
+                        "for %s. Pre-merge HEAD was %s. Repository may be "
+                        "corrupted — manual intervention required.",
+                        agent_name, pre_merge_head,
+                    )
 
             log.warning(
                 "Merge conflict for %s on files: %s",

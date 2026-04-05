@@ -11,13 +11,13 @@
 
 The engine is built, tested, polished, and open-sourced. All 5 papers written and Bitcoin-stamped. Website deployed at agentciv.ai with all four wings. Three public repos. Pipeline validated with 4 real smoke test runs.
 
-**What's next:** Write Papers 7+8 (conceptual), run City Grid experiment (Paper 6 empirical), build Creator Mode + Recursive Loop v1s, website mega-update with all new material.
+**What's next:** City Grid infrastructure integration test, then run experiment (~$50-70), then build Creator Mode + Recursive Loop v1s, then website mega-update.
 
 ```
-PHASE A: WRITE — Papers 7+8 (NOW — $0, pure intellectual work)
-  Write Paper 7 (Recursive Configuration Loop — emergent-meta)
-  Write Paper 8 (Scale-Invariant Duality — theoretical capstone)
-  Bitcoin-timestamp both → provenance established before any builds
+PHASE A: WRITE — Papers 7+8 (DONE — 5 April 2026)
+  ✓ Paper 7: Recursive Emergence (400 lines, 13 sections)
+  ✓ Paper 8: Scale-Invariant Duality (276 lines, 10 sections)
+  ✓ Both Bitcoin-stamped (commit 0bbf788, agentciv-creator repo)
 
 PHASE B: PROVE — City Grid Experiment / Paper 6 (days, ~$50-70)
   Build City Grid infrastructure (grid model, 5 scorers, renderers)
@@ -165,7 +165,7 @@ agentciv.ai
 
 ---
 
-### Phase 22-pre: Write Papers 7 + 8 (PHASE A — NOW)
+### Phase 22-pre: Write Papers 7 + 8 (PHASE A — DONE)
 
 **Goal:** Write the conceptual papers for the Recursive Configuration Loop (Paper 7) and Scale-Invariant Duality (Paper 8). Bitcoin-timestamp both BEFORE any builds. Same provenance logic as Paper 5.
 
@@ -173,15 +173,17 @@ agentciv.ai
 
 **Why first:** These papers define the claims. The builds (Phase C) demonstrate the claims. Timestamping the concepts before building anything is the entire provenance strategy — same as Paper 5 (written Phase 20, built Phases 32-36).
 
-| Step | What | Detail |
-|------|------|--------|
-| 22-pre-a | Write Paper 7 | "Self-Organising Configuration Space: Emergent Meta-Improvement in Coupled CMI Systems." The recursive loop concept: connect Engine + Simulation I/O spaces → configs improve without a directing intelligence. Distinct from Creator Mode (directed-meta vs emergent-meta). Core sections: the discovery, the loop mechanism, why it's not Creator Mode, what it produces differently, co-evolution connection, open questions. |
-| 22-pre-b | Write Paper 8 | "Scale-Invariant Duality in Collective Machine Intelligence." The observation that directed/emergent duality reappears at every level of abstraction. Three levels: object (Paper 4), meta (Papers 5+7), meta-meta (5+7 interacting). Self-similarity as evidence of fundamental structure. Primarily theoretical — empirical illustrations come later from Phase C builds. |
-| 22-pre-c | Bitcoin-timestamp both | Commit to `agentciv-creator` repo. Post-commit hook auto-stamps. Provenance established for both concepts before any implementation. |
+| Step | What | Detail | Status |
+|------|------|--------|--------|
+| 22-pre-a | Write Paper 7 | "Recursive Emergence: Self-Propagating Organisational Evolution Through Civilisational Generation." 13 sections: the two-facts discovery, primitive loop, failure modes + counterfactuals, Creator Mode distinction, organisational evolution (with co-evolution positioning), scaling trajectory, self-referential property, what it produces at 3 scales, cumulative advancement, buildable primitive. | DONE |
+| 22-pre-b | Write Paper 8 | "Scale-Invariant Duality in Collective Machine Intelligence: The Directed-Emergent Distinction as Structural Pattern." 10 sections: observation, object/meta/meta-meta levels, spectrum-not-binary, self-similarity in other domains, fundamental vs artefact (both possibilities explored), evidence and open questions, complete 8-paper arc. | DONE |
+| 22-pre-c | Bitcoin-timestamp both | Committed to `agentciv-creator` repo as commit `0bbf788`. Post-commit hook auto-stamped. Provenance file: `provenance/commit_0bbf788.ots`. | DONE |
 
 **Output:** Two concept papers, Bitcoin-timestamped, establishing intellectual claims for Papers 7 and 8. All future builds (Phase C) are demonstrations of these pre-established concepts.
 
 **Repo:** `agentciv-creator` (github.com/wonderben-code/agentciv-creator) — same repo as Paper 5.
+
+**Status:** COMPLETE (5 April 2026). Papers pushed to GitHub and Bitcoin-stamped.
 
 ---
 
@@ -243,32 +245,35 @@ All benchmark infrastructure built and validated.
 
 ---
 
-#### Step 2: Build City Grid Infrastructure (NEXT — ~5 hours)
+#### Step 2: Build City Grid Infrastructure (IN PROGRESS)
 
 The City Grid is a purpose-built benchmark task where 4 agents collaborate to design a city on a 10×10 grid. Different team configurations produce visually and quantitatively different cities. The visual output — five city grids side by side — is the hero image of Paper 6.
 
 **Task overview:** Agents receive a 10×10 empty grid and 8 building types (Residential, Commercial, Industrial, Park, Road, Hospital, School, Empty). They must design a functional city with connected roads, logical zoning, and diverse infrastructure. Quality is scored across 5 automated dimensions on a 0-100 scale. Aggregate = harmonic mean (penalises any dimension near zero).
 
-| Sub-step | What | Detail | File |
-|----------|------|--------|------|
-| 22-2a | Grid data model | `CityGrid` class: 10×10 array, `BuildingType` enum (R, C, I, P, ., H, S, _), placement validation (building must be adjacent to road), `to_string()` / `from_string()` parsing. | `agentciv/benchmark/city_grid.py` |
-| 22-2b | Scoring: Coverage | `score_coverage(grid) → float` — (used cells / 100) × 100. Simple but foundational. | `agentciv/benchmark/city_scorer.py` |
-| 22-2c | Scoring: Accessibility | `score_accessibility(grid) → float` — BFS from any road cell. (reachable buildings / total buildings) × 100. Tests whether road network actually connects everything. | `agentciv/benchmark/city_scorer.py` |
-| 22-2d | Scoring: Zoning Logic | `score_zoning(grid) → float` — adjacency rules. Good: residential↔park (+3), residential↔school (+2), commercial↔road (+2), industrial↔industrial (+1). Bad: residential↔industrial (−3), hospital↔industrial (−2). Sum of adjacency scores, normalised to 0-100. | `agentciv/benchmark/city_scorer.py` |
-| 22-2e | Scoring: Diversity | `score_diversity(grid) → float` — Shannon entropy of building type distribution, normalised against max possible entropy. A city of only houses → low. Balanced mix → high. | `agentciv/benchmark/city_scorer.py` |
-| 22-2f | Scoring: Connectivity | `score_connectivity(grid) → float` — road network coherence. Components: number of connected road components (1 = best), dead-end ratio, average shortest path between buildings. Weighted combination, normalised 0-100. | `agentciv/benchmark/city_scorer.py` |
-| 22-2g | Aggregate scorer | `score_city(grid) → CityScore` — runs all 5 scorers, computes harmonic mean. Returns dataclass with individual + aggregate scores. | `agentciv/benchmark/city_scorer.py` |
-| 22-2h | Grid renderer: ASCII | `render_ascii(grid) → str` — colour-coded terminal output. Each building type has a colour. Shows grid with row/column labels. For terminal display and quick validation. | `agentciv/benchmark/city_renderer.py` |
-| 22-2i | Grid renderer: PNG | `render_png(grid, path)` — colour PNG image. Each cell as a coloured square with building type label. For the paper. Uses `pillow` or `matplotlib`. | `agentciv/benchmark/city_renderer.py` |
-| 22-2j | Agent contribution tracker | Track which agent placed/modified each cell. Stored as a parallel 10×10 grid of agent IDs. Saved per tick. Enables heatmap rendering. | `agentciv/benchmark/city_grid.py` |
-| 22-2k | Contribution heatmap renderer | `render_heatmap(contribution_grid, agents) → PNG` — each cell coloured by which agent placed it. Visualises work distribution. Gini coefficient as an image. | `agentciv/benchmark/city_renderer.py` |
-| 22-2l | Temporal grid snapshots | Save grid state + contribution state at every tick. Enables frame-by-frame animation of how each team built their city. Extends existing `TickSnapshot`. | `agentciv/benchmark/city_grid.py` |
-| 22-2m | Task definition | `BenchmarkTask` entry for city-grid. Task prompt includes: grid spec (10×10), building types with descriptions, placement rules (roads connect, buildings adjacent to roads, zoning guidelines), goal (maximise all 5 scoring dimensions). Verification script calls `score_city()`. | `agentciv/benchmark/tasks.py` |
-| 22-2n | Task prompt design | The prompt agents receive. Must be clear enough that agents understand the grid format, building types, placement rules, and quality goals. Must NOT prescribe a strategy — the strategy should emerge from the org structure. Include example of a small 3×3 grid to show format. | Part of task definition |
-| 22-2o | Radar chart generator | `render_radar(scores_by_preset) → PNG` — 5-axis radar chart overlaying all preset profiles. Shows at a glance which presets excel at what. For the paper. | `agentciv/benchmark/city_renderer.py` |
-| 22-2p | Integration test | Run city-grid task with 1 preset (collaborative), 1 run, 4 agents, ~10 ticks. Verify: grid is produced, parseable, scoreable, all renderers work, data saves to JSON, temporal snapshots captured. | Manual validation |
+| Sub-step | What | Detail | File | Status |
+|----------|------|--------|------|--------|
+| 22-2a | Grid data model | `CityGrid` class: 10×10 array, `BuildingType` enum (R, C, I, P, ., H, S, _), `to_string()` / `from_string()` parsing, `to_dict()` / `from_dict()` serialisation. | `agentciv/benchmark/city_grid.py` | DONE |
+| 22-2b | Scoring: Coverage | `score_coverage(grid) → float` — (used cells / 100) × 100. Simple but foundational. | `agentciv/benchmark/city_scorer.py` | DONE |
+| 22-2c | Scoring: Accessibility | `score_accessibility(grid) → float` — BFS from all road cells. (buildings adjacent to road / total buildings) × 100. | `agentciv/benchmark/city_scorer.py` | DONE |
+| 22-2d | Scoring: Zoning Logic | `score_zoning(grid) → float` — 14 adjacency rules (good + bad). Raw score normalised to 0-100 via linear map. | `agentciv/benchmark/city_scorer.py` | DONE |
+| 22-2e | Scoring: Diversity | `score_diversity(grid) → float` — Shannon entropy of building type distribution, normalised against log2(7). | `agentciv/benchmark/city_scorer.py` | DONE |
+| 22-2f | Scoring: Connectivity | `score_connectivity(grid) → float` — 3 sub-metrics: connected components (40%), dead-end ratio (30%), road coverage (30%). | `agentciv/benchmark/city_scorer.py` | DONE |
+| 22-2g | Aggregate scorer | `score_city(grid) → CityScore` — runs all 5 scorers, computes harmonic mean. Returns dataclass with individual + aggregate scores. | `agentciv/benchmark/city_scorer.py` | DONE |
+| 22-2h | Grid renderer: ASCII | `render_ascii(grid) → str` — ANSI colour-coded terminal output with row/column labels and legend. | `agentciv/benchmark/city_renderer.py` | DONE |
+| 22-2i | Grid renderer: PNG | `render_png(grid, path)` — colour PNG via Pillow. Cell labels, optional title, optional score bar, legend. | `agentciv/benchmark/city_renderer.py` | DONE |
+| 22-2j | Agent contribution tracker | `ContributionGrid` class: parallel 10×10 grid of agent IDs. | `agentciv/benchmark/city_grid.py` | DONE |
+| 22-2k | Contribution heatmap renderer | `render_heatmap(contributions, path)` — each cell coloured by agent. Up to 10 distinct agent colours. | `agentciv/benchmark/city_renderer.py` | DONE |
+| 22-2l | Temporal grid snapshots | `GridSnapshot` dataclass: tick + CityGrid + ContributionGrid. Serialisable to/from dict. | `agentciv/benchmark/city_grid.py` | DONE |
+| 22-2m | Task definition | `BenchmarkTask` entry for city-grid. 1710-char prompt, 3x3 example, 7 verification tests (parse + 5 dimensions + aggregate). | `agentciv/benchmark/tasks.py` | DONE |
+| 22-2n | Task prompt design | Clear grid format, all 8 building types with descriptions, 5 quality goals, 3×3 example, explicit output instruction. Does NOT prescribe strategy. | Part of task definition | DONE |
+| 22-2o | Radar chart generator | `render_radar(scores_by_preset, path)` — 5-axis radar via matplotlib. Multiple presets overlaid. | `agentciv/benchmark/city_renderer.py` | DONE |
+| 22-2p | Side-by-side comparison | `render_comparison(grids, path)` — hero image: multiple city grids side by side with scores. | `agentciv/benchmark/city_renderer.py` | DONE |
+| 22-2q | Integration test | Run city-grid task with 1 preset, 1 run. Verify: grid produced, parseable, scoreable, renderers work. | Manual validation | NEXT |
 
 **Success criteria for Step 2:** A single run produces a valid city grid, all 5 scoring dimensions return sensible values, ASCII and PNG renderers produce output, contribution heatmap shows which agent built what, temporal snapshots capture grid state per tick.
+
+**Progress (5 April 2026):** All infrastructure code built and unit-tested. 3 new files: `city_grid.py` (194 lines), `city_scorer.py` (216 lines), `city_renderer.py` (310 lines). Task registered in TASK_BANK. Verification script tested against sample grid (7/7 tests pass). All renderers produce valid output (PNG, heatmap, radar, comparison). Data capture pipeline: artifact extraction, per-tick git snapshots, city scoring, auto-PNG rendering. Fixed `python` → `python3` alias resolution in executor (macOS compatibility). Integration test (22-2q) — first attempt experienced API connection failure; needs re-run with fresh key.
 
 ---
 
@@ -276,12 +281,12 @@ The City Grid is a purpose-built benchmark task where 4 agents collaborate to de
 
 | Sub-step | What | Detail |
 |----------|------|--------|
-| 22-3a | Team runs | `agentciv test-tasks --tasks city-grid --presets collaborative,competitive,meritocratic,auto,hierarchical --runs 3 --agents 4 --max-ticks 15 --output benchmark_results/city_grid` — 15 runs total. |
-| 22-3b | Single-agent baseline | `agentciv test-tasks --tasks city-grid --presets collaborative --runs 3 --agents 1 --max-ticks 15 --output benchmark_results/city_grid` — 3 runs. |
+| 22-3a | Team runs | `agentciv test-tasks --tasks city-grid --presets collaborative,competitive,meritocratic,auto,hierarchical --runs 3 --agents 4 --max-ticks 25 --output benchmark_results/city_grid` — 15 runs total. |
+| 22-3b | Single-agent baseline | `agentciv test-tasks --tasks city-grid --presets collaborative --runs 3 --agents 1 --max-ticks 25 --output benchmark_results/city_grid` — 3 runs. |
 | 22-3c | Verify all data saved | Check `benchmark_results/city_grid/runs/` for 18 JSON files. Each must contain: grid output, 5 dimension scores, aggregate score, full chronicle (messages, reasoning, relationships), per-tick grid snapshots, contribution grid. |
 | 22-3d | Quick sanity check | Spot-check: are grids genuinely different? Do scores vary? Any failed/empty runs? |
 
-**Total: 18 runs. Estimated cost: $50-70. Automated — one command per batch.**
+**Total: 18 runs. Estimated cost: $50-90 (max_ticks=25). Automated — one command per batch.**
 
 **Commands (exact, copy-paste ready):**
 ```bash
@@ -293,7 +298,7 @@ agentciv test-tasks \
   --presets collaborative,competitive,meritocratic,auto,hierarchical \
   --runs 3 \
   --agents 4 \
-  --max-ticks 15 \
+  --max-ticks 25 \
   --output benchmark_results/city_grid
 
 # Single-agent baseline: 3 runs
@@ -302,7 +307,7 @@ agentciv test-tasks \
   --presets collaborative \
   --runs 3 \
   --agents 1 \
-  --max-ticks 15 \
+  --max-ticks 25 \
   --output benchmark_results/city_grid
 ```
 
@@ -877,6 +882,20 @@ Website Mega-Update   Launch Prep      Outreach
 │ interactive 3-level
 │ diagram, crown jewel
 │ of Science wing)
+├ Engine Capability Audit
+│ (audit ALL engine features
+│ — merge conflicts, branch-per-
+│ agent, peer review, specialisation,
+│ attention maps, meta-ticks,
+│ gardener mode, learning system —
+│ showcase on website. These are
+│ beautiful capabilities that visitors
+│ don't know about yet.)
+├ Experimental Software Disclaimer
+│ (website + README: "experimental
+│ research software" framing. Honest
+│ about maturity. Not production-grade
+│ deployment tool — research instrument.)
 ├ All repos cleaned
 ├ QC/QA audit
 └ Final deploy

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 import subprocess
 import tempfile
 import time
@@ -65,6 +66,11 @@ class SingleRunResult:
     success: bool = True
     error: str | None = None
     wall_time_seconds: float = 0.0
+    artifacts: dict[str, Any] = None  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        if self.artifacts is None:
+            self.artifacts = {}
 
 
 async def run_benchmark(config: BenchmarkConfig) -> dict[str, Any]:
@@ -190,9 +196,11 @@ async def _execute_single_run(
 ) -> SingleRunResult:
     """Execute a single (task, preset, run) and return results."""
     start = time.time()
+    tmpdir_path: str | None = None
 
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = tmpdir
             project = Path(tmpdir) / "project"
             project.mkdir()
 
@@ -227,6 +235,9 @@ async def _execute_single_run(
             # Run analysis (network + temporal)
             run_analysis = analyse_run(report, metrics)
 
+            # Capture output artifacts before temp dir is cleaned up
+            artifacts = _capture_artifacts(task, project)
+
             return SingleRunResult(
                 task_id=task.id,
                 preset=preset,
@@ -236,9 +247,13 @@ async def _execute_single_run(
                 metrics=metrics,
                 analysis=run_analysis,
                 wall_time_seconds=wall_time,
+                artifacts=artifacts,
             )
 
     except Exception as e:
+        # Fallback cleanup: TemporaryDirectory may fail to remove git worktrees or locked files
+        if tmpdir_path and Path(tmpdir_path).exists():
+            shutil.rmtree(tmpdir_path, ignore_errors=True)
         wall_time = time.time() - start
         log.exception("Benchmark run failed: %s / %s / %d", task.id, preset, run_index)
 
@@ -270,13 +285,15 @@ async def _execute_single_run(
 
 def _verify(task: BenchmarkTask, project_dir: Path) -> VerificationResult:
     """Run a task's verification script in a subprocess."""
+    # Difficulty-aware timeout: hard tasks get more time
+    timeout = {"hard": 60, "medium": 45}.get(task.difficulty, 30)
     try:
         result = subprocess.run(
             ["python3", "-c", task.verification_script],
             cwd=str(project_dir),
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=timeout,
         )
 
         output = result.stdout.strip()
@@ -319,7 +336,7 @@ def _verify(task: BenchmarkTask, project_dir: Path) -> VerificationResult:
     except subprocess.TimeoutExpired:
         return VerificationResult(
             passed=False,
-            error="Verification timed out (30s)",
+            error=f"Verification timed out ({timeout}s)",
         )
     except Exception as e:
         return VerificationResult(
@@ -362,6 +379,108 @@ def _dry_run_plan(
     }
 
 
+def _capture_artifacts(task: BenchmarkTask, project_dir: Path) -> dict[str, Any]:
+    """Capture output artifacts from the project directory before cleanup.
+
+    Reads all expected output files so they survive the temp dir deletion.
+    For city-grid tasks, also scores the grid and extracts per-tick
+    snapshots from git history.
+    """
+    artifacts: dict[str, Any] = {}
+
+    # Capture all expected output files
+    for expected_file in task.expected_files:
+        fpath = project_dir / expected_file
+        if fpath.exists():
+            try:
+                artifacts[expected_file] = fpath.read_text()
+            except Exception:
+                pass
+
+    # City-grid specific: parse, score, and capture grid evolution
+    if task.id == "city-grid" and "city.txt" in artifacts:
+        try:
+            from .city_grid import CityGrid
+            from .city_scorer import score_city
+
+            grid = CityGrid.from_string(artifacts["city.txt"])
+            scores = score_city(grid)
+            artifacts["city_scores"] = scores.to_dict()
+            artifacts["city_grid_data"] = grid.to_dict()
+        except Exception as e:
+            artifacts["city_score_error"] = str(e)
+
+        # Extract per-tick grid snapshots from git history
+        snapshots = _extract_grid_snapshots(project_dir)
+        if snapshots:
+            artifacts["grid_snapshots"] = snapshots
+
+    return artifacts
+
+
+def _extract_grid_snapshots(project_dir: Path) -> list[dict[str, Any]]:
+    """Extract city.txt content at each git commit for per-tick animation.
+
+    The engine commits at each tick boundary. Walking git history gives
+    us the city grid at each stage of construction — different teams
+    build in visibly different sequences.
+    """
+    snapshots: list[dict[str, Any]] = []
+
+    # Validate git is available and project_dir is a git repo
+    try:
+        check = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            cwd=str(project_dir),
+            capture_output=True, text=True, timeout=5,
+        )
+        if check.returncode != 0:
+            log.debug("Not a git repo, skipping grid snapshots: %s", project_dir)
+            return snapshots
+    except FileNotFoundError:
+        log.debug("git not found on PATH, skipping grid snapshots")
+        return snapshots
+    except Exception:
+        log.debug("git check failed, skipping grid snapshots")
+        return snapshots
+
+    try:
+        # Get all commits in chronological order
+        result = subprocess.run(
+            ["git", "log", "--pretty=format:%H %s", "--reverse"],
+            cwd=str(project_dir),
+            capture_output=True, text=True, timeout=10,
+        )
+        if result.returncode != 0:
+            return snapshots
+
+        for line in result.stdout.strip().split("\n"):
+            if not line.strip():
+                continue
+            parts = line.split(" ", 1)
+            commit_hash = parts[0]
+            message = parts[1] if len(parts) > 1 else ""
+
+            # Try to read city.txt from this commit
+            show = subprocess.run(
+                ["git", "show", f"{commit_hash}:city.txt"],
+                cwd=str(project_dir),
+                capture_output=True, text=True, timeout=5,
+            )
+            if show.returncode == 0 and show.stdout.strip():
+                grid_text = show.stdout.strip()
+                # Only add if the grid content changed from previous
+                if not snapshots or snapshots[-1]["grid_text"] != grid_text:
+                    snapshots.append({
+                        "commit": commit_hash[:8],
+                        "message": message,
+                        "grid_text": grid_text,
+                    })
+    except Exception:
+        pass
+    return snapshots
+
+
 def _save_run_json(result: SingleRunResult, output_dir: str) -> None:
     """Auto-save a single run's data to the results directory.
 
@@ -399,11 +518,47 @@ def _save_run_json(result: SingleRunResult, output_dir: str) -> None:
             "passed": result.verification.passed,
             "tests_total": result.verification.tests_total,
             "tests_passed": result.verification.tests_passed,
+            "output": result.verification.output,
         },
+        "artifacts": result.artifacts,
     }
 
     try:
+        if filepath.is_dir():
+            log.warning("Path is a directory, cannot save: %s", filepath)
+            return
         with open(filepath, "w") as f:
-            json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2, default=str)
     except Exception as e:
         log.warning("Failed to save run JSON %s: %s", filename, e)
+
+    # Auto-render city grid PNG alongside the JSON
+    if "city.txt" in result.artifacts:
+        # Check available disk space before rendering to avoid cryptic PIL errors
+        try:
+            disk = shutil.disk_usage(runs_dir)
+            if disk.free < 50 * 1024 * 1024:  # 50 MB
+                log.warning(
+                    "Skipping PNG render for %s: only %d MB free (need 50 MB)",
+                    filename, disk.free // (1024 * 1024),
+                )
+                return
+        except OSError:
+            pass  # disk_usage failed — proceed anyway
+
+        try:
+            from .city_grid import CityGrid
+            from .city_scorer import score_city
+            from .city_renderer import render_png
+
+            grid = CityGrid.from_string(result.artifacts["city.txt"])
+            scores = score_city(grid)
+            png_filename = f"{result.task_id}_{result.preset}_run{result.run_index}.png"
+            render_png(
+                grid,
+                runs_dir / png_filename,
+                title=f"{result.preset} (run {result.run_index + 1})",
+                scores=scores,
+            )
+        except Exception as e:
+            log.warning("Failed to render city PNG %s: %s", filename, e)

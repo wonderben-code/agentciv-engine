@@ -24,6 +24,21 @@ from .analysis import (
     PresetComparison,
     RunAnalysis,
 )
+from .city_grid import (
+    BuildingType,
+    CityGrid,
+    ContributionGrid,
+    GridSnapshot,
+    GRID_SIZE,
+)
+from .city_scorer import CityScore, score_city
+from .city_renderer import (
+    render_ascii,
+    render_png,
+    render_heatmap,
+    render_radar,
+    render_comparison,
+)
 
 __all__ = [
     "run_benchmark",
@@ -47,4 +62,17 @@ __all__ = [
     "TemporalMetrics",
     "PresetComparison",
     "RunAnalysis",
+    # City Grid (Paper 6)
+    "BuildingType",
+    "CityGrid",
+    "ContributionGrid",
+    "GridSnapshot",
+    "GRID_SIZE",
+    "CityScore",
+    "score_city",
+    "render_ascii",
+    "render_png",
+    "render_heatmap",
+    "render_radar",
+    "render_comparison",
 ]

@@ -6,7 +6,45 @@
 
 **Target:** NeurIPS 2026 / ICML Multi-Agent Systems / standalone arXiv preprint
 
-**Status:** Pre-execution. Methodology pre-registered and Bitcoin-timestamped.
+**Status:** Infrastructure complete. Experiment ready to run. Methodology pre-registered and Bitcoin-timestamped.
+
+---
+
+## 0. THE CORE INSIGHT (read this first)
+
+**This paper is NOT about city planning.** City planning is the proof-of-concept — the first primitive, visual, undeniable demonstration of a principle that scales to the most consequential question in the future of AI.
+
+### The Principle
+
+**How AI agents are configured and organised to attack a task — their structure, communication, authority, decision-making — is itself a variable that affects performance and output.** This is true regardless of the scale of the team, the complexity of the task, or the capability of the individual agents.
+
+If configuration is a variable, it can be **measured.** If it can be measured, it can be **optimised.** If it can be optimised, it becomes one of the most important levers in AI — because it applies at every scale:
+
+- **4 agents building a city grid** (this paper — the first empirical proof)
+- **20 agents building software** (the AgentCiv Engine's current capability)
+- **100 AI agents running a startup** (near-term: AGI-wide companies)
+- **1,000 AI agents running a research lab** (coordinated scientific discovery)
+- **Entire AI civilisations** (Paper 3's simulation, but with engineered configuration)
+
+At every scale, the question is the same: **what configuration of these AI agents produces the best outcome for this task?** And at every scale, the answer is: it depends on the task, and it can be discovered empirically.
+
+### What We Show (Primitive Scale)
+
+The city grid experiment shows this at the smallest useful scale: 4 agents, 5 configurations, 1 task. Different configurations → different cities → different quality → different processes. The proof is visual (five grids side by side) and quantitative (5 scoring dimensions, 8 network metrics, 3 tiers of process data).
+
+### What This Scales Into
+
+The engine is the first primitive tool demonstrating this capability. The city grid is the first primitive test. But the principle — that organisational configuration is a performance variable for AI collectives — has implications far beyond either:
+
+- **AGI-run companies:** When companies are operated by hundreds or thousands of AI agents, how those agents are organised will determine the company's output quality, speed, innovation rate, and adaptability. Configuration becomes a competitive advantage.
+- **AI nations and civilisations:** At civilisational scale, the org structure of AI collectives determines governance quality, resource allocation, knowledge production, and collective intelligence. The right configuration doesn't just perform better — it produces qualitatively different civilisational outcomes.
+- **Optimal adaptation:** Because configuration is a variable, it can be adapted dynamically — different structures for different phases of a project, different tasks, different scales. Auto mode (where agents design their own structure) is the primitive form of this.
+
+This paper provides the first empirical evidence that the variable exists and matters. The 4-property task framework provides the methodology for measuring it. The measurement infrastructure provides the tools. Everything from here is scaling the same principle.
+
+### Relationship to CMI
+
+Collective Intelligence Engineering — the practical subfield of designing, measuring, and optimising collective AI configurations — sits within the broader field of Collective Machine Intelligence (CMI, Paper 4). CMI encompasses theory, observation, emergence, and engineering. CIE is the practical subfield focused specifically on the configuration question: for this task, what structure produces the best outcome?
 
 ---
 
@@ -21,6 +59,8 @@ Every multi-agent AI framework (CrewAI, AutoGen, LangGraph, Agents SDK) hardcode
 Organisational theory has known for 60 years that structure shapes performance in human teams (Burns & Stalker 1961, Mintzberg 1979, Galbraith 1973). Yet AI research treats multi-agent coordination as a fixed engineering choice, not an experimental variable.
 
 This paper introduces the first controlled experiment measuring the effect of organisational structure on multi-agent AI team performance — not on binary pass/fail coding tasks, but on an open-ended collaborative design task where output quality varies on a continuous spectrum and is visible to the naked eye.
+
+**The larger claim:** If organisational configuration affects performance at the 4-agent scale, it affects performance at every scale — 20-agent software teams, 100-agent companies, 1000-agent research labs, civilisation-scale AI collectives. The city grid is the first empirical proof at primitive scale. The principle is scale-invariant: **how AI is organised matters as much as how capable individual AI is.** As AI systems grow from tools to teams to companies to civilisations, configuration becomes one of the most consequential variables in artificial intelligence. This paper opens that research programme.
 
 **What makes this publishable even with small N:**
 - The QUESTION is novel (nobody is asking it)
@@ -198,7 +238,7 @@ All metrics already implemented and auto-captured. Every run saves comprehensive
 
 - **Agent count:** 4 per team (consistent across all presets)
 - **Model:** Claude Sonnet 4 for all runs (constant)
-- **Max ticks:** 15 (enough for a complete city, consistent across presets)
+- **Max ticks:** 25 (generous cap — enough for a complete city, consistent across presets)
 - **Runs per combo:** 3 (for variance estimation and statistical power)
 - **Single-agent baseline:** Same task with agents=1 (is a team even helpful?)
 - **Random seed variation:** Different seeds per run for stochastic variation
@@ -278,13 +318,76 @@ The problem (org structure ignored in multi-agent AI) → the task selection pro
 - **The city grid:** uniquely satisfies all four properties AND produces visual output
 - **Contribution:** The 4-property framework itself is a methodological contribution. Future researchers can use it to design configuration-variance-revealing tasks in other domains.
 
-### 4. The AgentCiv Engine (~1.5 pages)
-- 9 organisational dimensions (authority, communication, roles, decisions, incentives, information, conflict, groups, adaptation)
+### 4. The AgentCiv Engine (~3.5 pages)
+
+#### 4.1 Organisational Dimensions (9)
+- 9 configurable dimensions: authority, communication, roles, decisions, incentives, information, conflict, groups, adaptation
+- Each dimension has 4-6 possible values (e.g., authority: hierarchy/flat/distributed/rotating/consensus/anarchic)
 - 13 presets spanning the organisational space (5 used in this experiment)
-- Enforcement mechanisms (not suggestions — hard constraints on communication, authority, information flow)
-- Agent architecture: observe → reason → decide → act → reflect
+- Any point in this 9-dimensional space is a valid team configuration — the presets are curated regions
+
+#### 4.2 Enforcement Mechanisms (critical — not suggestions)
+- Constraints are HARD — the system prevents agents from violating their org structure
+- Authority dimension → restricts who can make task decisions (only leads in hierarchical mode)
+- Communication dimension → restricts available message paths (hub-spoke forces routing through lead; mesh allows all-to-all; whisper = private only)
+- Information dimension → restricts what agents can see (transparent = shared workspace; need-to-know = filtered)
+- Decision dimension → restricts how decisions are made (consensus requires agreement; top-down = lead decides)
+- **This is why different presets produce different behaviours: agents can't choose to circumvent their structure**
+
+#### 4.3 Measurement Infrastructure (custom-built — key contribution)
+
+To prove organisational structure matters, we need to measure not just WHAT teams produce but HOW they produce it. This requires instrumentation at three levels:
+
+**Tier 1 — Agent-level measurement:**
+- Per-agent token tracking (input + output tokens per API call, deducted from token budget)
+- Per-agent contribution tracking (which agent created/modified which files, ContributionGrid for spatial tasks)
+- Per-agent reasoning capture (internal reasoning text saved alongside every action)
+- Emergent specialisation detection (Gini coefficient of file-type distribution per agent)
+
+**Tier 2 — Team-level measurement:**
+- Communication graph analysis: directed graph of who-talks-to-whom, with 8 network metrics (density, hub-spoke ratio, betweenness centrality, clustering coefficient, reciprocity, communication efficiency)
+- Conflict detection + resolution timing: every git merge conflict recorded with detection tick, resolution tick, resolution method, and affected files
+- Work distribution: Gini coefficient of total actions per agent (low = even distribution, high = concentrated)
+- Branch-per-agent git system: each agent works on its own branch; auto-merge at tick boundaries; conflicts are real coordination failures, not artificial
+- Merge conflict handling: the engine resolves conflicts through the org's conflict resolution mechanism (authority-decides in hierarchical, negotiated in collaborative, voted in meritocratic)
+
+**Tier 3 — Temporal measurement:**
+- Per-tick snapshots: at every clock tick, capture files changed, messages sent, broadcasts, conflicts, merges, active agents, per-agent file operations
+- Relationship trust evolution: pairwise trust scores updated per interaction; trust trajectories show how collaboration develops differently under different structures
+- Convergence analysis: when does the team "find its rhythm"? (measured by action-type stability)
+- Phase transitions: detected via change-point analysis on activity curves
+- Per-tick grid state capture (spatial tasks): city grid saved at every tick for animation of build sequence
+
+**Data format:** Every run produces a 50-100KB JSON with all three tiers. This is NOT post-hoc analysis — it's built into the engine's chronicle system. Every measurement is captured DURING the run, not reconstructed after.
+
+**Why this matters for the paper:** The measurement infrastructure makes the claim falsifiable. We can show exact message counts, exact git conflicts, exact token consumption, exact relationship trust scores, exact contribution maps. Everything is reproducible.
+
+#### 4.4 Agent Architecture
+- Observe → reason → decide → act → reflect cycle per tick
 - Tools: read, write, run, communicate, claim, broadcast, done
-- Chronicle system: structured data capture every tick (messages, files, relationships, conflicts)
+- Each agent has token budget, visible files, relationship state, specialisation history
+- **Attention map:** shared real-time view of who's working on what file, preventing duplicate effort and enabling coordination-aware decisions
+- **Peer review system:** configurable mandatory review before merges (meritocratic, code-review, open-source presets). Reviewers earn reputation; reviewed code has fewer merge conflicts. The engine tracks review quality and adjusts review authority over time.
+- **Emergent specialisation:** agents develop skills through practice. An agent who repeatedly works on infrastructure files becomes a better infrastructure builder. Specialisation is tracked and visible to other agents, enabling natural division of labour.
+- **Relationship and trust system:** pairwise trust scores between every agent pair, updated after each interaction. Successful collaboration → trust increases. Conflicts → trust decreases. Trust affects future communication willingness and task assignment in some presets.
+
+#### 4.5 Meta-Ticks and Adaptive Structure (auto mode)
+- In auto mode, agents periodically pause work to hold **meta-ticks** — structured discussions about their own organisational structure
+- Agents can propose restructures: change authority, communication topology, role assignments, decision-making process
+- Proposals are voted on by the collective; winning proposals are enforced for subsequent ticks
+- The engine captures every restructure event: what was proposed, who voted how, what changed
+- **This means auto mode doesn't just pick a structure — it adapts dynamically, potentially restructuring multiple times during a single run**
+
+#### 4.6 Learning System (cross-run knowledge)
+- Every completed run persists its outcome: task type, org structure used, performance metrics, what worked and what didn't
+- When `--org auto` is used, the engine consults this history for similar past tasks before agents begin
+- Over time, the system accumulates empirical data on which configurations work for which task types
+- This is the primitive form of adaptive configuration: not just measuring configuration effects, but learning from them
+
+#### 4.7 The Chronicle System
+- Structured event capture every tick (messages, files, relationships, conflicts, reasoning)
+- Enables both within-run behaviour analysis and cross-run comparative analysis
+- Auto-saves per-run JSON immediately (crash-resilient — data survives even if process dies mid-experiment)
 
 ### 5. Experimental Design (~1.5 pages)
 - The city grid task: grid spec, building types, placement rules, scoring dimensions
@@ -366,11 +469,29 @@ Organisational structure is a significant variable. Not marginally — qualitati
 - If org structure affects collaborative design, it likely affects: research teams, creative teams, decision-making teams, crisis response
 - The 4-property framework applies to any domain: design a task that satisfies all four properties and you can measure configuration effects
 
-#### 7.6 The Bigger Picture
-- Multi-agent AI is headed toward AI collectives, not just single AGI
-- How those collectives are organised will matter as much as the individual model capability
-- This paper opens a new research programme: **Computational Organisational Intelligence**
-- The question isn't "which model is smartest?" but "which TEAM is most effective?"
+#### 7.6 The Bigger Picture — Configuration as a Civilisational Variable
+
+**The scale argument.** This paper demonstrates the configuration effect at the smallest useful scale: 4 agents, 1 task. But the principle — that how AI is organised determines what AI produces — is scale-invariant. It applies equally to:
+
+| Scale | Configuration question | Why it matters |
+|-------|----------------------|----------------|
+| **4 agents** | Which preset for this city grid? | This paper's demonstration |
+| **20 agents** | Which org structure for this codebase? | Near-term software engineering |
+| **100 agents** | How to structure an AGI-run company? | Organisation = competitive advantage |
+| **1,000 agents** | How to organise a research lab? | Configuration → discovery rate |
+| **Civilisation-scale** | How to organise an AI nation? | Configuration → civilisational outcome |
+
+At every scale, configuration is a variable. At every scale, it can be optimised. At every scale, different configurations produce different outcomes. **The question "which model is smartest?" gives way to "which configuration of these models produces the best collective outcome?"**
+
+This is one of the most consequential variables in the future of AI. Individual model capability matters — but as AI moves from single agents to teams to companies to civilisations, the *organisation* of those agents will matter at least as much. A well-configured collective of moderate-capability agents may outperform a poorly-configured collective of frontier agents. Configuration becomes a lever as important as capability itself.
+
+**Collective Intelligence Engineering** — the practical subfield within CMI (Mala 2026) focused on designing, measuring, and optimising collective AI configurations — is what this paper introduces empirically. It sits within the broader CMI field alongside computational organisational theory, emergence science, and collective AI safety.
+
+The City Grid demonstrates the methodology at primitive scale. The 4-property task framework enables measurement in any domain. The 9-dimensional org space is searchable — including by the agents themselves (auto mode, which is the first primitive form of *adaptive configuration*). The measurement infrastructure (8 network metrics, per-tick snapshots, statistical tests) is open-source.
+
+The possibility space is vast: 13 presets × 9 dimensions × infinite tasks × varying team sizes × dynamic reconfiguration. This paper explores one point. The field is open.
+
+**What makes this different from "team coordination" research:** Existing multi-agent research treats coordination as an implementation detail — a fixed engineering choice. We treat it as the independent variable. This reframing — from fixed choice to tunable parameter to optimisable variable — is what opens the field. When you can measure the effect of configuration, you can optimise it. When you can optimise it, you can adapt it. When you can adapt it, you can scale it to any level of AI collective.
 
 #### 7.7 Limitations (stated honestly)
 - Single LLM provider (Anthropic Claude)
@@ -392,7 +513,11 @@ Organisational structure is a significant variable. Not marginally — qualitati
 - **Community benchmark:** Thousands of runs across the full preset space
 
 ### 9. Conclusion (~0.5 pages)
-Organisational structure matters. We proved it visually and quantitatively on a purpose-built design task. The infrastructure is open-source. The 4-property framework enables anyone to build configuration-variance benchmarks in any domain. The field is open.
+Organisational structure is a first-class design parameter for multi-agent AI systems. We proved it visually and quantitatively: five teams, same task, same model, same resources — five qualitatively different cities with measurably different quality profiles, built via fundamentally different processes.
+
+The city grid is the demonstration. The contribution is larger: a reusable 4-property framework for designing configuration-revealing tasks in ANY domain, a 3-tier measurement infrastructure for quantifying how teams differ, and 1,200 lines of open-source tooling that anyone can use to reproduce, extend, and build on this work.
+
+The question for multi-agent AI shifts from "which model?" to "which team structure, for which task?" This paper opens the field of Collective Intelligence Engineering. The possibility space is vast. The tools exist. The field is open.
 
 ---
 
@@ -407,6 +532,9 @@ Organisational structure matters. We proved it visually and quantitatively on a 
 7. **Auto-org mode** — agents designing their own structure, with empirical results
 8. **Pre-registered methodology** with Bitcoin-timestamped provenance
 9. **Fully open-source** — engine, presets, benchmark infrastructure, scoring code, all data
+10. **3-tier measurement infrastructure** — agent-level, team-level, and temporal measurement built into the engine (not post-hoc), capturing per-tick snapshots, relationship dynamics, conflict timing, and contribution maps
+11. **Cross-run learning system** — the engine accumulates empirical data on which configurations work for which tasks, enabling adaptive configuration over time
+12. **Attention maps + peer review + meta-ticks** — coordination mechanisms that are themselves measurable: who's working on what, how review affects quality, how auto-mode restructures itself
 
 ## 8. HYPOTHESES (pre-registered)
 
@@ -448,23 +576,47 @@ Based on 60 years of organisational theory applied to AI teams:
 | Auto-save per run (crash resilient) | DONE | `agentciv/benchmark/runner.py` |
 | Pre-registered methodology | DONE | `benchmark_results/methodology.md` |
 | Smoke test data (internal tasks) | DONE | `benchmark_results/smoke_test/runs/` |
+| Attention map (who's working on what) | DONE | `agentciv/core/engine.py` |
+| Peer review system (mandatory review gates) | DONE | `agentciv/org/` + `agentciv/core/engine.py` |
+| Meta-tick system (auto-mode restructuring) | DONE | `agentciv/core/engine.py` |
+| Learning system (cross-run knowledge) | DONE | `agentciv/learning/` |
+| Emergent specialisation tracking | DONE | `agentciv/core/agent.py` |
 | Pipeline validated with real agents | DONE | 4 successful runs (5 April) |
 
-## 10. WHAT NEEDS BUILDING
+## 10. INFRASTRUCTURE STATUS (custom-built for this experiment)
 
-| Component | Effort | Detail |
-|-----------|--------|--------|
-| City grid data model | ~1 hr | Grid class, building types enum, placement validation |
-| Scoring engine | ~2 hrs | 5 dimension scorers (coverage, accessibility, zoning, diversity, connectivity) + harmonic mean |
-| Grid renderer | ~1 hr | ASCII for terminal + colour PNG for paper |
-| Agent contribution tracker | ~30 min | Track which agent placed which cell (already have per-agent file ops) |
-| Temporal grid snapshots | ~30 min | Save grid state per tick (extend existing tick snapshots) |
-| City grid task definition | ~30 min | BenchmarkTask entry with grid spec, building types, rules, verification |
-| City grid verification script | ~1 hr | Parse output, run all 5 scorers, return scores |
-| Radar chart generator | ~1 hr | 5-dimension radar chart per preset |
-| Contribution heatmap renderer | ~30 min | Colour-code grid by agent |
-| Paper figures automation | ~2 hrs | Generate all charts from result JSON |
-| **Total new work** | **~10 hrs** | Plus run time (~$50-70) |
+All infrastructure was purpose-built for this experiment. This is itself a contribution — the measurement toolkit for Collective Intelligence Engineering.
+
+| Component | Status | File | Lines |
+|-----------|--------|------|-------|
+| City grid data model (10×10, 8 building types, parse/serialize) | **DONE** | `agentciv/benchmark/city_grid.py` | 194 |
+| Coverage scorer (% cells used) | **DONE** | `agentciv/benchmark/city_scorer.py` | 216 |
+| Accessibility scorer (BFS from roads) | **DONE** | `agentciv/benchmark/city_scorer.py` | — |
+| Zoning logic scorer (14 adjacency rules) | **DONE** | `agentciv/benchmark/city_scorer.py` | — |
+| Diversity scorer (Shannon entropy) | **DONE** | `agentciv/benchmark/city_scorer.py` | — |
+| Connectivity scorer (components, dead-ends, coverage) | **DONE** | `agentciv/benchmark/city_scorer.py` | — |
+| Aggregate scorer (harmonic mean with 0.01 floor) | **DONE** | `agentciv/benchmark/city_scorer.py` | — |
+| ASCII terminal renderer (ANSI colour-coded) | **DONE** | `agentciv/benchmark/city_renderer.py` | 310 |
+| PNG grid renderer (Pillow, scores, legend) | **DONE** | `agentciv/benchmark/city_renderer.py` | — |
+| Contribution heatmap renderer (agent colours) | **DONE** | `agentciv/benchmark/city_renderer.py` | — |
+| Radar chart (matplotlib, 5-axis, multi-preset overlay) | **DONE** | `agentciv/benchmark/city_renderer.py` | — |
+| Side-by-side comparison (hero image) | **DONE** | `agentciv/benchmark/city_renderer.py` | — |
+| Agent contribution tracking (ContributionGrid) | **DONE** | `agentciv/benchmark/city_grid.py` | — |
+| Per-tick grid snapshots (GridSnapshot) | **DONE** | `agentciv/benchmark/city_grid.py` | ��� |
+| City grid task definition (1710-char prompt, 3×3 example) | **DONE** | `agentciv/benchmark/tasks.py` | — |
+| Verification script (7 tests: parse + 5 dims ≥ 20 + aggregate ≥ 30) | **DONE** | `agentciv/benchmark/tasks.py` | — |
+| Artifact capture (grid text + scores + snapshots survive temp dir) | **DONE** | `agentciv/benchmark/runner.py` | — |
+| Auto-PNG rendering per run | **DONE** | `agentciv/benchmark/runner.py` | — |
+| Per-tick git history extraction (build sequence animation data) | **DONE** | `agentciv/benchmark/runner.py` | �� |
+| API retry logic (3 retries, exponential backoff) | **DONE** | `agentciv/llm/client.py` | — |
+| API key fail-fast validation | **DONE** | `agentciv/llm/client.py` | — |
+| python→python3 alias (macOS compatibility) | **DONE** | `agentciv/workspace/executor.py` | — |
+| Git merge safety (pre-merge HEAD save, safe recovery) | **DONE** | `agentciv/workspace/git.py` | — |
+| Token budget pre-flight check | **DONE** | `agentciv/core/agent.py` | �� |
+| Context window overflow protection | **DONE** | `agentciv/core/agent.py` | — |
+| **Total custom infrastructure** | **~1,200 lines across 7 files** | — | — |
+
+**What remains: Run the experiment (~$50-90) and write the paper with real data.**
 
 ## 11. EXECUTION PLAN
 
@@ -485,7 +637,7 @@ agentciv test-tasks \
   --presets collaborative,competitive,meritocratic,auto,hierarchical \
   --runs 3 \
   --agents 4 \
-  --max-ticks 15 \
+  --max-ticks 25 \
   --output benchmark_results/city_grid
 
 # Single-agent baseline: 1 task × 1 preset × 3 runs = 3 runs
@@ -494,7 +646,7 @@ agentciv test-tasks \
   --presets collaborative \
   --runs 3 \
   --agents 1 \
-  --max-ticks 15 \
+  --max-ticks 25 \
   --output benchmark_results/city_grid
 ```
 
@@ -559,6 +711,15 @@ The honest limitation is the strength: "One researcher with a $70 budget produce
 - Reproducible sociology: run the same society 1000 times, change one variable
 - Impossible in human teams, trivial in AI teams
 - Opens computational social science at a new scale
+
+**For AGI and beyond — the scale argument:**
+- As AI moves from single agents → teams → companies → civilisations, CONFIGURATION becomes one of the most important variables in artificial intelligence
+- A well-configured collective of moderate-capability agents may outperform a poorly-configured collective of frontier agents
+- AGI-run companies: 100s of AI agents, and their organisational structure = their competitive advantage
+- AI civilisations: the configuration of millions of AI agents determines governance quality, innovation rate, resource allocation, collective wellbeing
+- Configuration is not static — it can be adapted per-task, per-phase, per-scale. Auto mode is the first primitive form of this
+- **The principle demonstrated at 4-agent scale in this paper is the same principle that will govern civilisation-scale AI collectives. What we show in primitive form here scales into one of the most consequential design decisions of the AI era**
+- The question isn't just "how capable is the AI?" but "how is the AI organised?" — and this paper provides the first empirical evidence that the answer matters
 
 ---
 

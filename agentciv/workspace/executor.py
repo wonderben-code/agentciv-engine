@@ -36,6 +36,7 @@ class WorkspaceExecutor:
         self.workspace = workspace
         self.attention = attention
         self.working_dir = working_dir  # None = use workspace.project_dir
+        self._metadata_lock = asyncio.Lock()
         # Whitelist of allowed shell commands (safety)
         self.allowed_commands = allowed_commands or [
             "python", "python3", "pip", "npm", "node", "npx",
@@ -55,11 +56,11 @@ class WorkspaceExecutor:
                 case ActionType.READ_FILE:
                     return self._read_file(action)
                 case ActionType.WRITE_FILE:
-                    return self._write_file(action)
+                    return await self._write_file(action)
                 case ActionType.CREATE_FILE:
-                    return self._create_file(action)
+                    return await self._create_file(action)
                 case ActionType.DELETE_FILE:
-                    return self._delete_file(action)
+                    return await self._delete_file(action)
                 case ActionType.RUN_COMMAND:
                     return await self._run_command(action)
                 case ActionType.COMMUNICATE | ActionType.BROADCAST:
@@ -107,7 +108,7 @@ class WorkspaceExecutor:
         except ValueError:
             return False, full_path
 
-    def _write_file(self, action: Action) -> ActionResult:
+    async def _write_file(self, action: Action) -> ActionResult:
         if not action.file_path:
             return ActionResult(success=False, error="No file path specified")
         if not action.content:
@@ -140,16 +141,17 @@ class WorkspaceExecutor:
         # Write to agent's working directory (worktree or main)
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(action.content)
-        # Update workspace metadata centrally
-        self.workspace.update_file_metadata(
-            action.file_path, action.agent_id, action.tick, len(action.content),
-        )
+        # Update workspace metadata centrally (locked for concurrent agent safety)
+        async with self._metadata_lock:
+            self.workspace.update_file_metadata(
+                action.file_path, action.agent_id, action.tick, len(action.content),
+            )
         return ActionResult(
             success=True,
             output=f"Written {len(action.content)} chars to {action.file_path}.{warning}",
         )
 
-    def _create_file(self, action: Action) -> ActionResult:
+    async def _create_file(self, action: Action) -> ActionResult:
         if not action.file_path:
             return ActionResult(success=False, error="No file path specified")
 
@@ -176,15 +178,17 @@ class WorkspaceExecutor:
         content = action.content or ""
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(content)
-        self.workspace.update_file_metadata(
-            action.file_path, action.agent_id, action.tick, len(content),
-        )
+        # Update workspace metadata centrally (locked for concurrent agent safety)
+        async with self._metadata_lock:
+            self.workspace.update_file_metadata(
+                action.file_path, action.agent_id, action.tick, len(content),
+            )
         return ActionResult(
             success=True,
             output=f"Created {action.file_path} ({len(content)} chars)",
         )
 
-    def _delete_file(self, action: Action) -> ActionResult:
+    async def _delete_file(self, action: Action) -> ActionResult:
         if not action.file_path:
             return ActionResult(success=False, error="No file path specified")
 
@@ -193,7 +197,8 @@ class WorkspaceExecutor:
             return ActionResult(success=False, error=f"File not found: {action.file_path}")
 
         full_path.unlink()
-        self.workspace.files.pop(action.file_path, None)
+        async with self._metadata_lock:
+            self.workspace.files.pop(action.file_path, None)
         return ActionResult(success=True, output=f"Deleted {action.file_path}")
 
     async def _run_command(self, action: Action) -> ActionResult:
@@ -208,6 +213,13 @@ class WorkspaceExecutor:
 
         if not parts:
             return ActionResult(success=False, error="Empty command")
+
+        # Resolve common command aliases (e.g. macOS has python3 but not python)
+        _CMD_ALIASES = {"python": "python3", "pip": "pip3"}
+        if parts[0] in _CMD_ALIASES:
+            import shutil
+            if not shutil.which(parts[0]) and shutil.which(_CMD_ALIASES[parts[0]]):
+                parts[0] = _CMD_ALIASES[parts[0]]
 
         # Safety: check executable against whitelist
         if parts[0] not in self.allowed_commands:

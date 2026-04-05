@@ -15,6 +15,7 @@ Our job: assemble the right context. The model's job: reason and act.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -102,11 +103,20 @@ class AnthropicClient(LLMClient):
 
     def _get_client(self) -> Any:
         if self._client is None:
+            api_key = os.environ.get("ANTHROPIC_API_KEY")
+            if not api_key:
+                raise RuntimeError(
+                    "ANTHROPIC_API_KEY is not set.\n\n"
+                    "To fix this:\n"
+                    "  1. Get your API key from console.anthropic.com\n"
+                    "  2. Set it: export ANTHROPIC_API_KEY=\"your-key-here\"\n"
+                    "  3. Or add it to your shell profile (~/.zshrc or ~/.bashrc)\n\n"
+                    "If you don't want to use API mode, try Max Plan mode instead — it's free.\n"
+                    "Run: agentciv setup"
+                )
             try:
                 import anthropic
-                self._client = anthropic.AsyncAnthropic(
-                    api_key=os.environ.get("ANTHROPIC_API_KEY"),
-                )
+                self._client = anthropic.AsyncAnthropic(api_key=api_key)
             except ImportError:
                 raise RuntimeError("Install anthropic: pip install anthropic")
         return self._client
@@ -125,10 +135,29 @@ class AnthropicClient(LLMClient):
         if system:
             kwargs["system"] = system
 
-        try:
-            response = await client.messages.create(**kwargs)
-        except Exception as e:
-            raise _enhance_api_error(e, provider="Anthropic", model=self.model)
+        import anthropic as _anthropic
+        _retryable = (
+            _anthropic.RateLimitError,
+            _anthropic.APITimeoutError,
+            _anthropic.APIConnectionError,
+            _anthropic.InternalServerError,
+        )
+        _max_retries = 3
+        for _attempt in range(_max_retries + 1):
+            try:
+                response = await client.messages.create(**kwargs)
+                break
+            except _retryable as e:
+                if _attempt >= _max_retries:
+                    raise _enhance_api_error(e, provider="Anthropic", model=self.model)
+                _delay = 2 ** _attempt  # 1s, 2s, 4s
+                log.warning(
+                    "Anthropic API transient error (attempt %d/%d): %s — retrying in %ds",
+                    _attempt + 1, _max_retries, type(e).__name__, _delay,
+                )
+                await asyncio.sleep(_delay)
+            except Exception as e:
+                raise _enhance_api_error(e, provider="Anthropic", model=self.model)
 
         # Extract text and tool calls from response blocks
         text_parts: list[str] = []
@@ -212,11 +241,20 @@ class OpenAIClient(LLMClient):
 
     def _get_client(self) -> Any:
         if self._client is None:
+            api_key = os.environ.get("OPENAI_API_KEY")
+            if not api_key:
+                raise RuntimeError(
+                    "OPENAI_API_KEY is not set.\n\n"
+                    "To fix this:\n"
+                    "  1. Get your API key from platform.openai.com\n"
+                    "  2. Set it: export OPENAI_API_KEY=\"your-key-here\"\n"
+                    "  3. Or add it to your shell profile (~/.zshrc or ~/.bashrc)\n\n"
+                    "If you don't want to use API mode, try Max Plan mode instead — it's free.\n"
+                    "Run: agentciv setup"
+                )
             try:
                 import openai
-                self._client = openai.AsyncOpenAI(
-                    api_key=os.environ.get("OPENAI_API_KEY"),
-                )
+                self._client = openai.AsyncOpenAI(api_key=api_key)
             except ImportError:
                 raise RuntimeError("Install openai: pip install openai")
         return self._client

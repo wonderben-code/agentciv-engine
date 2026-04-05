@@ -51,6 +51,9 @@ class TickSnapshot:
     active_agents: int = 0  # agents that took non-idle actions this tick
     # Per-agent file ops this tick (for computing running Gini)
     agent_file_ops: dict[str, int] = field(default_factory=dict)
+    # Per-tick relationship trust snapshot (for research export)
+    # Format: {"AgentA → AgentB": trust_score, ...}
+    relationships: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -79,6 +82,8 @@ class TimelineEntry:
     event_type: str
     agent: str | None
     summary: str
+    content: str | None = None  # full message/reasoning text for research export
+    reasoning: str | None = None  # agent's reasoning behind this action
 
 
 @dataclass
@@ -249,6 +254,8 @@ class ChronicleReport:
                     "type": e.event_type,
                     "agent": e.agent,
                     "summary": e.summary,
+                    **({"content": e.content} if e.content else {}),
+                    **({"reasoning": e.reasoning} if e.reasoning else {}),
                 }
                 for e in self.timeline
             ],
@@ -263,6 +270,7 @@ class ChronicleReport:
                     "merges_succeeded": s.merges_succeeded_cumulative,
                     "active_agents": s.active_agents,
                     "agent_file_ops": s.agent_file_ops,
+                    **({"relationships": s.relationships} if s.relationships else {}),
                 }
                 for s in self.tick_snapshots
             ],
@@ -346,7 +354,10 @@ class Chronicle:
                 if event.agent_id:
                     self._tick_active_agents.add(event.agent_id)
                     self._tick_agent_file_ops[event.agent_id] += 1
-                self._add_timeline(event, f"created {f}")
+                self._add_timeline(
+                    event, f"created {f}",
+                    reasoning=event.data.get("reasoning"),
+                )
 
             case EventType.FILE_MODIFIED:
                 f = event.data.get("file", "?")
@@ -373,6 +384,15 @@ class Chronicle:
                         target = self._agent_names.get(t, t)
                         key = f"{sender} → {target}"
                         self._comm_pairs[key] += 1
+                # Capture full message content for research export
+                msg_content = event.data.get("content") or event.data.get("content_preview", "")
+                msg_reasoning = event.data.get("reasoning")
+                preview = (msg_content or "")[:60]
+                target_names = [self._agent_names.get(t, t) for t in targets]
+                self._add_timeline(
+                    event, f"→ {', '.join(target_names)}: {preview}",
+                    content=msg_content, reasoning=msg_reasoning,
+                )
 
             case EventType.BROADCAST_SENT:
                 self._total_broadcasts += 1
@@ -381,15 +401,27 @@ class Chronicle:
                     agent.broadcasts_sent += 1
                 if event.agent_id:
                     self._tick_active_agents.add(event.agent_id)
+                # Capture full broadcast content for research export
+                bcast_content = event.data.get("content") or event.data.get("content_preview", "")
+                bcast_reasoning = event.data.get("reasoning")
+                preview = (bcast_content or "")[:60]
+                self._add_timeline(
+                    event, f"broadcast: {preview}",
+                    content=bcast_content, reasoning=bcast_reasoning,
+                )
 
             case EventType.TASK_CLAIMED:
-                preview = event.data.get("content_preview", "")
+                task_content = event.data.get("content") or event.data.get("content_preview", "")
+                preview = task_content[:80] if task_content else ""
                 agent = self._get_agent(event.agent_id)
                 if agent and preview:
-                    agent.tasks_claimed.append(preview[:80])
+                    agent.tasks_claimed.append(preview)
                 if event.agent_id:
                     self._tick_active_agents.add(event.agent_id)
-                self._add_timeline(event, f"claimed: {preview[:60]}")
+                self._add_timeline(
+                    event, f"claimed: {preview[:60]}",
+                    content=task_content, reasoning=event.data.get("reasoning"),
+                )
 
             case EventType.REVIEW_REQUESTED:
                 agent = self._get_agent(event.agent_id)
@@ -483,6 +515,7 @@ class Chronicle:
                     merges_succeeded_cumulative=self._merges_succeeded,
                     active_agents=len(self._tick_active_agents),
                     agent_file_ops=dict(self._tick_agent_file_ops),
+                    relationships=event.data.get("relationships", {}),
                 )
                 self._tick_snapshots.append(snapshot)
 
@@ -532,7 +565,10 @@ class Chronicle:
             self._agents[agent_id] = AgentContribution(agent_id=agent_id, agent_name=name)
         return self._agents[agent_id]
 
-    def _add_timeline(self, event: Event, summary: str) -> None:
+    def _add_timeline(
+        self, event: Event, summary: str,
+        content: str | None = None, reasoning: str | None = None,
+    ) -> None:
         """Add a notable moment to the timeline."""
         agent_display = self._agent_names.get(event.agent_id, event.agent_id) if event.agent_id else None
         self._timeline.append(TimelineEntry(
@@ -540,4 +576,6 @@ class Chronicle:
             event_type=event.type.name,
             agent=agent_display,
             summary=summary,
+            content=content,
+            reasoning=reasoning,
         ))

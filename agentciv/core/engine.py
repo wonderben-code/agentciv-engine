@@ -472,10 +472,28 @@ class Engine:
         # Tick idle counters
         self.attention.tick_idle(self.tick)
 
+        # Collect relationship snapshot for research export
+        rel_snapshot: dict[str, float] = {}
+        if self.config.parameters.enable_relationships:
+            for agent in self.agents:
+                aid = agent.state.identity.name
+                for partner_id, rel in agent.state.relationships.items():
+                    partner_name = next(
+                        (a.state.identity.name for a in self.agents
+                         if a.state.identity.id == partner_id),
+                        partner_id,
+                    )
+                    key = f"{aid} → {partner_name}"
+                    rel_snapshot[key] = rel.trust
+
         self.event_bus.emit(Event(
             type=EventType.TICK_END,
             tick=self.tick,
-            data={"actions": len(all_actions), "is_meta_tick": is_meta_tick},
+            data={
+                "actions": len(all_actions),
+                "is_meta_tick": is_meta_tick,
+                "relationships": rel_snapshot,
+            },
         ))
 
         should_continue = self.running and self.tick < self.config.max_ticks
@@ -646,10 +664,28 @@ class Engine:
         # Tick idle counters
         self.attention.tick_idle(self.tick)
 
+        # Collect relationship snapshot for research export
+        rel_snapshot: dict[str, float] = {}
+        if self.config.parameters.enable_relationships:
+            for agent in self.agents:
+                aid = agent.state.identity.name
+                for partner_id, rel in agent.state.relationships.items():
+                    partner_name = next(
+                        (a.state.identity.name for a in self.agents
+                         if a.state.identity.id == partner_id),
+                        partner_id,
+                    )
+                    key = f"{aid} → {partner_name}"
+                    rel_snapshot[key] = rel.trust
+
         self.event_bus.emit(Event(
             type=EventType.TICK_END,
             tick=self.tick,
-            data={"actions": len(all_actions), "is_meta_tick": is_meta_tick},
+            data={
+                "actions": len(all_actions),
+                "is_meta_tick": is_meta_tick,
+                "relationships": rel_snapshot,
+            },
         ))
 
     def _apply_intervention(self, intervention: Intervention) -> str | None:
@@ -894,6 +930,7 @@ class Engine:
             agent_id=action.agent_id,
             data={
                 "file": action.file_path,
+                "content": action.content or "",
                 "content_preview": (action.content or "")[:100],
                 "targets": action.target_agents,
                 "reasoning": action.reasoning,
