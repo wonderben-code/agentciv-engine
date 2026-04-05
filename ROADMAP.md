@@ -1,6 +1,6 @@
 # AgentCiv Engine — Master Roadmap
 
-**Last updated:** 4 April 2026
+**Last updated:** 5 April 2026 (City Grid + Papers 7-8 expansion)
 **Author:** Ekram Alam & Claude
 
 ---
@@ -13,13 +13,14 @@ The engine is built, tested, polished, and open-sourced. All 5 papers written an
 
 ```
 ERA 1: LAUNCH (Phases 19–23)
-  Battle-test → Paper 5 → Website → Benchmarks → Go Public (PyPI)
+  Battle-test → Paper 5 → Website → City Grid Experiment (Paper 6) → Go Public
 
 ERA 2: THE SIMULATION EXPERIENCE (Phases 26–31)
   Package & Install → YAML Customisation → Rich Terminal → Live Chronicler → Gardener → Community
 
-ERA 3: CREATOR MODE (Phases 32–36)
-  Build It → Task Search → Emergence Explorer → Full Website Wing → Empirical Paper
+ERA 3: CREATOR MODE + META-PAPERS (Phases 32–36c)
+  Build Creator → Task Search → Emergence Explorer → Website Wing → Paper 5 Empirical
+  → Paper 7 (Recursive Loop) → Paper 8 (Scale Invariance Capstone)
 
 ERA 4: LAUNCH & OUTREACH (Phases 37–39)
   Website Refresh + QC/QA → Launch Prep → Outreach
@@ -52,9 +53,14 @@ ERA 4: LAUNCH & OUTREACH (Phases 37–39)
 | 19 | Battle-Test | API mode, Max Plan mode, experiment mode dry runs. Live runs: hello_api + todo_app_auto. | DONE |
 | 20 | Paper 5 — Creator Mode | "Creator Mode: AI as Civilisation Designer." 14 sections, v1 architecture, NAS/AutoML/OEE connections, limitations, ethics. Dedicated repo (agentciv-creator). Bitcoin-stamped. | DONE |
 | 21 | Website — Four Wings | Four-wing site deployed at agentciv.ai. All wing landing pages rebuilt for first-time visitors. Links audited. Provenance on home page. Polish deferred to ERA 4. | DONE (core) |
+| 22-0 | Benchmark Infrastructure | Per-agent token tracking, per-tick snapshots, conflict resolution timing, network metrics (8 metrics), temporal analysis (convergence, phase transitions), comparative analysis (rankings, superadditivity, Cohen's d, Kruskal-Wallis, Mann-Whitney U), CSV/JSON/LaTeX export. Results directory + pre-registered methodology (Bitcoin-stamped). | DONE |
+| 22-0.5 | MCP Display Parity | 15 formatters in `mcp/display.py` with unicode box-drawing, markdown tables, agent markers, contextual tips. All MCP tools wired. Verified from fresh terminal. | DONE |
+| 22-mock | Pipeline Validation | 10 mock benchmark runs (5 tasks × 2 presets). Validated: data saves, JSON schema populates, analysis layer computes. | DONE |
 | 23a | Repos Public | All 3 repos public (agentciv/agentciv, wonderben-code/agentciv-engine, wonderben-code/agentciv-creator). Internal docs removed pre-publish. | DONE |
+| 23b | PyPI Publish | `pip install agentciv-engine` v0.1.1 live on PyPI. Presets moved into package. All path refs updated. Tested in clean venv. | DONE |
+| 23c | Website Deployed | agentciv.ai deployed on Netlify. Engine landing page updated with literal step-by-step commands, both modes, macOS pip3 buttons, realistic output panels. | DONE |
 
-**Current state:** ~11,500 lines across 40 Python files + website code. 13 presets. All features working and tested. Three public repos + one private (website). Website deployed at agentciv.ai. All external links verified working. All repos Bitcoin-stamped.
+**Current state:** ~11,000+ lines across 40+ Python files + website code. 13 presets. All features working and tested. Three public repos + one private (website). v0.1.1 on PyPI. Website deployed at agentciv.ai. All external links verified working. All repos Bitcoin-stamped.
 
 ---
 
@@ -140,153 +146,188 @@ agentciv.ai
 
 ---
 
-### Phase 22: Established Benchmarks — The Capstone
+### Phase 22: The City Grid Experiment — Paper 6
 
-**Goal:** Publishable evidence that organisational structure is a significant variable in multi-agent AI performance. Same task + different org = different performance. Controlled experiment, not leaderboard submission.
+**Goal:** The first controlled experiment proving that organisational structure produces measurably different outputs of measurably different quality in multi-agent AI. Visual, quantitative, and undeniable.
 
-**Thesis:** Configured collectives outperform individual AI on complex tasks, and different organisational structures outperform others for specific task types. This is the first controlled study of organisational arrangement as a design parameter.
+**Paper:** "Same City, Different Architects" — Paper 6 in the AgentCiv series. Full plan: `docs/PAPER_PLAN.md`
 
-**Full reference:** `docs/BENCHMARK_PLAN.md` — 13 sections, every detail, metric formulas, data schemas, statistical approach, publication plan.
+**Thesis:** The same task, given to teams with different organisational structures, produces visually distinct outputs with quantitatively different quality — measured continuously across 5 dimensions, not binary pass/fail.
 
-**Cost:** $0 primary (Max Plan mode). Optional $50-100 API validation.
+**Why City Grid, not SWE-bench:** SWE-bench tasks are binary (pass/fail). If all teams solve the bug, you can't distinguish quality. The City Grid satisfies 4 critical properties simultaneously: (1) multiple valid outputs, (2) composition from parts requiring coordination, (3) continuous multi-dimensional scoring, (4) process visibly differs across configurations. No standard coding benchmark satisfies all four. Full analysis in `docs/PAPER_PLAN.md` Section 3.
 
-**Pre-registration:** Methodology committed and Bitcoin-timestamped BEFORE any runs. This is non-negotiable.
+**Cost:** ~$50-70 API.
 
-#### Step 0: Engine Preparation (~1-2 sessions)
-
-Infrastructure changes required before any benchmark can run.
-
-| Sub-step | What | Detail | Est. |
-|----------|------|--------|------|
-| 22-0a | Per-agent token tracking | In agent action loop, count input/output tokens per agent per tick. Store in chronicle. | 30 min |
-| 22-0b | Per-tick metric snapshots | End of each tick: snapshot agent contributions, comms count, files count, conflicts count. Enables temporal analysis (Tier 3 metrics). | 1 hr |
-| 22-0c | Conflict resolution timing | When merge conflict detected → record tick. When resolved → record tick. Delta = resolution time. | 30 min |
-| 22-0d | Per-agent completion contribution | Tag which agent's code actually passes tests. Who solved it? Essential for superadditivity analysis. | 1 hr |
-| 22-0e | Verify single-agent mode | Ensure engine works cleanly with `--agents 1`. No multi-agent assumptions break. This IS the baseline. | 30 min |
-| 22-0f | Max Plan benchmark orchestration | Wire MCP tools (`agentciv_orchestrate_start/act/tick/status`) to run benchmarks end-to-end in Max Plan mode. Auto-save results. | 2 hr |
-| 22-0g | Analysis layer | Network metrics calculator (density, centrality, clustering, reciprocity, hub-spoke ratio, directive vs collaborative ratio). Temporal analysis (phase transitions, convergence). Comparative analysis (cross-preset rankings, statistical significance). Export to CSV/JSON/LaTeX. | 3 hr |
-| 22-0h | Results directory structure | Create `benchmark_results/` with subdirectories: `internal/`, `humaneval/`, `swebench/`, `gpqa/`, `comparative/`. Per-run JSON schema. Summary aggregation. See `docs/BENCHMARK_PLAN.md` Section 6. | 30 min |
-| 22-0i | Pre-registration commit | Commit methodology (trimmed BENCHMARK_PLAN.md) to `benchmark_results/methodology.md`. Bitcoin timestamp. This locks our approach BEFORE seeing results. | 15 min |
-| 22-0j | Regression test | Run existing test suite + manual smoke test of `agentciv solve` and `agentciv experiment` to confirm all benchmark instrumentation is additive-only and the dev tool UX is unchanged. No benchmark code should affect normal user experience. | 30 min |
-
-#### Step 0.5: MCP Display Parity — Max Plan UX (~1 session)
-
-**BLOCKER for all benchmark runs.** The CLI (`agentciv solve`) has 43 Rich display functions with coloured agent names, panels, tables, status indicators, chronicle reports. MCP mode returns raw JSON — no visual UX at all. Claude Code renders markdown, so we format MCP responses as beautiful unicode/markdown text with data attached.
-
-| Sub-step | What | Detail | Est. |
-|----------|------|--------|------|
-| 22-0.5a | Create `mcp/display.py` | Display formatting module for MCP responses. Converts every tool's JSON data into beautifully formatted text using unicode box-drawing, markdown tables, status indicators (✓/✗), agent names. Parallel to `display.py` (Rich) but outputs plain text/markdown for Claude Code. | 2 hr |
-| 22-0.5b | Wire into all MCP tools | Every tool in `server.py` calls the formatter. Returns formatted display text as the primary response, with JSON data embedded at the end for programmatic use. 12 tools total. | 1 hr |
-| 22-0.5c | Verify MCP connection | Fix `.mcp.json` → ensure `agentciv mcp` starts cleanly, tools appear in Claude Code, no import errors. Test from a fresh terminal. | 30 min |
-| 22-0.5d | Side-by-side comparison | Run the same operation via CLI and MCP. Screenshot both. Verify the MCP version conveys the same information with equal clarity. | 30 min |
-| 22-0.5e | Benchmark tool display | Ensure `agentciv_benchmark_start` and `agentciv_benchmark_verify` have excellent formatted output — these are what the user will see most during benchmark runs. | 30 min |
-
-**Design principle:** Same data, same clarity, different medium. CLI uses Rich panels; MCP uses unicode + markdown tables. Both are beautiful. Neither is a data dump.
-
-#### Step 1: Internal Benchmark Suite — Pipeline Validation (FREE, ~1 session)
-
-5 built-in tasks × (5 priority presets + single-agent baseline) × 2 runs = **60 runs**.
-
-| Sub-step | What | Detail |
-|----------|------|--------|
-| 22-1a | Run internal tasks | fizzbuzz, todo_api, calculator, data_pipeline, web_scraper. All via Max Plan mode. |
-| 22-1b | Presets tested | `collaborative`, `competitive`, `meritocratic`, `auto`, `hierarchical` + single-agent baseline. |
-| 22-1c | Validate pipeline | Confirm: data saves correctly, metrics compute, analysis layer works, results directory populates. |
-| 22-1d | First results | Generate first comparison tables. Do we already see org structure effects? This is the sanity check. |
-| 22-1e | Fix any issues | If pipeline breaks, fix before moving to established benchmarks. Cheaper to find bugs here. |
-
-**Success criteria:** Pipeline runs end-to-end, all metrics compute, results are reproducible across 2 runs of the same config.
-
-#### Step 2a: HumanEval — Established Coding Benchmark (FREE, ~1-2 sessions)
-
-164 Python function-generation problems. Pass@1 evaluation. Industry-standard, widely cited.
-
-| Sub-step | What | Runs | Detail |
-|----------|------|------|--------|
-| 22-2a-i | Pilot | 30 | 10 problems × 3 presets. Validate HumanEval integration. |
-| 22-2a-ii | Core run | 1,968 | 164 problems × (5 presets + baseline) × 2 runs. Full dataset. |
-| 22-2a-iii | Extended (optional) | 4,920+ | Add remaining presets (13 total + auto + baseline). Only if time allows. |
-
-**Expected output:** Pass@1 rate per preset. Token efficiency per preset. Communication pattern differences. First publishable result.
-
-#### Step 2b: SWE-bench Lite — Real-World Software Engineering (FREE, ~2-4 sessions)
-
-300 real GitHub issues from popular repos. Binary pass/fail (tests pass or don't). The gold standard.
-
-| Sub-step | What | Runs | Detail |
-|----------|------|------|--------|
-| 22-2b-i | Pilot | 9 | 3 problems × 3 presets. Validate SWE-bench integration (repo cloning, env setup, test harness). |
-| 22-2b-ii | Small scale | 120 | 10 problems × (5 presets + baseline) × 2 runs. Minimum publishable SWE-bench data. |
-| 22-2b-iii | Medium scale | 600 | 50 problems × (5 presets + baseline) × 2 runs. Strong paper. |
-| 22-2b-iv | Full scale | 4,500+ | 300 problems × 5+ presets × 3 runs. Spread over weeks if subscription allows. |
-| 22-2b-v | Everything | 15,000+ | All benchmarks × all 13 presets + auto + baseline × 3 runs. Ultimate stretch — months of Max Plan runtime. |
-
-**Scaling strategy:** Start at pilot, expand as results warrant. Stop at any tier and publish — each tier is independently publishable.
-
-#### Step 2c: GPQA Diamond — Collective Reasoning (Stretch, FREE)
-
-198 graduate-level science questions. Tests whether org structure affects reasoning, not just coding.
-
-| Sub-step | What | Runs | Detail |
-|----------|------|------|--------|
-| 22-2c-i | Pilot | 30 | 10 problems × 3 presets. Does org structure matter for reasoning tasks? |
-| 22-2c-ii | Full | 990 | 198 problems × 5 presets. If coding results are strong and we have capacity. |
-
-#### Step 3: API Validation (Optional, $50-100 max)
-
-| Sub-step | What | Detail |
-|----------|------|--------|
-| 22-3a | Select subset | Pick 10-20 tasks where Max Plan showed clearest org effects. |
-| 22-3b | API runs | Re-run subset with `ANTHROPIC_API_KEY` mode. Same presets, same tasks. |
-| 22-3c | Compare | Do API results match Max Plan results? If yes → validates free methodology. If no → document differences. |
-
-**Purpose:** Proves Max Plan mode produces equivalent results to API mode. Makes "$0 cost" claim airtight.
-
-#### Step 4: Analysis & Publication (~1 session)
-
-| Sub-step | What | Detail |
-|----------|------|--------|
-| 22-4a | Cross-benchmark analysis | Which presets win on which benchmarks? Does the winner change by task type? |
-| 22-4b | Statistical significance | Kruskal-Wallis H-test across presets. Mann-Whitney U for pairwise. Cohen's d effect sizes. All pre-registered. |
-| 22-4c | Publication tables | Preset × Benchmark matrix. Token efficiency comparison. Communication pattern analysis. LaTeX-ready. |
-| 22-4d | Figures | Performance by preset (box plots), communication networks (graph viz), temporal evolution (line charts), Gini coefficients (bar charts). |
-| 22-4e | Write-up | Update Paper 3 ("From Emergence to Evidence") with benchmark results. Or standalone paper if results warrant it. |
-| 22-4f | Data release | All raw data, configs, analysis code published in `benchmark_results/`. Full reproducibility. |
-| 22-4g | Clean up internal docs | Remove internal planning docs from public repo: `docs/BENCHMARK_PLAN.md`, collapse Phase 22 detail in `ROADMAP.md` back to a summary. Keep `benchmark_results/methodology.md` (pre-registered, Bitcoin-stamped) and all raw data. Planning docs served their purpose — the published artifact is the data and the paper. |
-
-#### Priority Presets (tested first, in order)
-
-1. `collaborative` — the default, mesh communication, shared reward
-2. `competitive` — agents race independently, best solution wins
-3. `meritocratic` — earned influence, mandatory peer review
-4. `auto` — agents design their own org structure
-5. `hierarchical` — top-down, lead agent assigns tasks
-
-Then expand to remaining 8 presets + `single-agent baseline` as capacity allows.
-
-#### Metrics Framework (3 tiers — see `docs/BENCHMARK_PLAN.md` Section 5 for formulas)
-
-- **Tier 1 (minimum publishable):** Success rate, tokens used, ticks used, Gini coefficient, communication volume, merge conflicts, run-to-run variance, baseline comparison.
-- **Tier 2 (strong paper):** Network density/centrality, parallel utilisation, coordination overhead, role emergence, conflict resolution time, directive vs collaborative ratio, quality score.
-- **Tier 3 (outstanding paper):** Per-tick temporal evolution, phase transition detection, metric correlation analysis, predictive validity (can tick-10 predict outcome?), emergent norm detection, superadditivity ratio.
-
-#### Auto Mode Learning Flywheel
-
-Every benchmark run feeds the learning system. Run → data → insights → better auto-mode starts → better runs. By the end of benchmarking, the `auto` preset will have accumulated enough history to make genuinely informed self-organisation decisions. This is a research output in itself.
+**Pre-registration:** Methodology committed and Bitcoin-timestamped BEFORE any runs. DONE.
 
 ---
 
-### Phase 23: Go Public
+#### Step 0: Engine Preparation — DONE
+
+All benchmark infrastructure built and validated.
+
+| Sub-step | What | Status |
+|----------|------|--------|
+| 22-0a | Per-agent token tracking | DONE — `LLMResponse.input_tokens/output_tokens`, deducted from `AgentState.token_budget_remaining`, injected into `ChronicleReport.tokens_per_agent` |
+| 22-0b | Per-tick metric snapshots | DONE — `TickSnapshot` dataclass in `chronicle/observer.py`: files, messages, broadcasts, conflicts, merges, active agents, per-agent file ops. Captured at `TICK_END`. |
+| 22-0c | Conflict resolution timing | DONE — `ConflictRecord` dataclass with `detected_tick`, `resolved_tick`, `resolution_time` property. |
+| 22-0d | Analysis layer | DONE — `benchmark/analysis.py`: `NetworkMetrics` (8 metrics), `TemporalMetrics`, `compute_preset_comparison()`, `kruskal_wallis()`, `mann_whitney_u()`, Cohen's d. Export: CSV, JSON, LaTeX. |
+| 22-0e | Results directory + pre-registration | DONE — `benchmark_results/` with subdirectories. `methodology.md` Bitcoin-timestamped. |
+| 22-0f | Full message content capture | DONE — `engine.py` stores full `message.content` (fixed 5 April 2026). |
+| 22-0g | Agent reasoning capture | DONE — `chronicle/observer.py` persists `reasoning` field on timeline entries (fixed 5 April 2026). |
+| 22-0h | Relationship trust snapshots | DONE — `TickSnapshot.relationships` dict captured at every `TICK_END` (fixed 5 April 2026). |
+
+#### Step 0.5: MCP Display Parity — DONE
+
+| Sub-step | What | Status |
+|----------|------|--------|
+| 22-0.5a | `mcp/display.py` — 15 formatters | DONE |
+| 22-0.5b | All MCP tools wired | DONE |
+| 22-0.5c-e | Verified from fresh terminal | DONE |
+
+#### Step 1: Pipeline Validation — DONE
+
+| Sub-step | What | Status |
+|----------|------|--------|
+| 22-1a | Mock runs (10) | DONE — 5 tasks × 2 presets. Validated data saves, JSON schema, analysis layer. |
+| 22-1b | Real smoke test — fizzbuzz | DONE — collaborative vs competitive, 1 run each. Real code produced, 5/5 tests passing. |
+| 22-1c | Real smoke test — calculator | DONE — collaborative vs competitive, 1 run each. Real code produced, 11/11 tests passing. |
+| 22-1d | Data capture validation | DONE — Full message content (47/64 entries), reasoning (38/64), relationship snapshots (all 10 ticks). |
+| 22-1e | Process differences confirmed | DONE — Collaborative: 37 msgs, 419s. Competitive: 6 msgs, 268s. Visibly different process. |
+| 22-1f | Runner summary JSON bug | KNOWN — `[Errno 21] Is a directory` when output path is existing dir. Per-run data saves correctly. Fix before full experiment. |
+
+**Smoke test data:** `benchmark_results/smoke_test/runs/` — 4 JSON files (fizzbuzz × 2, calculator × 2).
+
+**Key finding from smoke tests:** Even on binary pass/fail tasks, process is radically different. Competitive agents unanimously voted to self-reorganise toward collaborative incentives (auto-learning kicked in). This is already a finding for the paper.
+
+---
+
+#### Step 2: Build City Grid Infrastructure (NEXT — ~5 hours)
+
+The City Grid is a purpose-built benchmark task where 4 agents collaborate to design a city on a 10×10 grid. Different team configurations produce visually and quantitatively different cities. The visual output — five city grids side by side — is the hero image of Paper 6.
+
+**Task overview:** Agents receive a 10×10 empty grid and 8 building types (Residential, Commercial, Industrial, Park, Road, Hospital, School, Empty). They must design a functional city with connected roads, logical zoning, and diverse infrastructure. Quality is scored across 5 automated dimensions on a 0-100 scale. Aggregate = harmonic mean (penalises any dimension near zero).
+
+| Sub-step | What | Detail | File |
+|----------|------|--------|------|
+| 22-2a | Grid data model | `CityGrid` class: 10×10 array, `BuildingType` enum (R, C, I, P, ., H, S, _), placement validation (building must be adjacent to road), `to_string()` / `from_string()` parsing. | `agentciv/benchmark/city_grid.py` |
+| 22-2b | Scoring: Coverage | `score_coverage(grid) → float` — (used cells / 100) × 100. Simple but foundational. | `agentciv/benchmark/city_scorer.py` |
+| 22-2c | Scoring: Accessibility | `score_accessibility(grid) → float` — BFS from any road cell. (reachable buildings / total buildings) × 100. Tests whether road network actually connects everything. | `agentciv/benchmark/city_scorer.py` |
+| 22-2d | Scoring: Zoning Logic | `score_zoning(grid) → float` — adjacency rules. Good: residential↔park (+3), residential↔school (+2), commercial↔road (+2), industrial↔industrial (+1). Bad: residential↔industrial (−3), hospital↔industrial (−2). Sum of adjacency scores, normalised to 0-100. | `agentciv/benchmark/city_scorer.py` |
+| 22-2e | Scoring: Diversity | `score_diversity(grid) → float` — Shannon entropy of building type distribution, normalised against max possible entropy. A city of only houses → low. Balanced mix → high. | `agentciv/benchmark/city_scorer.py` |
+| 22-2f | Scoring: Connectivity | `score_connectivity(grid) → float` — road network coherence. Components: number of connected road components (1 = best), dead-end ratio, average shortest path between buildings. Weighted combination, normalised 0-100. | `agentciv/benchmark/city_scorer.py` |
+| 22-2g | Aggregate scorer | `score_city(grid) → CityScore` — runs all 5 scorers, computes harmonic mean. Returns dataclass with individual + aggregate scores. | `agentciv/benchmark/city_scorer.py` |
+| 22-2h | Grid renderer: ASCII | `render_ascii(grid) → str` — colour-coded terminal output. Each building type has a colour. Shows grid with row/column labels. For terminal display and quick validation. | `agentciv/benchmark/city_renderer.py` |
+| 22-2i | Grid renderer: PNG | `render_png(grid, path)` — colour PNG image. Each cell as a coloured square with building type label. For the paper. Uses `pillow` or `matplotlib`. | `agentciv/benchmark/city_renderer.py` |
+| 22-2j | Agent contribution tracker | Track which agent placed/modified each cell. Stored as a parallel 10×10 grid of agent IDs. Saved per tick. Enables heatmap rendering. | `agentciv/benchmark/city_grid.py` |
+| 22-2k | Contribution heatmap renderer | `render_heatmap(contribution_grid, agents) → PNG` — each cell coloured by which agent placed it. Visualises work distribution. Gini coefficient as an image. | `agentciv/benchmark/city_renderer.py` |
+| 22-2l | Temporal grid snapshots | Save grid state + contribution state at every tick. Enables frame-by-frame animation of how each team built their city. Extends existing `TickSnapshot`. | `agentciv/benchmark/city_grid.py` |
+| 22-2m | Task definition | `BenchmarkTask` entry for city-grid. Task prompt includes: grid spec (10×10), building types with descriptions, placement rules (roads connect, buildings adjacent to roads, zoning guidelines), goal (maximise all 5 scoring dimensions). Verification script calls `score_city()`. | `agentciv/benchmark/tasks.py` |
+| 22-2n | Task prompt design | The prompt agents receive. Must be clear enough that agents understand the grid format, building types, placement rules, and quality goals. Must NOT prescribe a strategy — the strategy should emerge from the org structure. Include example of a small 3×3 grid to show format. | Part of task definition |
+| 22-2o | Radar chart generator | `render_radar(scores_by_preset) → PNG` — 5-axis radar chart overlaying all preset profiles. Shows at a glance which presets excel at what. For the paper. | `agentciv/benchmark/city_renderer.py` |
+| 22-2p | Integration test | Run city-grid task with 1 preset (collaborative), 1 run, 4 agents, ~10 ticks. Verify: grid is produced, parseable, scoreable, all renderers work, data saves to JSON, temporal snapshots captured. | Manual validation |
+
+**Success criteria for Step 2:** A single run produces a valid city grid, all 5 scoring dimensions return sensible values, ASCII and PNG renderers produce output, contribution heatmap shows which agent built what, temporal snapshots capture grid state per tick.
+
+---
+
+#### Step 3: Run City Grid Experiment (~$50-70, automated)
+
+| Sub-step | What | Detail |
+|----------|------|--------|
+| 22-3a | Team runs | `agentciv test-tasks --tasks city-grid --presets collaborative,competitive,meritocratic,auto,hierarchical --runs 3 --agents 4 --max-ticks 15 --output benchmark_results/city_grid` — 15 runs total. |
+| 22-3b | Single-agent baseline | `agentciv test-tasks --tasks city-grid --presets collaborative --runs 3 --agents 1 --max-ticks 15 --output benchmark_results/city_grid` — 3 runs. |
+| 22-3c | Verify all data saved | Check `benchmark_results/city_grid/runs/` for 18 JSON files. Each must contain: grid output, 5 dimension scores, aggregate score, full chronicle (messages, reasoning, relationships), per-tick grid snapshots, contribution grid. |
+| 22-3d | Quick sanity check | Spot-check: are grids genuinely different? Do scores vary? Any failed/empty runs? |
+
+**Total: 18 runs. Estimated cost: $50-70. Automated — one command per batch.**
+
+**Commands (exact, copy-paste ready):**
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Team runs: 5 presets × 3 runs = 15 runs
+agentciv test-tasks \
+  --tasks city-grid \
+  --presets collaborative,competitive,meritocratic,auto,hierarchical \
+  --runs 3 \
+  --agents 4 \
+  --max-ticks 15 \
+  --output benchmark_results/city_grid
+
+# Single-agent baseline: 3 runs
+agentciv test-tasks \
+  --tasks city-grid \
+  --presets collaborative \
+  --runs 3 \
+  --agents 1 \
+  --max-ticks 15 \
+  --output benchmark_results/city_grid
+```
+
+---
+
+#### Step 4: Analysis + Figures (~2 hours)
+
+| Sub-step | What | Detail |
+|----------|------|--------|
+| 22-4a | Score all cities | Run `score_city()` on all 18 grid outputs. Populate scores into comparison data structure. |
+| 22-4b | Preset × dimension table | Table with 5 presets as rows, 5 dimensions + aggregate as columns. Mean ± std across 3 runs. |
+| 22-4c | Statistical significance | Kruskal-Wallis H-test across presets for each dimension and aggregate. Mann-Whitney U for all pairwise comparisons. Cohen's d effect sizes. All pre-registered in `methodology.md`. |
+| 22-4d | Hero image: 5 grids | Render the best run from each preset as a colour PNG. Place side by side. This is the paper's centrepiece. |
+| 22-4e | Temporal animations | Render per-tick grid states as frame sequences (or animated GIF). One animation per preset. Shows HOW each team built their city — the process made visible. |
+| 22-4f | Contribution heatmaps | Render 5 heatmaps (one per preset). Shows which agent built what. Immediately visualises work distribution — competitive shows quadrants, collaborative shows interleaving, hierarchical shows planner/executor split. |
+| 22-4g | Radar charts | 5-axis radar chart overlaying all preset quality profiles. Shows at a glance which presets excel at which dimensions. |
+| 22-4h | Communication network graphs | Per-preset network visualisation (from existing analysis layer). Hub-spoke ratios, density, betweenness centrality. |
+| 22-4i | Process comparison table | Table: preset × process metrics (messages, broadcasts, conflicts, Gini, communication efficiency). |
+| 22-4j | Hypothesis verification | Check all 10 hypotheses (H1-H10 in PAPER_PLAN.md) against actual data. Record which held, which surprised. |
+| 22-4k | LaTeX export | Export all tables in LaTeX format. Export all figures at publication resolution. |
+| 22-4l | Appendix: smoke test data | Include fizzbuzz + calculator smoke test results showing process differences on binary tasks. |
+
+---
+
+#### Step 5: Write Paper (~4-6 hours)
+
+| Sub-step | What | Detail |
+|----------|------|--------|
+| 22-5a | Abstract + Introduction | The gap, our approach, preview of findings. ~2 pages. |
+| 22-5b | Task Selection Problem | The 4-property framework. Why most benchmarks fail. Table of rejected tasks. Why City Grid. ~1.5 pages. This section is a methodological contribution on its own. |
+| 22-5c | Engine description | 9 dimensions, enforcement, agent architecture. ~1.5 pages. |
+| 22-5d | Experimental design | Task spec, presets, controls, run matrix. ~1.5 pages. |
+| 22-5e | Results: visual evidence | Five grids, animations, heatmaps. The hero section. ~1 page. |
+| 22-5f | Results: quantitative | Scores, radar charts, statistical tests. ~2 pages. |
+| 22-5g | Results: process + emergence | Network graphs, communication patterns, role emergence, auto-mode behaviour. ~1.5 pages. |
+| 22-5h | Discussion | Core finding, configuration recommendations, implications (AI engineering, org theory, safety, science). ~2 pages. |
+| 22-5i | Limitations + Future Work | Honest framing. SWE-bench as future ecological validity. Recursive loop. ~1 page. |
+| 22-5j | Polish + Bitcoin timestamp | Final pass, proofread, commit, Bitcoin-stamp. |
+
+**Full structure:** `docs/PAPER_PLAN.md` Section 6.
+
+---
+
+#### Metrics Framework (3 tiers)
+
+- **Tier 1 — Outcome (minimum publishable):** 5 city dimension scores, aggregate harmonic mean, grid completeness, ticks used, tokens used, baseline comparison.
+- **Tier 2 — Process (strong paper):** Communication volume/graph density/hub-spoke ratio, Gini coefficient + contribution heatmap, merge conflicts, parallel utilisation, coordination overhead, communication efficiency (quality / messages).
+- **Tier 3 — Emergence (outstanding paper):** Role emergence (agent specialisation patterns), auto-mode restructure log, phase transitions, temporal trust evolution, per-tick grid evolution, predictive validity (can tick-5 grid predict final score?), superadditivity ratio.
+
+#### Auto Mode Learning Flywheel
+
+Every run feeds the learning system. Run → data → insights → better auto-mode starts → better runs. By the end of the experiment, `auto` will have accumulated history for this specific task type. If auto improves across its 3 runs, that's evidence of learning — a finding in itself.
+
+---
+
+### Phase 23: Go Public — MOSTLY DONE
 
 **Goal:** Everything goes live. First public impression = best version.
 
-| Step | What | Detail |
+| Step | What | Status |
 |------|------|--------|
-| 23a | Make GitHub repo public | No secrets, no embarrassing TODOs, clean history. |
-| 23b | PyPI publish | `pip install agentciv-engine` works for anyone. |
-| 23c | Website live | agentciv.ai with all four wings. |
-| 23d | Contributing guide | Add presets (YAML), dimensions, mechanisms. |
-| 23e | Examples directory | Polished examples with READMEs showing different org structures. |
+| 23a | Make GitHub repo public | DONE — all 3 repos public on wonderben-code. |
+| 23b | PyPI publish | DONE — v0.1.1 on PyPI. Tested in clean venv. |
+| 23c | Website live | DONE — agentciv.ai on Netlify. All four wings. |
+| 23d | Contributing guide | TODO — add presets (YAML), dimensions, mechanisms. |
+| 23e | Examples directory | TODO — polished examples with READMEs showing different org structures. |
 
 ---
 
@@ -586,6 +627,93 @@ Each layer must be clearly visible. Nobody should hit Layer 1 and think "that's 
 
 ---
 
+### Phase 36b: Paper 7 — The Recursive Configuration Loop (emergent-meta)
+
+**Goal:** Connect the Simulation and Engine input-output spaces to create a self-improving configuration loop WITH NO DIRECTING INTELLIGENCE. This is the emergent mirror of Creator Mode (Paper 5, directed-meta). Paper 7 in the series.
+
+**Core insight:** The Simulation takes a civilisation config as input and produces emergent behaviour as output. The Engine takes a team config as input and produces task output. Both configs answer the same question: "how should agents be organised?" Their ontologies overlap. Connect the I/O spaces and a refinement loop forms — configurations improve without anyone directing the improvement. It's structurally inevitable, not designed.
+
+**Distinction from Creator Mode:** Creator Mode (Paper 5) has an architect — a meta-agent with a strategy, reasoning about what to try next. Remove the Creator and the search stops. The recursive loop has NO architect. No strategy. No reasoning about what to try next. Improvement falls out of the structural coupling. Creator Mode = a scientist running experiments. Recursive Loop = evolution.
+
+**Full concept document:** `/Users/ekramalam/agentciv-creator/agentciv_expansion_projects.md` Section 2.
+
+| Step | What | Detail |
+|------|------|--------|
+| 36b-a | Ontology mapping | Define the explicit parameter mapping between Engine org config (9 dimensions) and Simulation civ config. What flows from Engine output → Simulation input? What flows from Simulation output → Engine input? The mapping design IS the research contribution — if it's natural (not forced), that's evidence of genuine structural coupling. |
+| 36b-b | Engine→Simulation connector | Formatter that takes an Engine team's output (a designed civ config) and converts it to valid Simulation input. The Engine team's task: "design a civilisation configuration that will produce maximal emergence." Their output becomes the next Simulation run's config. |
+| 36b-c | Simulation→Engine connector | Formatter that takes Simulation output (emergence metrics, observed dynamics, communication patterns, governance outcomes) and converts it to a valid Engine task brief: "given these simulation results, design a better team configuration for designing civilisations." |
+| 36b-d | Cycle harness | A harness that runs N cycles: Engine team designs civ → Simulation runs civ → results fed back to Engine team → new design → repeat. Tracks how configs and outcomes change across cycles. Detects convergence, oscillation, or divergence. |
+| 36b-e | Improvement metrics | How to measure whether configs are actually improving: use City Grid scores (from Paper 6) as the quantitative backbone. Each cycle, measure the quality of what the loop produces. If scores trend upward, the loop is working. |
+| 36b-f | Run experiment | Run N cycles (target: 5-10 cycles minimum). Measure: config drift (how much do configs change per cycle?), outcome improvement (do scores increase?), novelty (does the loop find configs Creator Mode wouldn't?). |
+| 36b-g | Comparison with Creator Mode | Run Creator Mode on the same task for the same number of cycles. Compare: which finds better configs? Which finds MORE DIFFERENT configs? Which finds configs the other wouldn't? If they produce non-overlapping discoveries, the complementarity claim is proven. |
+| 36b-h | Write Paper 7 | Title: "Self-Organising Configuration Space: Emergent Meta-Improvement in Coupled CMI Systems." Core claim: when two CMI tools share an ontology, connecting their I/O spaces creates a recursive dynamic that improves configs without any directing intelligence — distinct from and complementary to Creator Mode. |
+| 36b-i | Bitcoin timestamp | Commit paper + all data. Provenance established. |
+
+**Open questions (empirical):**
+1. Does the loop converge? It might oscillate, diverge, or plateau.
+2. How many cycles before measurable improvement? If 3-5 → powerful demo. If 50 → too expensive for v1.
+3. Does it find configs Creator Mode doesn't? This is the key complementarity test.
+
+**Dependencies:** Requires both the Simulation (agent-civilisation repo) and the Engine (agentciv-engine repo) to be stable. Creator Mode build (Phase 32) should be done first for comparison.
+
+---
+
+### Phase 36c: Paper 8 — Scale-Invariant Duality (theoretical capstone)
+
+**Goal:** Observe and articulate the structural property that Papers 5 and 7 together reveal: the directed/emergent duality from CMI (Paper 4) reappears at every level of abstraction. This self-similarity is evidence that the duality is intrinsic to collective intelligence itself, not an artefact of implementation. Paper 8 in the series.
+
+**The observation:**
+
+```
+Object level (Paper 4 — inside a single run):
+  Directed  = agents pointed at a task, producing specified outputs
+  Emergent  = agents producing unspecified behaviour from dynamics
+
+Meta level (Papers 5 + 7 — designing configurations):
+  Directed  = Creator Mode — intentional search of config space (Paper 5)
+  Emergent  = Recursive Loop — configs improve without a director (Paper 7)
+
+Meta-meta level (Papers 5 + 7 interacting):
+  Directed  = intentionally orchestrating Creator + Loop together
+  Emergent  = Creator and Loop influencing each other naturally
+```
+
+Same duality. Every level. Not coincidence — structural invariant.
+
+**Analogy:** Seeing a pattern at one zoom level could be coincidence. Seeing it at every zoom level is a fractal. Paper 8 says CMI has a fractal property — the directed/emergent distinction is self-similar across levels of abstraction. This is a signature of fundamental structure, not incidental design.
+
+| Step | What | Detail |
+|------|------|--------|
+| 36c-a | Theoretical framework | Formalise the three levels. Define "directed-meta" and "emergent-meta" precisely. Show how each level reproduces the same duality. |
+| 36c-b | Empirical illustrations | Use data from Papers 5 (Creator Mode runs) and 7 (Recursive Loop runs) to illustrate each level. Show that Creator and Loop produce different types of discoveries, confirming they are genuinely distinct mechanisms. |
+| 36c-c | Third-level evidence | Attempt to demonstrate the duality at the meta-meta level: run Creator Mode and the Recursive Loop in combination, show the interaction itself exhibits directed/emergent dynamics. Frame as a testable prediction if full empirical evidence is hard to achieve at v1 scale. |
+| 36c-d | Connections to existing theory | Self-similar structures (fractals), scale invariance in physics, co-evolution in biology. Position the finding within the broader landscape of self-similar phenomena. |
+| 36c-e | Write Paper 8 | Title: "Scale-Invariant Duality in Collective Machine Intelligence: The Directed-Emergent Distinction as Structural Invariant." Primarily theoretical with empirical illustrations. The third level framed as a prediction/conjecture — testable, and more powerful as a prediction than as a forced demonstration. |
+| 36c-f | Bitcoin timestamp | Commit paper. Provenance established. |
+
+**This paper does NOT introduce a new mechanism.** It steps back and observes what Papers 5 and 7 together reveal. It's the capstone of the series — the claim that elevates CMI from "a useful framework" to "something fundamental about collective intelligence."
+
+**Dependencies:** Papers 5 (empirical) and 7 (empirical) should both exist with data before this paper can be written at full strength. Can be drafted earlier from theory alone.
+
+---
+
+### Full Paper Series (updated)
+
+| Paper | Title | Type | Status |
+|-------|-------|------|--------|
+| 1 | From Agent Teams to Agent Civilisations | Vision / theoretical | Published |
+| 2 | Civilisation as Innovation Engine | Conceptual argument | Published |
+| 3 | Maslow Machines | Empirical (simulation) | Published |
+| 4 | Collective Machine Intelligence (CMI + COT) | Field definition | Published |
+| 5 | Creator Mode: AI as Civilisation Designer | Meta-mechanism (directed) | Paper written, build Phases 32-36 |
+| **6** | **Same City, Different Architects** | **Empirical validation** | **Phase 22 — NEXT** |
+| **7** | **Recursive Configuration Loop** | **Meta-mechanism (emergent)** | **Phase 36b — after Creator Mode build** |
+| **8** | **Scale-Invariant Duality** | **Theoretical capstone** | **Phase 36c — after Papers 5+7 empirical** |
+
+Papers 1-3 identify the phenomenon. Paper 4 defines the field. Paper 6 proves configuration variance empirically. Papers 5 and 7 are the two meta-level mechanisms (directed and emergent). Paper 8 observes the structural pattern that 5 and 7 together reveal. That's a complete intellectual arc.
+
+---
+
 ## ERA 4: LAUNCH & OUTREACH
 
 *Everything is built. Now make it perfect, package it, and share it with the world.*
@@ -643,13 +771,16 @@ Each layer must be clearly visible. Nobody should hit Layer 1 and think "that's 
 ```
 ERA 1: LAUNCH ✓ (mostly complete)
 ═══════════════════════════════════════════════════════════════════════════════
-Phase 19 ✓  Phase 20 ✓  Phase 21 ✓  Phase 22     Phase 23
-Battle-     Paper 5     Website     Benchmarks   Go Public
-Test        (concept)   4 Wings     (NEXT)       (PyPI)
-                        ├ Science
-                        ├ Simulation
-                        ├ Engine
-                        └ Creator Mode
+Phase 19 ✓  Phase 20 ✓  Phase 21 ✓  Phase 22        Phase 23
+Battle-     Paper 5     Website     CITY GRID       Go Public
+Test        (concept)   4 Wings     EXPERIMENT      (PyPI)
+                        ├ Science   (Paper 6)
+                        ├ Simulation├ Build grid     ├ Contributing
+                        ├ Engine      infrastructure ├ Examples
+                        └ Creator   ├ Run 5 presets
+                          Mode      ├ Score + analyse
+                                    ├ Generate figures
+                                    └ Write paper
 
 ERA 2: THE SIMULATION EXPERIENCE
 ═══════════════════════════════════════════════════════════════════════════════
@@ -666,7 +797,7 @@ Install        Customisation   Terminal       Chronicler      Mode       + Commu
                  templates                      interview
                └ Validation
 
-ERA 3: CREATOR MODE
+ERA 3: CREATOR MODE + META-PAPERS
 ═══════════════════════════════════════════════════════════════════════════════
 Phase 32        Phase 33        Phase 34          Phase 35         Phase 36
 Build Meta-     Task Search     Emergence         Full Website     Paper 5
@@ -676,6 +807,21 @@ Agent                           Explorer          Wing             Empirical
 ├ Analyse       ├ Evaluate      ├ Novelty         ├ Discoveries    ├ Timestamp
 ├ Learn         ├ Refine          detect          └ Space map      └ Submit
 └ CLI           └ Recommend     └ Catalogue
+
+Phase 36b                      Phase 36c
+RECURSIVE LOOP                 SCALE INVARIANCE
+(Paper 7)                      (Paper 8)
+├ Ontology mapping             ├ Theoretical framework
+├ Engine→Sim connector         ├ Empirical illustrations
+├ Sim→Engine connector         ├ Third-level evidence
+├ Cycle harness                ├ Connections to theory
+├ Run N cycles                 └ Write capstone paper
+├ Compare with Creator
+└ Write paper
+
+PAPER SERIES:
+  1 ✓ Vision → 2 ✓ Concept → 3 ✓ Empirical → 4 ✓ Field Definition
+  → 5 (concept ✓, build ERA 3) → 6 (NEXT) → 7 (after Creator) → 8 (capstone)
 
 ERA 4: LAUNCH & OUTREACH
 ═══════════════════════════════════════════════════════════════════════════════
