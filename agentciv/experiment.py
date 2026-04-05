@@ -217,6 +217,13 @@ async def run_single(
     await engine.run()
     report = engine.chronicle.generate_report()
 
+    # Inject per-agent token consumption (Step 0a)
+    initial_budget = config.parameters.token_budget_per_agent
+    report.tokens_per_agent = {
+        a.state.identity.id: max(0, initial_budget - a.state.token_budget_remaining)
+        for a in agents
+    }
+
     # Save to learning history
     try:
         save_run(

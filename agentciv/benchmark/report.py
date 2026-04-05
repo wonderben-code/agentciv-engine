@@ -51,10 +51,10 @@ class BenchmarkResult:
             header = (
                 f"  {'Preset':20s} {'Complete':>9s} {'Ticks':>8s} "
                 f"{'Files':>7s} {'Tests':>8s} {'Comms':>7s} "
-                f"{'Conflicts':>10s} {'Special.':>9s}"
+                f"{'Conflicts':>10s} {'Special.':>9s} {'Tokens':>10s}"
             )
             lines.append(header)
-            lines.append(f"  {'─' * 70}")
+            lines.append(f"  {'─' * 80}")
 
             for preset in self.presets:
                 key = (task_id, preset)
@@ -71,7 +71,8 @@ class BenchmarkResult:
                     f"{self._fmt_stat(agg.test_pass_rate):>8s} "
                     f"{self._fmt_stat(agg.communication_volume):>7s} "
                     f"{self._fmt_stat(agg.merge_conflicts):>10s} "
-                    f"{self._fmt_stat(agg.emergent_specialisation):>9s}"
+                    f"{self._fmt_stat(agg.emergent_specialisation):>9s} "
+                    f"{self._fmt_stat_int(agg.total_tokens):>10s}"
                 )
 
             lines.append("")
@@ -139,6 +140,8 @@ class BenchmarkResult:
                         "merge_conflicts": r.metrics.merge_conflicts,
                         "emergent_specialisation": round(r.metrics.emergent_specialisation, 3),
                         "file_completeness": r.metrics.file_completeness,
+                        "total_tokens": r.metrics.total_tokens,
+                        "tokens_per_agent": r.metrics.tokens_per_agent,
                     } if r.success else None,
                     "report": r.report.to_dict() if r.success else None,
                 }
@@ -182,6 +185,13 @@ class BenchmarkResult:
         if stat.std > 0.005:
             return f"{stat.mean:.2f}\u00b1{stat.std:.2f}"
         return f"{stat.mean:.2f}"
+
+    @staticmethod
+    def _fmt_stat_int(stat: StatSummary) -> str:
+        """Format a stat as integer mean +/- std (for tokens, counts)."""
+        if stat.std > 0.5:
+            return f"{stat.mean:.0f}\u00b1{stat.std:.0f}"
+        return f"{stat.mean:.0f}"
 
     @staticmethod
     def _fmt_time(seconds: float) -> str:

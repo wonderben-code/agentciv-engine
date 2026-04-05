@@ -35,6 +35,44 @@ class AgentContribution:
 
 
 @dataclass
+class TickSnapshot:
+    """Per-tick metric snapshot for temporal analysis (Tier 3).
+
+    Captured at the end of every tick. Enables phase transition detection,
+    convergence speed analysis, and predictive models (can tick-10 predict outcome?).
+    """
+    tick: int
+    files_created_cumulative: int = 0
+    files_modified_cumulative: int = 0
+    messages_cumulative: int = 0
+    broadcasts_cumulative: int = 0
+    merge_conflicts_cumulative: int = 0
+    merges_succeeded_cumulative: int = 0
+    active_agents: int = 0  # agents that took non-idle actions this tick
+    # Per-agent file ops this tick (for computing running Gini)
+    agent_file_ops: dict[str, int] = field(default_factory=dict)
+
+
+@dataclass
+class ConflictRecord:
+    """Tracks a single merge conflict from detection to resolution (Step 0c).
+
+    Resolution is detected when the same file is successfully merged in a later tick.
+    Delta (resolved_tick - detected_tick) = conflict resolution time.
+    """
+    file: str
+    agent_id: str
+    detected_tick: int
+    resolved_tick: int | None = None
+
+    @property
+    def resolution_time(self) -> int | None:
+        if self.resolved_tick is not None:
+            return self.resolved_tick - self.detected_tick
+        return None
+
+
+@dataclass
 class TimelineEntry:
     """A notable moment in the run."""
     tick: int
@@ -83,6 +121,11 @@ class ChronicleReport:
 
     # Timeline — key moments
     timeline: list[TimelineEntry] = field(default_factory=list)
+
+    # Benchmark additions
+    tick_snapshots: list[TickSnapshot] = field(default_factory=list)
+    conflict_records: list[ConflictRecord] = field(default_factory=list)
+    tokens_per_agent: dict[str, int] = field(default_factory=dict)  # injected post-run
 
     def to_terminal(self) -> str:
         """Render a clean terminal summary."""
@@ -209,6 +252,31 @@ class ChronicleReport:
                 }
                 for e in self.timeline
             ],
+            "tick_snapshots": [
+                {
+                    "tick": s.tick,
+                    "files_created": s.files_created_cumulative,
+                    "files_modified": s.files_modified_cumulative,
+                    "messages": s.messages_cumulative,
+                    "broadcasts": s.broadcasts_cumulative,
+                    "merge_conflicts": s.merge_conflicts_cumulative,
+                    "merges_succeeded": s.merges_succeeded_cumulative,
+                    "active_agents": s.active_agents,
+                    "agent_file_ops": s.agent_file_ops,
+                }
+                for s in self.tick_snapshots
+            ],
+            "conflict_records": [
+                {
+                    "file": c.file,
+                    "agent_id": c.agent_id,
+                    "detected_tick": c.detected_tick,
+                    "resolved_tick": c.resolved_tick,
+                    "resolution_time": c.resolution_time,
+                }
+                for c in self.conflict_records
+            ],
+            "tokens_per_agent": self.tokens_per_agent,
         }
 
 
@@ -249,11 +317,25 @@ class Chronicle:
         self._total_broadcasts: int = 0
         self._last_tick: int = 0
 
+        # Benchmark: per-tick snapshots (Step 0b)
+        self._tick_snapshots: list[TickSnapshot] = []
+        self._tick_active_agents: set[str] = set()  # reset each tick
+        self._tick_agent_file_ops: dict[str, int] = defaultdict(int)  # reset each tick
+
+        # Benchmark: conflict resolution timing (Step 0c)
+        self._conflict_records: list[ConflictRecord] = []
+        self._unresolved_conflicts: dict[str, ConflictRecord] = {}  # file → record
+
     def observe(self, event: Event) -> None:
         """Event handler — called for every event via event_bus.subscribe."""
         self._last_tick = max(self._last_tick, event.tick)
 
         match event.type:
+            case EventType.TICK_START:
+                # Reset per-tick trackers
+                self._tick_active_agents.clear()
+                self._tick_agent_file_ops.clear()
+
             case EventType.FILE_CREATED:
                 f = event.data.get("file", "?")
                 self._files_created.append(f)
@@ -261,6 +343,9 @@ class Chronicle:
                 agent = self._get_agent(event.agent_id)
                 if agent:
                     agent.files_created.append(f)
+                if event.agent_id:
+                    self._tick_active_agents.add(event.agent_id)
+                    self._tick_agent_file_ops[event.agent_id] += 1
                 self._add_timeline(event, f"created {f}")
 
             case EventType.FILE_MODIFIED:
@@ -270,16 +355,23 @@ class Chronicle:
                 if agent:
                     if f not in agent.files_modified:
                         agent.files_modified.append(f)
+                if event.agent_id:
+                    self._tick_active_agents.add(event.agent_id)
+                    self._tick_agent_file_ops[event.agent_id] += 1
 
             case EventType.MESSAGE_SENT:
                 self._total_messages += 1
                 agent = self._get_agent(event.agent_id)
                 if agent:
                     agent.messages_sent += 1
+                if event.agent_id:
+                    self._tick_active_agents.add(event.agent_id)
                 targets = event.data.get("targets", [])
                 for t in targets:
                     if t and event.agent_id:
-                        key = f"{event.agent_id} → {t}"
+                        sender = self._agent_names.get(event.agent_id, event.agent_id)
+                        target = self._agent_names.get(t, t)
+                        key = f"{sender} → {target}"
                         self._comm_pairs[key] += 1
 
             case EventType.BROADCAST_SENT:
@@ -287,18 +379,24 @@ class Chronicle:
                 agent = self._get_agent(event.agent_id)
                 if agent:
                     agent.broadcasts_sent += 1
+                if event.agent_id:
+                    self._tick_active_agents.add(event.agent_id)
 
             case EventType.TASK_CLAIMED:
                 preview = event.data.get("content_preview", "")
                 agent = self._get_agent(event.agent_id)
                 if agent and preview:
                     agent.tasks_claimed.append(preview[:80])
+                if event.agent_id:
+                    self._tick_active_agents.add(event.agent_id)
                 self._add_timeline(event, f"claimed: {preview[:60]}")
 
             case EventType.REVIEW_REQUESTED:
                 agent = self._get_agent(event.agent_id)
                 if agent:
                     agent.reviews_requested += 1
+                if event.agent_id:
+                    self._tick_active_agents.add(event.agent_id)
 
             case EventType.BRANCH_MERGED:
                 self._merges_succeeded += 1
@@ -306,8 +404,16 @@ class Chronicle:
                 agent = self._get_agent(event.agent_id)
                 if agent:
                     agent.merges_succeeded += 1
+                if event.agent_id:
+                    self._tick_active_agents.add(event.agent_id)
                 if count > 2:
                     self._add_timeline(event, f"merged {count} files")
+                # Check if this resolves any previously conflicted files
+                merged_files = event.data.get("files", [])
+                for f in merged_files:
+                    if f in self._unresolved_conflicts:
+                        self._unresolved_conflicts[f].resolved_tick = event.tick
+                        del self._unresolved_conflicts[f]
 
             case EventType.MERGE_CONFLICT:
                 self._merge_conflicts += 1
@@ -315,6 +421,15 @@ class Chronicle:
                 agent = self._get_agent(event.agent_id)
                 if agent:
                     agent.merge_conflicts += 1
+                # Track conflict timing (Step 0c)
+                for f in conflicts:
+                    record = ConflictRecord(
+                        file=f,
+                        agent_id=event.agent_id or "",
+                        detected_tick=event.tick,
+                    )
+                    self._conflict_records.append(record)
+                    self._unresolved_conflicts[f] = record
                 self._add_timeline(
                     event, f"CONFLICT: {', '.join(conflicts)}"
                 )
@@ -356,6 +471,21 @@ class Chronicle:
                 self._build_status = "failing"
                 self._add_timeline(event, "build failed")
 
+            case EventType.TICK_END:
+                # Capture per-tick metric snapshot (Step 0b)
+                snapshot = TickSnapshot(
+                    tick=event.tick,
+                    files_created_cumulative=len(self._files_created),
+                    files_modified_cumulative=self._total_modifications,
+                    messages_cumulative=self._total_messages,
+                    broadcasts_cumulative=self._total_broadcasts,
+                    merge_conflicts_cumulative=self._merge_conflicts,
+                    merges_succeeded_cumulative=self._merges_succeeded,
+                    active_agents=len(self._tick_active_agents),
+                    agent_file_ops=dict(self._tick_agent_file_ops),
+                )
+                self._tick_snapshots.append(snapshot)
+
             case EventType.ENGINE_STARTED:
                 agents = event.data.get("agents", "?")
                 org = event.data.get("config", "?")
@@ -387,6 +517,8 @@ class Chronicle:
             final_build_status=self._build_status,
             final_test_status=self._test_status,
             timeline=self._timeline,
+            tick_snapshots=self._tick_snapshots,
+            conflict_records=self._conflict_records,
         )
 
     # --- Private helpers ---
@@ -402,9 +534,10 @@ class Chronicle:
 
     def _add_timeline(self, event: Event, summary: str) -> None:
         """Add a notable moment to the timeline."""
+        agent_display = self._agent_names.get(event.agent_id, event.agent_id) if event.agent_id else None
         self._timeline.append(TimelineEntry(
             tick=event.tick,
             event_type=event.type.name,
-            agent=event.agent_id,
+            agent=agent_display,
             summary=summary,
         ))

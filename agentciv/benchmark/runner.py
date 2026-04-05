@@ -17,6 +17,7 @@ from typing import Any
 
 from ..chronicle.observer import ChronicleReport
 from ..experiment import run_single
+from .analysis import analyse_run, RunAnalysis
 from .metrics import (
     AggregatedMetrics,
     RunMetrics,
@@ -60,6 +61,7 @@ class SingleRunResult:
     report: ChronicleReport
     verification: VerificationResult
     metrics: RunMetrics
+    analysis: RunAnalysis | None = None
     success: bool = True
     error: str | None = None
     wall_time_seconds: float = 0.0
@@ -134,6 +136,10 @@ async def run_benchmark(config: BenchmarkConfig) -> dict[str, Any]:
                     verbose=config.verbose,
                 )
                 runs.append(result)
+
+                # Auto-save per-run JSON (data survives even if process crashes)
+                if config.output_path and result.success:
+                    _save_run_json(result, config.output_path)
 
                 if result.success:
                     v = result.verification
@@ -212,8 +218,14 @@ async def _execute_single_run(
             # Run verification
             verification = _verify(task, project)
 
-            # Extract metrics
-            metrics = extract_metrics(report, verification, wall_time)
+            # Extract metrics (pass per-agent token data from chronicle)
+            metrics = extract_metrics(
+                report, verification, wall_time,
+                agent_tokens=report.tokens_per_agent or None,
+            )
+
+            # Run analysis (network + temporal)
+            run_analysis = analyse_run(report, metrics)
 
             return SingleRunResult(
                 task_id=task.id,
@@ -222,6 +234,7 @@ async def _execute_single_run(
                 report=report,
                 verification=verification,
                 metrics=metrics,
+                analysis=run_analysis,
                 wall_time_seconds=wall_time,
             )
 
@@ -347,3 +360,50 @@ def _dry_run_plan(
         "tasks": [t.id for t in tasks],
         "presets": presets,
     }
+
+
+def _save_run_json(result: SingleRunResult, output_dir: str) -> None:
+    """Auto-save a single run's data to the results directory.
+
+    Saves immediately after each run so data survives even if the process
+    crashes mid-benchmark. File naming: {task}_{preset}_run{index}.json
+    """
+    out = Path(output_dir)
+    runs_dir = out / "runs"
+    runs_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{result.task_id}_{result.preset}_run{result.run_index}.json"
+    filepath = runs_dir / filename
+
+    data = {
+        "task_id": result.task_id,
+        "preset": result.preset,
+        "run_index": result.run_index,
+        "success": result.success,
+        "wall_time_seconds": round(result.wall_time_seconds, 2),
+        "metrics": {
+            "completion_rate": result.metrics.completion_rate,
+            "ticks_used": result.metrics.ticks_used,
+            "files_produced": result.metrics.files_produced,
+            "test_pass_rate": result.metrics.test_pass_rate,
+            "communication_volume": result.metrics.communication_volume,
+            "merge_conflicts": result.metrics.merge_conflicts,
+            "emergent_specialisation": round(result.metrics.emergent_specialisation, 4),
+            "file_completeness": result.metrics.file_completeness,
+            "total_tokens": result.metrics.total_tokens,
+            "tokens_per_agent": result.metrics.tokens_per_agent,
+        },
+        "analysis": result.analysis.to_dict() if result.analysis else None,
+        "report": result.report.to_dict(),
+        "verification": {
+            "passed": result.verification.passed,
+            "tests_total": result.verification.tests_total,
+            "tests_passed": result.verification.tests_passed,
+        },
+    }
+
+    try:
+        with open(filepath, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        log.warning("Failed to save run JSON %s: %s", filename, e)

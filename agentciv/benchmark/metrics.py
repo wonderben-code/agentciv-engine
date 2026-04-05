@@ -40,6 +40,10 @@ class RunMetrics:
     merge_conflicts: int
     emergent_specialisation: float  # Gini coefficient of file operations
 
+    # Token metrics (Step 0a)
+    total_tokens: int = 0
+    tokens_per_agent: dict[str, int] = field(default_factory=dict)
+
     # Bonus metrics
     merges_succeeded: int = 0
     restructures_adopted: int = 0
@@ -79,6 +83,7 @@ class AggregatedMetrics:
     merge_conflicts: StatSummary
     emergent_specialisation: StatSummary
     file_completeness: StatSummary
+    total_tokens: StatSummary = field(default_factory=lambda: StatSummary(0.0, 0.0, 0.0, 0.0))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -93,6 +98,7 @@ class AggregatedMetrics:
             "merge_conflicts": self.merge_conflicts.to_dict(),
             "emergent_specialisation": self.emergent_specialisation.to_dict(),
             "file_completeness": self.file_completeness.to_dict(),
+            "total_tokens": self.total_tokens.to_dict(),
         }
 
 
@@ -100,8 +106,17 @@ def extract_metrics(
     report: ChronicleReport,
     verification: VerificationResult,
     wall_time: float = 0.0,
+    agent_tokens: dict[str, int] | None = None,
 ) -> RunMetrics:
-    """Extract structured metrics from a chronicle report + verification."""
+    """Extract structured metrics from a chronicle report + verification.
+
+    Args:
+        report: Chronicle report from the engine run.
+        verification: Results from running the task's verification script.
+        wall_time: Wall-clock time for the run in seconds.
+        agent_tokens: Per-agent token consumption {agent_id: tokens_consumed}.
+            Calculated as initial_budget - remaining for each agent.
+    """
     # File completeness (computed first — used in completion fallback)
     if verification.expected_files_total > 0:
         file_comp = verification.expected_files_present / verification.expected_files_total
@@ -125,6 +140,10 @@ def extract_metrics(
     # Emergent specialisation (Gini coefficient of file operations per agent)
     specialisation = _compute_specialisation(report)
 
+    # Token metrics
+    tokens = agent_tokens or {}
+    total_tokens = sum(tokens.values())
+
     return RunMetrics(
         completion_rate=completion,
         ticks_used=report.total_ticks,
@@ -133,6 +152,8 @@ def extract_metrics(
         communication_volume=comm_volume,
         merge_conflicts=report.merge_conflicts,
         emergent_specialisation=specialisation,
+        total_tokens=total_tokens,
+        tokens_per_agent=tokens,
         merges_succeeded=report.merges_succeeded,
         restructures_adopted=report.restructures_adopted,
         wall_time_seconds=wall_time,
@@ -219,4 +240,5 @@ def aggregate(
         merge_conflicts=_summarise([float(r.merge_conflicts) for r in runs]),
         emergent_specialisation=_summarise([r.emergent_specialisation for r in runs]),
         file_completeness=_summarise([r.file_completeness for r in runs]),
+        total_tokens=_summarise([float(r.total_tokens) for r in runs]),
     )
