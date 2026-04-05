@@ -1,29 +1,48 @@
 # AgentCiv Engine — Master Roadmap
 
-**Last updated:** 5 April 2026 (City Grid + Papers 7-8 expansion)
+**Last updated:** 5 April 2026 (Phase A-D restructure + Papers 6-8 expansion)
 **Author:** Ekram Alam & Claude
 
 ---
 
 ## Status Overview
 
-**22 phases completed. 17 remaining across four eras.**
+**22 phases completed. Four execution phases remaining, then three eras of platform + outreach.**
 
-The engine is built, tested, polished, and open-sourced. All 5 papers written and Bitcoin-stamped. Website deployed at agentciv.ai with all four wings. Three public repos. What remains: benchmarks, PyPI, platform features, Creator Mode, then a final website refresh and launch.
+The engine is built, tested, polished, and open-sourced. All 5 papers written and Bitcoin-stamped. Website deployed at agentciv.ai with all four wings. Three public repos. Pipeline validated with 4 real smoke test runs.
+
+**What's next:** Write Papers 7+8 (conceptual), run City Grid experiment (Paper 6 empirical), build Creator Mode + Recursive Loop v1s, website mega-update with all new material.
 
 ```
-ERA 1: LAUNCH (Phases 19–23)
-  Battle-test → Paper 5 → Website → City Grid Experiment (Paper 6) → Go Public
+PHASE A: WRITE — Papers 7+8 (NOW — $0, pure intellectual work)
+  Write Paper 7 (Recursive Configuration Loop — emergent-meta)
+  Write Paper 8 (Scale-Invariant Duality — theoretical capstone)
+  Bitcoin-timestamp both → provenance established before any builds
+
+PHASE B: PROVE — City Grid Experiment / Paper 6 (days, ~$50-70)
+  Build City Grid infrastructure (grid model, 5 scorers, renderers)
+  Run experiment (5 presets × 3 runs + baseline = 18 runs)
+  Second experiment: teams design civ configs (bridge to Paper 7)
+  Write Paper 6 with real data
+  Bitcoin-timestamp → first empirical evidence published
+
+PHASE C: BUILD — Creator Mode v1 + Recursive Loop v1 (weeks)
+  Build Creator Mode v1 (Paper 5 → empirical)
+  Build Recursive Loop v1 (Paper 7 → empirical)
+  Update Papers 5+7 with empirical results
+  Paper 8 gains empirical illustrations from both v1s
+
+PHASE D: PRESENT — Website + Outreach
+  Website mega-update: Paper 6 results, Creator Mode page update,
+  Recursive Loop page, Paper 8 interactive three-level page (crown jewel)
+  All repos cleaned, internal docs removed, final QC
+  Launch prep + outreach
 
 ERA 2: THE SIMULATION EXPERIENCE (Phases 26–31)
-  Package & Install → YAML Customisation → Rich Terminal → Live Chronicler → Gardener → Community
+  Package & Install → YAML Customisation → Rich Terminal → Live Chronicler
+  → Gardener → Community
 
-ERA 3: CREATOR MODE + META-PAPERS (Phases 32–36c)
-  Build Creator → Task Search → Emergence Explorer → Website Wing → Paper 5 Empirical
-  → Paper 7 (Recursive Loop) → Paper 8 (Scale Invariance Capstone)
-
-ERA 4: LAUNCH & OUTREACH (Phases 37–39)
-  Website Refresh + QC/QA → Launch Prep → Outreach
+(ERA 2 runs independently — platform features, not research)
 ```
 
 ---
@@ -146,9 +165,29 @@ agentciv.ai
 
 ---
 
-### Phase 22: The City Grid Experiment — Paper 6
+### Phase 22-pre: Write Papers 7 + 8 (PHASE A — NOW)
 
-**Goal:** The first controlled experiment proving that organisational structure produces measurably different outputs of measurably different quality in multi-agent AI. Visual, quantitative, and undeniable.
+**Goal:** Write the conceptual papers for the Recursive Configuration Loop (Paper 7) and Scale-Invariant Duality (Paper 8). Bitcoin-timestamp both BEFORE any builds. Same provenance logic as Paper 5.
+
+**Cost:** $0. Pure intellectual work.
+
+**Why first:** These papers define the claims. The builds (Phase C) demonstrate the claims. Timestamping the concepts before building anything is the entire provenance strategy — same as Paper 5 (written Phase 20, built Phases 32-36).
+
+| Step | What | Detail |
+|------|------|--------|
+| 22-pre-a | Write Paper 7 | "Self-Organising Configuration Space: Emergent Meta-Improvement in Coupled CMI Systems." The recursive loop concept: connect Engine + Simulation I/O spaces → configs improve without a directing intelligence. Distinct from Creator Mode (directed-meta vs emergent-meta). Core sections: the discovery, the loop mechanism, why it's not Creator Mode, what it produces differently, co-evolution connection, open questions. |
+| 22-pre-b | Write Paper 8 | "Scale-Invariant Duality in Collective Machine Intelligence." The observation that directed/emergent duality reappears at every level of abstraction. Three levels: object (Paper 4), meta (Papers 5+7), meta-meta (5+7 interacting). Self-similarity as evidence of fundamental structure. Primarily theoretical — empirical illustrations come later from Phase C builds. |
+| 22-pre-c | Bitcoin-timestamp both | Commit to `agentciv-creator` repo. Post-commit hook auto-stamps. Provenance established for both concepts before any implementation. |
+
+**Output:** Two concept papers, Bitcoin-timestamped, establishing intellectual claims for Papers 7 and 8. All future builds (Phase C) are demonstrations of these pre-established concepts.
+
+**Repo:** `agentciv-creator` (github.com/wonderben-code/agentciv-creator) — same repo as Paper 5.
+
+---
+
+### Phase 22: The City Grid Experiment — Paper 6 (PHASE B)
+
+**Goal:** The first controlled experiment proving that organisational structure produces measurably different outputs of measurably different quality in multi-agent AI. Visual, quantitative, and undeniable. TWO experiments: (1) City Grid design task, (2) Teams designing civilisation configurations.
 
 **Paper:** "Same City, Different Architects" — Paper 6 in the AgentCiv series. Full plan: `docs/PAPER_PLAN.md`
 
@@ -156,7 +195,9 @@ agentciv.ai
 
 **Why City Grid, not SWE-bench:** SWE-bench tasks are binary (pass/fail). If all teams solve the bug, you can't distinguish quality. The City Grid satisfies 4 critical properties simultaneously: (1) multiple valid outputs, (2) composition from parts requiring coordination, (3) continuous multi-dimensional scoring, (4) process visibly differs across configurations. No standard coding benchmark satisfies all four. Full analysis in `docs/PAPER_PLAN.md` Section 3.
 
-**Cost:** ~$50-70 API.
+**Second experiment — Teams Designing Civ Configs:** Different Engine teams are given the task: "Design a civilisation configuration for the AgentCiv Simulation that will produce maximal emergence." This satisfies all 4 properties (many valid configs, team must compose a coherent config, measurable via simulation emergence metrics, process visibly differs). It also directly bridges to Paper 7 — this experiment IS one step of the Recursive Loop, done once as a standalone demonstration. Strengthens Paper 6 (two experiments proving the thesis from different angles) and sets up Paper 7 naturally.
+
+**Cost:** ~$50-70 API (City Grid) + ~$20-30 (civ config experiment).
 
 **Pre-registration:** Methodology committed and Bitcoin-timestamped BEFORE any runs. DONE.
 
@@ -297,8 +338,9 @@ agentciv test-tasks \
 | 22-5e | Results: visual evidence | Five grids, animations, heatmaps. The hero section. ~1 page. |
 | 22-5f | Results: quantitative | Scores, radar charts, statistical tests. ~2 pages. |
 | 22-5g | Results: process + emergence | Network graphs, communication patterns, role emergence, auto-mode behaviour. ~1.5 pages. |
-| 22-5h | Discussion | Core finding, configuration recommendations, implications (AI engineering, org theory, safety, science). ~2 pages. |
-| 22-5i | Limitations + Future Work | Honest framing. SWE-bench as future ecological validity. Recursive loop. ~1 page. |
+| 22-5h | Extension: Teams as Civilisation Designers | Engine teams given task: "design a simulation config for maximal emergence." Different team structures produce different civ configs. Satisfies all 4 properties. Shows Engine works on meta-tasks, not just coding. Scored by running resulting configs in Simulation and measuring emergence. ~1 page. |
+| 22-5i | Discussion | Core finding, configuration recommendations, implications (AI engineering, org theory, safety, science). ~2 pages. |
+| 22-5j | Limitations + Future Work | Honest framing. SWE-bench as future ecological validity. Recursive loop. ~1 page. |
 | 22-5j | Polish + Bitcoin timestamp | Final pass, proofread, commit, Bitcoin-stamp. |
 
 **Full structure:** `docs/PAPER_PLAN.md` Section 6.
@@ -699,18 +741,18 @@ Same duality. Every level. Not coincidence — structural invariant.
 
 ### Full Paper Series (updated)
 
-| Paper | Title | Type | Status |
-|-------|-------|------|--------|
-| 1 | From Agent Teams to Agent Civilisations | Vision / theoretical | Published |
-| 2 | Civilisation as Innovation Engine | Conceptual argument | Published |
-| 3 | Maslow Machines | Empirical (simulation) | Published |
-| 4 | Collective Machine Intelligence (CMI + COT) | Field definition | Published |
-| 5 | Creator Mode: AI as Civilisation Designer | Meta-mechanism (directed) | Paper written, build Phases 32-36 |
-| **6** | **Same City, Different Architects** | **Empirical validation** | **Phase 22 — NEXT** |
-| **7** | **Recursive Configuration Loop** | **Meta-mechanism (emergent)** | **Phase 36b — after Creator Mode build** |
-| **8** | **Scale-Invariant Duality** | **Theoretical capstone** | **Phase 36c — after Papers 5+7 empirical** |
+| Paper | Title | Type | Concept | Build/Empirical |
+|-------|-------|------|---------|----------------|
+| 1 | From Agent Teams to Agent Civilisations | Vision / theoretical | Published | N/A |
+| 2 | Civilisation as Innovation Engine | Conceptual argument | Published | N/A |
+| 3 | Maslow Machines | Empirical (simulation) | Published | Published |
+| 4 | Collective Machine Intelligence (CMI + COT) | Field definition | Published | N/A |
+| 5 | Creator Mode: AI as Civilisation Designer | Meta-mechanism (directed) | Published | Phase C (build v1) |
+| **6** | **Same City, Different Architects** | **Empirical validation** | **Phase B plan done** | **Phase B (experiment — NEXT)** |
+| **7** | **Recursive Configuration Loop** | **Meta-mechanism (emergent)** | **Phase A (writing NOW)** | **Phase C (build v1)** |
+| **8** | **Scale-Invariant Duality** | **Theoretical capstone** | **Phase A (writing NOW)** | **Phase C (empirical update)** |
 
-Papers 1-3 identify the phenomenon. Paper 4 defines the field. Paper 6 proves configuration variance empirically. Papers 5 and 7 are the two meta-level mechanisms (directed and emergent). Paper 8 observes the structural pattern that 5 and 7 together reveal. That's a complete intellectual arc.
+Papers 1-3 identify the phenomenon. Paper 4 defines the field. Paper 6 proves configuration variance empirically. Papers 5 and 7 are the two meta-level mechanisms (directed and emergent). Paper 8 observes the structural pattern that 5 and 7 together reveal. That's a complete intellectual arc from first observation through field definition through empirical validation through meta-level mechanisms through fundamental structural properties. Eight papers, two tools, two new fields (CMI and COT).
 
 ---
 
@@ -769,20 +811,77 @@ Papers 1-3 identify the phenomenon. Paper 4 defines the field. Paper 6 proves co
 ## The Full Path
 
 ```
-ERA 1: LAUNCH ✓ (mostly complete)
+PHASE A: WRITE — Concept Papers ($0, NOW)
 ═══════════════════════════════════════════════════════════════════════════════
-Phase 19 ✓  Phase 20 ✓  Phase 21 ✓  Phase 22        Phase 23
-Battle-     Paper 5     Website     CITY GRID       Go Public
-Test        (concept)   4 Wings     EXPERIMENT      (PyPI)
-                        ├ Science   (Paper 6)
-                        ├ Simulation├ Build grid     ├ Contributing
-                        ├ Engine      infrastructure ├ Examples
-                        └ Creator   ├ Run 5 presets
-                          Mode      ├ Score + analyse
-                                    ├ Generate figures
-                                    └ Write paper
+Phase 22-pre
+Write Papers 7+8
+├ Paper 7: Recursive Configuration Loop (emergent-meta concept)
+├ Paper 8: Scale-Invariant Duality (theoretical capstone concept)
+└ Bitcoin-timestamp both → provenance before builds
 
-ERA 2: THE SIMULATION EXPERIENCE
+PHASE B: PROVE — City Grid Experiment (days, ~$70)
+═══════════════════════════════════════════════════════════════════════════════
+Phase 22                              Phase 23
+CITY GRID EXPERIMENT (Paper 6)        Go Public
+├ Build grid infrastructure           ├ Contributing guide
+│ ├ Grid model + building types       └ Examples directory
+│ ├ 5 scoring dimensions
+│ ├ Renderers (ASCII + PNG + heatmap)
+│ └ Integration test
+├ Run experiment
+│ ├ 5 presets × 3 runs = 15 team runs
+│ ├ 3 single-agent baseline runs
+│ └ Civ config design experiment
+├ Analysis + figures
+│ ├ Hero image: 5 grids side by side
+│ ├ Temporal animations
+│ ├ Contribution heatmaps
+│ ├ Radar charts + network graphs
+│ └ Statistical tests
+└ Write Paper 6
+  ├ 4-property framework (methodological contribution)
+  ├ City Grid results (visual + quantitative)
+  ├ Teams as Civ Designers (extension — Engine × Simulation bridge)
+  └ Bitcoin-timestamp
+
+PHASE C: BUILD — Creator Mode + Recursive Loop v1 (weeks)
+═══════════════════════════════════════════════════════════════════════════════
+Phase 32-36                            Phase 36b
+CREATOR MODE v1 (Paper 5 → empirical)  RECURSIVE LOOP v1 (Paper 7 → empirical)
+├ Meta-agent design                    ├ Ontology mapping (Engine ↔ Sim)
+├ Spawn orchestration                  ├ Engine→Sim connector
+├ Analysis pipeline                    ├ Sim→Engine connector
+├ Learning loop                        ├ Cycle harness (N iterations)
+├ CLI integration                      ├ Run experiment
+├ Task search + emergence explorer     ├ Compare with Creator Mode
+└ Update Paper 5 with results          └ Update Paper 7 with results
+
+                    Phase 36c
+                    SCALE INVARIANCE (Paper 8 → empirical update)
+                    ├ Add empirical illustrations from both v1s
+                    ├ Third-level evidence (Creator + Loop interaction)
+                    └ Update Paper 8
+
+PHASE D: PRESENT — Website + Outreach
+═══════════════════════════════════════════════════════════════════════════════
+Phase 37              Phase 38         Phase 39
+Website Mega-Update   Launch Prep      Outreach
+├ Paper 6 results     ├ Demo video     ├ Anthropic/OpenAI
+│ page (5 grids)      ├ Blog post      ├ Karpathy/Swyx/Jim Fan
+├ Creator Mode page   ├ One-pager      ├ Stanford HAI/MIT
+│ update (v1 results) └ Social assets  ├ YC Bookface
+├ Recursive Loop page                  ├ Hacker News
+│ (new — Paper 7)                      └ Twitter/Reddit
+├ Scale Invariance
+│ page (Paper 8 —
+│ interactive 3-level
+│ diagram, crown jewel
+│ of Science wing)
+├ All repos cleaned
+├ QC/QA audit
+└ Final deploy
+
+ERA 2: THE SIMULATION EXPERIENCE (independent — platform features)
 ═══════════════════════════════════════════════════════════════════════════════
 Phase 26       Phase 27        Phase 28       Phase 29        Phase 30   Phase 31
 Package &      YAML            Rich           Live AI         Gardener   Live Fishbowl
@@ -797,57 +896,24 @@ Install        Customisation   Terminal       Chronicler      Mode       + Commu
                  templates                      interview
                └ Validation
 
-ERA 3: CREATOR MODE + META-PAPERS
-═══════════════════════════════════════════════════════════════════════════════
-Phase 32        Phase 33        Phase 34          Phase 35         Phase 36
-Build Meta-     Task Search     Emergence         Full Website     Paper 5
-Agent                           Explorer          Wing             Empirical
-├ Design        ├ Decompose     ├ Metrics         ├ Results        ├ Results
-├ Orchestrate   ├ Generate      ├ Sweep           ├ Live demo      ├ Update
-├ Analyse       ├ Evaluate      ├ Novelty         ├ Discoveries    ├ Timestamp
-├ Learn         ├ Refine          detect          └ Space map      └ Submit
-└ CLI           └ Recommend     └ Catalogue
-
-Phase 36b                      Phase 36c
-RECURSIVE LOOP                 SCALE INVARIANCE
-(Paper 7)                      (Paper 8)
-├ Ontology mapping             ├ Theoretical framework
-├ Engine→Sim connector         ├ Empirical illustrations
-├ Sim→Engine connector         ├ Third-level evidence
-├ Cycle harness                ├ Connections to theory
-├ Run N cycles                 └ Write capstone paper
-├ Compare with Creator
-└ Write paper
-
 PAPER SERIES:
   1 ✓ Vision → 2 ✓ Concept → 3 ✓ Empirical → 4 ✓ Field Definition
-  → 5 (concept ✓, build ERA 3) → 6 (NEXT) → 7 (after Creator) → 8 (capstone)
-
-ERA 4: LAUNCH & OUTREACH
-═══════════════════════════════════════════════════════════════════════════════
-Phase 37              Phase 38         Phase 39
-Website Refresh       Launch Prep      Outreach
-+ QC/QA Audit
-├ Content refresh     ├ Demo video     ├ Anthropic/OpenAI
-├ Visual polish       ├ Blog post      ├ Karpathy/Swyx/Jim Fan
-├ Accuracy audit      ├ One-pager      ├ Stanford HAI/MIT
-├ Tone audit          └ Social assets  ├ YC Bookface
-├ Link audit                           ├ Hacker News
-├ Skeptical review                     └ Twitter/Reddit
-└ Final deploy
+  → 5 ✓ concept (build Phase C) → 6 (Phase B — NEXT) → 7 ✓ concept (build Phase C) → 8 ✓ concept (update Phase C)
 ```
 
 ---
 
 ## Principles
 
-**Era 1:** Everything that can break, breaks in private. Everything the public sees is the best version we can make. The concept paper establishes the intellectual claim before anything is built.
+**Phase A:** Stake intellectual claims. Bitcoin-timestamp concepts before building anything. Provenance is non-negotiable.
 
-**Era 2:** The simulation becomes an experience. One command to launch. YAML for everything configurable. Rich terminal that makes the invisible visible. A live AI chronicler that narrates significance. Maximum customisation before code — and when you want to go deeper, the full modular codebase is yours.
+**Phase B:** Prove the thesis fast and cheap. City Grid = visual, undeniable, $70. The first empirical evidence in the series.
 
-**Era 3:** The field explores itself. AI designs civilisations, observes what emerges, and designs the next generation. The possibility space is infinite — only AI can explore it at scale.
+**Phase C:** Build the v1s. Creator Mode (directed-meta) and Recursive Loop (emergent-meta). Each updates its concept paper with real data. Paper 8 gains empirical illustrations from both.
 
-**Era 4:** Everything is built. One comprehensive pass to make it all perfect — every claim verified, every link checked, every page polished. Then package it for maximum impact and share it with the world.
+**Phase D:** Present everything. Website with new pages for each paper. Paper 8's three-level interactive diagram as the Science wing's crown jewel. Clean all repos. Launch.
+
+**ERA 2:** Runs independently — platform features for the Simulation experience. Not blocked by research phases.
 
 ---
 

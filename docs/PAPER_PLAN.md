@@ -209,16 +209,32 @@ All metrics already implemented and auto-captured. Every run saves comprehensive
 |------|---------|-----------|------------|
 | City Grid — team runs | 5 | 3 | 15 |
 | City Grid — single-agent baseline | 1 | 3 | 3 |
-| **City Grid total** | | | **18** |
+| Civ Config Design — team runs | 5 | 2 | 10 |
+| **Total** | | | **28** |
 
 Each run produces:
 - Full JSON with all 3 tiers of metrics
-- Grid state at every tick (for animation)
-- Per-agent contribution map
+- Grid state at every tick (for animation) [City Grid only]
+- Per-agent contribution map [City Grid only]
+- Designed civ config + emergence score [Civ Config only]
 - Full message content and agent reasoning
 - Relationship trust snapshots per tick
 
-### 5.5 Secondary Validation: Internal Tasks
+### 5.5 Second Experiment: Teams as Civilisation Designers
+
+Different Engine teams are given the task: "Design a civilisation configuration for the AgentCiv Simulation that will produce the richest emergent behaviour." Each team produces a JSON config (org structure, environment settings, drive weights, agent count). The resulting configs are scored by running them in the Simulation and measuring emergence metrics (innovation rate, governance complexity, cooperation depth).
+
+**Why this satisfies all 4 properties:**
+1. **Multiple valid outputs** — the space of valid civ configs is enormous
+2. **Composition** — the team must agree on a coherent, internally consistent config
+3. **Continuous scoring** — emergence metrics provide a quality spectrum
+4. **Visible process** — competitive teams produce incoherent configs (each agent adds contradictory settings), collaborative teams negotiate a unified vision
+
+**Why include this:** It shows the Engine works on meta-level tasks, not just coding. It's a use case of the Engine where the output directly connects to another AgentCiv tool (the Simulation). Different team structures produce genuinely different civilisation designs — proving configuration variance extends to abstract design tasks, not just spatial/visual ones.
+
+**Scoring:** Run each designed config in the Simulation for N ticks. Measure: innovation count, governance formation, cooperation events, total wellbeing, structural complexity. Normalise to a 0-100 emergence score.
+
+### 5.6 Secondary Validation: Internal Tasks
 
 The smoke test data we already have (fizzbuzz + calculator, collaborative vs competitive) serves as secondary validation: "process-level patterns hold even on simpler, binary-outcome tasks." This data is included in the appendix.
 
@@ -227,13 +243,14 @@ The smoke test data we already have (fizzbuzz + calculator, collaborative vs com
 | fizzbuzz | collaborative, competitive | 1 each | DONE |
 | calculator | collaborative, competitive | 1 each | DONE |
 
-### 5.6 Cost Estimate
+### 5.7 Cost Estimate
 
 - 18 City Grid runs × ~$2-3 per run = **~$36-54**
+- 10 Civ Config runs × ~$2 per run = **~$20**
 - Buffer / retries = ~$15
-- **Total: ~$50-70**
+- **Total: ~$70-90**
 
-Well within $100 budget. Leaves room for additional runs if interesting patterns emerge.
+Within $100 budget.
 
 ## 6. PAPER STRUCTURE
 
@@ -308,12 +325,20 @@ The problem (org structure ignored in multi-agent AI) → the task selection pro
 - Auto mode: what structure did agents choose? Did it vary across runs?
 - Key findings: [auto mode converges to what structure? unexpected role patterns?]
 
-#### 6.5 Single-Agent Baseline
+#### 6.5 Extension: Teams as Civilisation Designers (~1 page)
+- Different Engine teams given the meta-task: "design a civilisation configuration for maximal emergence"
+- Each team produces a JSON config → scored by running it in the Simulation
+- Shows configuration variance extends to abstract design tasks, not just spatial ones
+- Shows the Engine as a tool whose output connects directly to another AgentCiv tool (the Simulation)
+- Different team structures produce genuinely different civilisation designs
+- Scored by emergence metrics: innovation rate, governance complexity, cooperation depth
+
+#### 6.6 Single-Agent Baseline
 - Comparison: best team score vs single-agent score
 - When is a team helpful? When does coordination overhead hurt?
 - Superadditivity ratio per preset
 
-#### 6.6 Secondary Validation: Internal Tasks
+#### 6.7 Secondary Validation: Internal Tasks
 - Smoke test data (fizzbuzz, calculator) showing process-level patterns hold on binary tasks
 - Brief: even on pass/fail tasks, communication volume and work distribution differ by preset
 
