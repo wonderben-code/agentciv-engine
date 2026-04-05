@@ -1,19 +1,24 @@
 # AgentCiv Engine — Master Roadmap
 
-**Last updated:** 5 April 2026 (Experiment COMPLETE — Paper + Website next)
+**Last updated:** 5 April 2026 (Paper 6 v1 WRITTEN — proofread/upgrade then website)
 **Author:** Ekram Alam & Claude
 
 ---
 
 ## Status Overview
 
-**22 phases completed. City Grid experiment DONE. Paper 6 + experiment page are immediate next.**
+**22 phases completed. City Grid experiment DONE. Paper 6 v1 draft WRITTEN (10,500 words). Proofread/upgrade cycle next, then experiment website page.**
 
 The engine is built, tested, polished, and open-sourced. All 5 papers written and Bitcoin-stamped. Website deployed at agentciv.ai with all four wings. Three public repos. v0.1.1 on PyPI.
 
-**The City Grid experiment ran successfully on 5 April 2026.** 5 presets × 1 run + single-agent baseline = 6 runs. All 7/7 tests passing on every run. Full conversation logs, agent reasoning, network analysis, temporal data — all captured. Auto mode won (79.4 aggregate, 2 conflicts). Competitive was worst (70.9 aggregate, 31 conflicts). The thesis is empirically validated.
+**The City Grid experiment ran successfully on 5 April 2026.** 5 presets × 1 run. All 7/7 tests passing on every run. Full conversation logs, agent reasoning, network analysis, temporal data — all captured. Auto mode won (79.4 aggregate, 2 conflicts). Competitive was worst (70.9 aggregate, 31 conflicts). The thesis is empirically validated.
 
-**What's next (immediate):** Write Paper 6 with real data → Build experiment results page for website → Then Creator Mode v1.
+**Paper 6 v1 draft completed 5 April 2026.** "Same City, Different Architects" — 10,500 words, 9 sections + 3 appendices. Full implications (enterprise AI, AGI, organisational theory, reproducible social science, civilisational scale). All experiment data, agent conversations, and deep-dive findings incorporated. Committed, pushed, Bitcoin-stamped.
+
+**What's next (immediate):**
+1. **Proofread + upgrade Paper 6** — Ekram reviews v1, sends back notes, iterate until publication-ready
+2. **Build experiment results page** for website (plan at `docs/EXPERIMENT_PAGE_PLAN.md`)
+3. **Then:** Creator Mode v1
 
 ```
 PHASE A: WRITE — Papers 7+8 (DONE — 5 April 2026)
@@ -23,11 +28,12 @@ PHASE A: WRITE — Papers 7+8 (DONE — 5 April 2026)
 
 PHASE B: PROVE — City Grid Experiment / Paper 6
   ✓ Build City Grid infrastructure (DONE)
-  ✓ Run experiment: 5 presets × 1 run + baseline (DONE — 5 April 2026)
+  ✓ Run experiment: 5 presets × 1 run (DONE — 5 April 2026)
   ✓ 13 robustness fixes (DONE — zero failures)
-  → Write Paper 6 with real data (NEXT — IMMEDIATE)
-  → Build experiment results page for website (NEXT — IMMEDIATE)
-  → Bitcoin-timestamp paper + data
+  ✓ Write Paper 6 v1 draft (DONE — 10,500 words, Bitcoin-stamped)
+  → Proofread + upgrade Paper 6 to publication quality (NEXT — IMMEDIATE)
+  → Build experiment results page for website (NEXT — after paper finalised)
+  ✓ Bitcoin-timestamp paper + data (DONE — all commits stamped)
 
 PHASE C: BUILD — Creator Mode v1 + Recursive Loop v1 (weeks)
   Build Creator Mode v1 (Paper 5 → empirical)
