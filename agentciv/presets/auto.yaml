@@ -24,5 +24,5 @@ parameters:
   task_claim_mode: "voluntary"
   require_review: false
   enable_specialisation: true
-  meta_tick_interval: 10
+  meta_tick_interval: 1
   restructure_threshold: 0.6

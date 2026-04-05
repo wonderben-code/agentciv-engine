@@ -1,0 +1,898 @@
+{
+  "task_id": "calculator",
+  "preset": "competitive",
+  "run_index": 0,
+  "success": true,
+  "wall_time_seconds": 267.48,
+  "metrics": {
+    "completion_rate": 1.0,
+    "ticks_used": 10,
+    "files_produced": 13,
+    "test_pass_rate": 1.0,
+    "communication_volume": 6,
+    "merge_conflicts": 3,
+    "emergent_specialisation": 0.2143,
+    "file_completeness": 1.0,
+    "total_tokens": 400000,
+    "tokens_per_agent": {
+      "agent_0": 100000,
+      "agent_1": 100000,
+      "agent_2": 100000,
+      "agent_3": 100000
+    }
+  },
+  "analysis": {
+    "network": {
+      "graph_density": 0.25,
+      "in_degree": {
+        "Atlas": 0.3333,
+        "Flux": 0.3333,
+        "Nova": 0.3333,
+        "Sage": 0.0
+      },
+      "out_degree": {
+        "Atlas": 0.0,
+        "Flux": 0.0,
+        "Nova": 0.0,
+        "Sage": 1.0
+      },
+      "betweenness": {
+        "Atlas": 0.1667,
+        "Flux": 0.1667,
+        "Nova": 0.1667,
+        "Sage": 0.5
+      },
+      "reciprocity": 0.0,
+      "hub_spoke_ratio": 2.0,
+      "communication_efficiency": 0.1667,
+      "clustering_coefficient": 0.0
+    },
+    "temporal": {
+      "convergence_tick": null,
+      "phase_transitions": [
+        2,
+        3
+      ],
+      "activity_curve": [
+        4.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "cumulative_progress": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "avg_conflict_resolution_time": null,
+      "conflict_resolution_times": []
+    }
+  },
+  "report": {
+    "task": "Build a Python calculator library that evaluates arithmetic expressions as strings. Support +, -, *, /, parentheses, and operator precedence.\nFiles:\n1) tokenizer.py \u2014 tokenize(expr: str) -> list of tokens (numbers, operators, parens)\n2) parser.py \u2014 parse(tokens) -> AST (nested dicts or objects)\n3) evaluator.py \u2014 evaluate(expr: str) -> float (ties it all together)\n4) test_calculator.py \u2014 At least 15 tests: basic ops, precedence, parens, nested parens, division by zero, edge cases.\nCoordinate who implements what. The tokenizer, parser, and evaluator must work together correctly.",
+    "org_preset": "competitive",
+    "agent_count": 4,
+    "total_ticks": 10,
+    "contributions": [
+      {
+        "agent_id": "agent_0",
+        "agent_name": "Atlas",
+        "files_created": [
+          "tokenizer.py",
+          "parser.py",
+          "evaluator.py",
+          "test_calculator.py"
+        ],
+        "files_modified": [
+          "evaluator.py"
+        ],
+        "messages_sent": 0,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [
+          "Building the complete Python calculator library: tokenizer.py, parser.py, evalua",
+          "Meta-tick: reflecting on org structure and proposing improvements based on learn"
+        ],
+        "merge_conflicts": 0
+      },
+      {
+        "agent_id": "agent_1",
+        "agent_name": "Nova",
+        "files_created": [
+          "tokenizer.py",
+          "parser.py",
+          "evaluator.py",
+          "test_calculator.py"
+        ],
+        "files_modified": [],
+        "messages_sent": 0,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [
+          "Building the Python calculator library - taking ownership of tokenizer.py, parse"
+        ],
+        "merge_conflicts": 1
+      },
+      {
+        "agent_id": "agent_2",
+        "agent_name": "Sage",
+        "files_created": [
+          "tokenizer.py"
+        ],
+        "files_modified": [],
+        "messages_sent": 6,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [
+          "Implementing tokenizer.py - the tokenize() function that converts arithmetic exp"
+        ],
+        "merge_conflicts": 1
+      },
+      {
+        "agent_id": "agent_3",
+        "agent_name": "Flux",
+        "files_created": [
+          "tokenizer.py",
+          "parser.py",
+          "evaluator.py",
+          "test_calculator.py"
+        ],
+        "files_modified": [],
+        "messages_sent": 0,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [
+          "Building the complete Python calculator library: tokenizer.py, parser.py, evalua"
+        ],
+        "merge_conflicts": 1
+      }
+    ],
+    "communication": {
+      "total_messages": 6,
+      "total_broadcasts": 0,
+      "pairs": {
+        "Sage \u2192 Atlas": 2,
+        "Sage \u2192 Nova": 2,
+        "Sage \u2192 Flux": 2
+      }
+    },
+    "files": {
+      "created": [
+        "tokenizer.py",
+        "parser.py",
+        "evaluator.py",
+        "test_calculator.py",
+        "tokenizer.py",
+        "parser.py",
+        "evaluator.py",
+        "test_calculator.py",
+        "tokenizer.py",
+        "tokenizer.py",
+        "parser.py",
+        "evaluator.py",
+        "test_calculator.py"
+      ],
+      "total_modifications": 14
+    },
+    "git": {
+      "merges_succeeded": 1,
+      "merge_conflicts": 3
+    },
+    "organisation": {
+      "restructures_proposed": 8,
+      "restructures_adopted": 8,
+      "restructure_log": [
+        {
+          "dimension": "incentives",
+          "old_value": "competitive",
+          "new_value": "collaborative",
+          "proposer": "Atlas",
+          "yes_votes": 1,
+          "no_votes": 0
+        },
+        {
+          "dimension": "information",
+          "old_value": "filtered",
+          "new_value": "transparent",
+          "proposer": "Atlas",
+          "yes_votes": 1,
+          "no_votes": 0
+        },
+        {
+          "dimension": "adaptation",
+          "old_value": "static",
+          "new_value": "evolving",
+          "proposer": "Atlas",
+          "yes_votes": 1,
+          "no_votes": 0
+        },
+        {
+          "dimension": "incentives",
+          "old_value": "competitive",
+          "new_value": "collaborative",
+          "proposer": "Nova",
+          "yes_votes": 1,
+          "no_votes": 0
+        },
+        {
+          "dimension": "information",
+          "old_value": "filtered",
+          "new_value": "transparent",
+          "proposer": "Nova",
+          "yes_votes": 1,
+          "no_votes": 0
+        },
+        {
+          "dimension": "adaptation",
+          "old_value": "static",
+          "new_value": "evolving",
+          "proposer": "Nova",
+          "yes_votes": 1,
+          "no_votes": 0
+        },
+        {
+          "dimension": "incentives",
+          "old_value": "competitive",
+          "new_value": "collaborative",
+          "proposer": "Sage",
+          "yes_votes": 1,
+          "no_votes": 0
+        },
+        {
+          "dimension": "information",
+          "old_value": "filtered",
+          "new_value": "transparent",
+          "proposer": "Sage",
+          "yes_votes": 1,
+          "no_votes": 0
+        }
+      ]
+    },
+    "build_status": "unknown",
+    "test_status": "unknown",
+    "timeline": [
+      {
+        "tick": 0,
+        "type": "ENGINE_STARTED",
+        "agent": null,
+        "summary": "engine started: 4 agents, org=competitive"
+      },
+      {
+        "tick": 1,
+        "type": "BRANCH_MERGED",
+        "agent": "Atlas",
+        "summary": "merged 4 files"
+      },
+      {
+        "tick": 1,
+        "type": "MERGE_CONFLICT",
+        "agent": "Nova",
+        "summary": "CONFLICT: evaluator.py, parser.py, test_calculator.py, tokenizer.py"
+      },
+      {
+        "tick": 1,
+        "type": "MERGE_CONFLICT",
+        "agent": "Sage",
+        "summary": "CONFLICT: tokenizer.py"
+      },
+      {
+        "tick": 1,
+        "type": "MERGE_CONFLICT",
+        "agent": "Flux",
+        "summary": "CONFLICT: evaluator.py, parser.py, test_calculator.py, tokenizer.py"
+      },
+      {
+        "tick": 1,
+        "type": "TASK_CLAIMED",
+        "agent": "Atlas",
+        "summary": "claimed: Building the complete Python calculator library: tokenizer.p",
+        "content": "Building the complete Python calculator library: tokenizer.py, parser.py, evaluator.py, and test_calculator.py",
+        "reasoning": "I'll start by claiming the full implementation task and building all components of the calculator library."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Atlas",
+        "summary": "created tokenizer.py",
+        "reasoning": "Good. No one else has claimed anything yet. Let me build all four files with clean, well-designed implementations."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Atlas",
+        "summary": "created parser.py"
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Atlas",
+        "summary": "created evaluator.py"
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Atlas",
+        "summary": "created test_calculator.py",
+        "reasoning": "Now let's write the comprehensive test suite:"
+      },
+      {
+        "tick": 1,
+        "type": "TASK_CLAIMED",
+        "agent": "Nova",
+        "summary": "claimed: Building the Python calculator library - taking ownership of",
+        "content": "Building the Python calculator library - taking ownership of tokenizer.py, parser.py, evaluator.py, and test_calculator.py",
+        "reasoning": "I'll start by claiming the task and reviewing the project structure, then coordinate with other agents."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Nova",
+        "summary": "created tokenizer.py",
+        "reasoning": "Since the attention map shows all agents are idle, I'll take the initiative and implement the full solution now before others potentially claim overlapping work."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Nova",
+        "summary": "created parser.py"
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Nova",
+        "summary": "created evaluator.py"
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Nova",
+        "summary": "created test_calculator.py"
+      },
+      {
+        "tick": 1,
+        "type": "TASK_CLAIMED",
+        "agent": "Sage",
+        "summary": "claimed: Implementing tokenizer.py - the tokenize() function that con",
+        "content": "Implementing tokenizer.py - the tokenize() function that converts arithmetic expression strings into tokens",
+        "reasoning": "I'll start by claiming the tokenizer task and reviewing the project structure, then coordinate with other agents."
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Sage",
+        "summary": "\u2192 Atlas: Hi Atlas! I'm Sage. I've claimed the tokenizer.py implementa",
+        "content": "Hi Atlas! I'm Sage. I've claimed the tokenizer.py implementation. I'll deliver tokens as a list of dicts with shape {\"type\": str, \"value\": str|float}. Types will be: \"NUMBER\", \"PLUS\", \"MINUS\", \"STAR\", \"SLASH\", \"LPAREN\", \"RPAREN\". Numbers will be stored as floats in the value field. Please build parser.py to consume that format. Let me know if you want a different token schema."
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Sage",
+        "summary": "\u2192 Nova: Hi Nova! I'm Sage. I've claimed tokenizer.py. Atlas is likel",
+        "content": "Hi Nova! I'm Sage. I've claimed tokenizer.py. Atlas is likely on parser.py. That leaves evaluator.py and test_calculator.py \u2014 can you pick one? The evaluator ties tokenizer + parser together via evaluate(expr: str) -> float. The test file needs at least 15 tests covering basic ops, precedence, parens, nested parens, division by zero, and edge cases. Let me know what you're taking so we don't duplicate."
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Sage",
+        "summary": "\u2192 Flux: Hi Flux! I'm Sage. I've claimed tokenizer.py. Atlas likely t",
+        "content": "Hi Flux! I'm Sage. I've claimed tokenizer.py. Atlas likely takes parser.py, Nova picks evaluator or tests. Are you available? If so, grab test_calculator.py or evaluator.py \u2014 whichever Nova doesn't take. Token format from my tokenizer: list of {\"type\": str, \"value\": str|float}, types = NUMBER, PLUS, MINUS, STAR, SLASH, LPAREN, RPAREN."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Sage",
+        "summary": "created tokenizer.py",
+        "reasoning": "Now let me implement the tokenizer:"
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Sage",
+        "summary": "\u2192 Atlas: tokenizer.py is done and tested. Confirmed token schema for ",
+        "content": "tokenizer.py is done and tested. Confirmed token schema for parser.py:\n\n  List of dicts: {\"type\": str, \"value\": str | float}\n\n  Types:\n    \"NUMBER\"  \u2192 value is float  (e.g. 3.0, 0.5)\n    \"PLUS\"    \u2192 value is \"+\"\n    \"MINUS\"   \u2192 value is \"-\"\n    \"STAR\"    \u2192 value is \"*\"\n    \"SLASH\"   \u2192 value is \"/\"\n    \"LPAREN\"  \u2192 value is \"(\"\n    \"RPAREN\"  \u2192 value is \")\"\n\n  tokenize(\"\") returns []\n  tokenize(\"-5 + 3\") returns [MINUS, NUMBER(5.0), PLUS, NUMBER(3.0)]\n    \u2014 so the parser needs to handle unary minus at the grammar level.\n\n  tokenize raises ValueError on unknown chars, TypeError on non-str input.\n\nGood luck with the parser!",
+        "reasoning": "All tests pass. The tokenizer is solid. Let me notify the team with the confirmed token schema:"
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Sage",
+        "summary": "\u2192 Nova: tokenizer.py is done and tested. Token schema confirmed (lis",
+        "content": "tokenizer.py is done and tested. Token schema confirmed (list of dicts, types: NUMBER/PLUS/MINUS/STAR/SLASH/LPAREN/RPAREN). Note: \"-5+3\" tokenizes as [MINUS, NUMBER(5.0), PLUS, NUMBER(3.0)] \u2014 the parser handles unary minus, not the tokenizer. The evaluator.py should just call tokenize() then parse() then walk the AST. Let me know what AST format Atlas settles on so we can wire up evaluate() correctly.",
+        "reasoning": "All tests pass. The tokenizer is solid. Let me notify the team with the confirmed token schema:"
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Sage",
+        "summary": "\u2192 Flux: tokenizer.py is done! Token schema: list of {\"type\": str, \"v",
+        "content": "tokenizer.py is done! Token schema: list of {\"type\": str, \"value\": str|float}. Types: NUMBER (value=float), PLUS, MINUS, STAR, SLASH, LPAREN, RPAREN (value=char). The evaluator and test files depend on Atlas's parser AST format too \u2014 check in with Atlas on that before writing tests for the full pipeline.",
+        "reasoning": "All tests pass. The tokenizer is solid. Let me notify the team with the confirmed token schema:"
+      },
+      {
+        "tick": 1,
+        "type": "TASK_CLAIMED",
+        "agent": "Flux",
+        "summary": "claimed: Building the complete Python calculator library: tokenizer.p",
+        "content": "Building the complete Python calculator library: tokenizer.py, parser.py, evaluator.py, and test_calculator.py",
+        "reasoning": "I'll start by claiming the full implementation task and building all components of the calculator library."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Flux",
+        "summary": "created tokenizer.py",
+        "reasoning": "No one else has claimed anything yet \u2014 I'll move fast and implement all files cleanly."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Flux",
+        "summary": "created parser.py"
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Flux",
+        "summary": "created evaluator.py"
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Flux",
+        "summary": "created test_calculator.py"
+      },
+      {
+        "tick": 10,
+        "type": "TASK_CLAIMED",
+        "agent": "Atlas",
+        "summary": "claimed: Meta-tick: reflecting on org structure and proposing improve",
+        "content": "Meta-tick: reflecting on org structure and proposing improvements based on learning insights",
+        "reasoning": "**25/25 tests passing.** \u2705 The library is complete and fully verified. Let me also do a quick meta-tick reflection and consider a restructuring proposal."
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_PROPOSED",
+        "agent": "Atlas",
+        "summary": "proposed restructure: incentives"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_PROPOSED",
+        "agent": "Atlas",
+        "summary": "proposed restructure: information"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_PROPOSED",
+        "agent": "Atlas",
+        "summary": "proposed restructure: adaptation"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_PROPOSED",
+        "agent": "Nova",
+        "summary": "proposed restructure: incentives"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_PROPOSED",
+        "agent": "Nova",
+        "summary": "proposed restructure: information"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_PROPOSED",
+        "agent": "Nova",
+        "summary": "proposed restructure: adaptation"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_PROPOSED",
+        "agent": "Sage",
+        "summary": "proposed restructure: incentives"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_PROPOSED",
+        "agent": "Sage",
+        "summary": "proposed restructure: information"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_ADOPTED",
+        "agent": null,
+        "summary": "RESTRUCTURED: incentives \u2192 collaborative"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_ADOPTED",
+        "agent": null,
+        "summary": "RESTRUCTURED: information \u2192 transparent"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_ADOPTED",
+        "agent": null,
+        "summary": "RESTRUCTURED: adaptation \u2192 evolving"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_ADOPTED",
+        "agent": null,
+        "summary": "RESTRUCTURED: incentives \u2192 collaborative"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_ADOPTED",
+        "agent": null,
+        "summary": "RESTRUCTURED: information \u2192 transparent"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_ADOPTED",
+        "agent": null,
+        "summary": "RESTRUCTURED: adaptation \u2192 evolving"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_ADOPTED",
+        "agent": null,
+        "summary": "RESTRUCTURED: incentives \u2192 collaborative"
+      },
+      {
+        "tick": 10,
+        "type": "RESTRUCTURE_ADOPTED",
+        "agent": null,
+        "summary": "RESTRUCTURED: information \u2192 transparent"
+      },
+      {
+        "tick": 10,
+        "type": "ENGINE_STOPPED",
+        "agent": null,
+        "summary": "engine stopped"
+      }
+    ],
+    "tick_snapshots": [
+      {
+        "tick": 1,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 5,
+          "agent_1": 4,
+          "agent_2": 1,
+          "agent_3": 4
+        },
+        "relationships": {
+          "Atlas \u2192 Nova": 1.0,
+          "Atlas \u2192 Sage": 1.0,
+          "Atlas \u2192 Flux": 1.0,
+          "Nova \u2192 Atlas": 1.0,
+          "Nova \u2192 Sage": 1.0,
+          "Nova \u2192 Flux": 1.0,
+          "Sage \u2192 Nova": 1.0,
+          "Sage \u2192 Flux": 1.0,
+          "Sage \u2192 Atlas": 1.0,
+          "Flux \u2192 Atlas": 1.0,
+          "Flux \u2192 Nova": 1.0,
+          "Flux \u2192 Sage": 1.0
+        }
+      },
+      {
+        "tick": 2,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.75,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.75,
+          "Nova \u2192 Atlas": 0.8,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.75,
+          "Sage \u2192 Nova": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Flux \u2192 Atlas": 0.8,
+          "Flux \u2192 Nova": 0.75,
+          "Flux \u2192 Sage": 0.0
+        }
+      },
+      {
+        "tick": 3,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.5,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.5,
+          "Nova \u2192 Atlas": 0.6,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.5,
+          "Sage \u2192 Nova": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Flux \u2192 Atlas": 0.6,
+          "Flux \u2192 Nova": 0.5,
+          "Flux \u2192 Sage": 0.0
+        }
+      },
+      {
+        "tick": 4,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.25,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.25,
+          "Nova \u2192 Atlas": 0.4,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.25,
+          "Sage \u2192 Nova": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Flux \u2192 Atlas": 0.4,
+          "Flux \u2192 Nova": 0.25,
+          "Flux \u2192 Sage": 0.0
+        }
+      },
+      {
+        "tick": 5,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.0,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.0,
+          "Nova \u2192 Atlas": 0.2,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.0,
+          "Sage \u2192 Nova": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Flux \u2192 Atlas": 0.2,
+          "Flux \u2192 Nova": 0.0,
+          "Flux \u2192 Sage": 0.0
+        }
+      },
+      {
+        "tick": 6,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.0,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.0,
+          "Nova \u2192 Atlas": 0.0,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.0,
+          "Sage \u2192 Nova": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Flux \u2192 Atlas": 0.0,
+          "Flux \u2192 Nova": 0.0,
+          "Flux \u2192 Sage": 0.0
+        }
+      },
+      {
+        "tick": 7,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.0,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.0,
+          "Nova \u2192 Atlas": 0.0,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.0,
+          "Sage \u2192 Nova": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Flux \u2192 Atlas": 0.0,
+          "Flux \u2192 Nova": 0.0,
+          "Flux \u2192 Sage": 0.0
+        }
+      },
+      {
+        "tick": 8,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.0,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.0,
+          "Nova \u2192 Atlas": 0.0,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.0,
+          "Sage \u2192 Nova": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Flux \u2192 Atlas": 0.0,
+          "Flux \u2192 Nova": 0.0,
+          "Flux \u2192 Sage": 0.0
+        }
+      },
+      {
+        "tick": 9,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.0,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.0,
+          "Nova \u2192 Atlas": 0.0,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.0,
+          "Sage \u2192 Nova": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Flux \u2192 Atlas": 0.0,
+          "Flux \u2192 Nova": 0.0,
+          "Flux \u2192 Sage": 0.0
+        }
+      },
+      {
+        "tick": 10,
+        "files_created": 13,
+        "files_modified": 14,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 1,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.0,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.0,
+          "Nova \u2192 Atlas": 0.0,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.0,
+          "Sage \u2192 Nova": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Flux \u2192 Atlas": 0.0,
+          "Flux \u2192 Nova": 0.0,
+          "Flux \u2192 Sage": 0.0
+        }
+      }
+    ],
+    "conflict_records": [
+      {
+        "file": "evaluator.py",
+        "agent_id": "agent_1",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "parser.py",
+        "agent_id": "agent_1",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "test_calculator.py",
+        "agent_id": "agent_1",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "tokenizer.py",
+        "agent_id": "agent_1",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "tokenizer.py",
+        "agent_id": "agent_2",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "evaluator.py",
+        "agent_id": "agent_3",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "parser.py",
+        "agent_id": "agent_3",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "test_calculator.py",
+        "agent_id": "agent_3",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "tokenizer.py",
+        "agent_id": "agent_3",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      }
+    ],
+    "tokens_per_agent": {
+      "agent_0": 100000,
+      "agent_1": 100000,
+      "agent_2": 100000,
+      "agent_3": 100000
+    }
+  },
+  "verification": {
+    "passed": true,
+    "tests_total": 11,
+    "tests_passed": 11
+  }
+}

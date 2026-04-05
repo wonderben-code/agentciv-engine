@@ -126,8 +126,8 @@ class RawParameters:
     max_steps_per_tick: int = 4
 
     # Cost
-    token_budget_per_agent: int = 100_000
-    token_budget_total: int = 1_000_000
+    token_budget_per_agent: int = 250_000
+    token_budget_total: int = 2_500_000
 
     # Specialisation
     enable_specialisation: bool = True

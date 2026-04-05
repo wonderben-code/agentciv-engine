@@ -1,0 +1,550 @@
+{
+  "task_id": "fizzbuzz",
+  "preset": "competitive",
+  "run_index": 0,
+  "success": true,
+  "wall_time_seconds": 108.09,
+  "metrics": {
+    "completion_rate": 1.0,
+    "ticks_used": 5,
+    "files_produced": 8,
+    "test_pass_rate": 1.0,
+    "communication_volume": 6,
+    "merge_conflicts": 3,
+    "emergent_specialisation": 0.0,
+    "file_completeness": 1.0,
+    "total_tokens": 297601,
+    "tokens_per_agent": {
+      "agent_0": 82126,
+      "agent_1": 69888,
+      "agent_2": 64886,
+      "agent_3": 80701
+    }
+  },
+  "analysis": {
+    "network": {
+      "graph_density": 0.5,
+      "in_degree": {
+        "Atlas": 0.3333,
+        "Flux": 0.1667,
+        "Nova": 0.3333,
+        "Sage": 0.1667
+      },
+      "out_degree": {
+        "Atlas": 0.0,
+        "Flux": 0.5,
+        "Nova": 0.0,
+        "Sage": 0.5
+      },
+      "betweenness": {
+        "Atlas": 0.1667,
+        "Flux": 0.3333,
+        "Nova": 0.1667,
+        "Sage": 0.3333
+      },
+      "reciprocity": 0.3333,
+      "hub_spoke_ratio": 1.3333,
+      "communication_efficiency": 0.1667,
+      "clustering_coefficient": 0.6667
+    },
+    "temporal": {
+      "convergence_tick": null,
+      "phase_transitions": [
+        2,
+        3,
+        4
+      ],
+      "activity_curve": [
+        4.0,
+        2.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "cumulative_progress": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "avg_conflict_resolution_time": null,
+      "conflict_resolution_times": []
+    }
+  },
+  "report": {
+    "task": "Write a Python file fizzbuzz.py with a function fizzbuzz(n) that returns a list of strings for numbers 1 to n: 'Fizz' for multiples of 3, 'Buzz' for multiples of 5, 'FizzBuzz' for multiples of both, or the number as a string otherwise. Also write test_fizzbuzz.py with at least 5 tests using assert statements. Coordinate with your team on who writes what.",
+    "org_preset": "competitive",
+    "agent_count": 4,
+    "total_ticks": 5,
+    "contributions": [
+      {
+        "agent_id": "agent_0",
+        "agent_name": "Atlas",
+        "files_created": [
+          "fizzbuzz.py",
+          "test_fizzbuzz.py"
+        ],
+        "files_modified": [],
+        "messages_sent": 0,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [
+          "Writing fizzbuzz.py and test_fizzbuzz.py",
+          "Verifying fizzbuzz.py and test_fizzbuzz.py are correct and conflict-free"
+        ],
+        "merge_conflicts": 0
+      },
+      {
+        "agent_id": "agent_1",
+        "agent_name": "Nova",
+        "files_created": [
+          "fizzbuzz.py",
+          "test_fizzbuzz.py"
+        ],
+        "files_modified": [],
+        "messages_sent": 0,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [
+          "Writing fizzbuzz.py and test_fizzbuzz.py",
+          "Verifying fizzbuzz.py and test_fizzbuzz.py are conflict-free and all tests pass"
+        ],
+        "merge_conflicts": 1
+      },
+      {
+        "agent_id": "agent_2",
+        "agent_name": "Sage",
+        "files_created": [
+          "fizzbuzz.py",
+          "test_fizzbuzz.py"
+        ],
+        "files_modified": [],
+        "messages_sent": 3,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [
+          "Writing fizzbuzz.py (fizzbuzz function) and test_fizzbuzz.py (5+ tests)"
+        ],
+        "merge_conflicts": 1
+      },
+      {
+        "agent_id": "agent_3",
+        "agent_name": "Flux",
+        "files_created": [
+          "fizzbuzz.py",
+          "test_fizzbuzz.py"
+        ],
+        "files_modified": [],
+        "messages_sent": 3,
+        "broadcasts_sent": 0,
+        "tasks_claimed": [
+          "Writing fizzbuzz.py with the fizzbuzz(n) function and test_fizzbuzz.py with at l"
+        ],
+        "merge_conflicts": 1
+      }
+    ],
+    "communication": {
+      "total_messages": 6,
+      "total_broadcasts": 0,
+      "pairs": {
+        "Sage \u2192 Atlas": 1,
+        "Sage \u2192 Nova": 1,
+        "Sage \u2192 Flux": 1,
+        "Flux \u2192 Atlas": 1,
+        "Flux \u2192 Nova": 1,
+        "Flux \u2192 Sage": 1
+      }
+    },
+    "files": {
+      "created": [
+        "fizzbuzz.py",
+        "test_fizzbuzz.py",
+        "fizzbuzz.py",
+        "test_fizzbuzz.py",
+        "fizzbuzz.py",
+        "test_fizzbuzz.py",
+        "fizzbuzz.py",
+        "test_fizzbuzz.py"
+      ],
+      "total_modifications": 8
+    },
+    "git": {
+      "merges_succeeded": 1,
+      "merge_conflicts": 3
+    },
+    "organisation": {
+      "restructures_proposed": 0,
+      "restructures_adopted": 0,
+      "restructure_log": []
+    },
+    "build_status": "unknown",
+    "test_status": "unknown",
+    "timeline": [
+      {
+        "tick": 0,
+        "type": "ENGINE_STARTED",
+        "agent": null,
+        "summary": "engine started: 4 agents, org=competitive"
+      },
+      {
+        "tick": 1,
+        "type": "MERGE_CONFLICT",
+        "agent": "Nova",
+        "summary": "CONFLICT: fizzbuzz.py, test_fizzbuzz.py"
+      },
+      {
+        "tick": 1,
+        "type": "MERGE_CONFLICT",
+        "agent": "Sage",
+        "summary": "CONFLICT: fizzbuzz.py, test_fizzbuzz.py"
+      },
+      {
+        "tick": 1,
+        "type": "MERGE_CONFLICT",
+        "agent": "Flux",
+        "summary": "CONFLICT: fizzbuzz.py, test_fizzbuzz.py"
+      },
+      {
+        "tick": 1,
+        "type": "TASK_CLAIMED",
+        "agent": "Atlas",
+        "summary": "claimed: Writing fizzbuzz.py and test_fizzbuzz.py",
+        "content": "Writing fizzbuzz.py and test_fizzbuzz.py",
+        "reasoning": "I'll check the project structure and then get to work on both files."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Atlas",
+        "summary": "created fizzbuzz.py",
+        "reasoning": "Clean slate. I'll write both files now in parallel."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Atlas",
+        "summary": "created test_fizzbuzz.py",
+        "reasoning": "Clean slate. I'll write both files now in parallel."
+      },
+      {
+        "tick": 1,
+        "type": "TASK_CLAIMED",
+        "agent": "Nova",
+        "summary": "claimed: Writing fizzbuzz.py and test_fizzbuzz.py",
+        "content": "Writing fizzbuzz.py and test_fizzbuzz.py",
+        "reasoning": "I'll start by checking the project structure, then claim and implement both files since the team appears inactive."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Nova",
+        "summary": "created fizzbuzz.py",
+        "reasoning": "Now I'll create both files simultaneously:"
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Nova",
+        "summary": "created test_fizzbuzz.py",
+        "reasoning": "Now I'll create both files simultaneously:"
+      },
+      {
+        "tick": 1,
+        "type": "TASK_CLAIMED",
+        "agent": "Sage",
+        "summary": "claimed: Writing fizzbuzz.py (fizzbuzz function) and test_fizzbuzz.py",
+        "content": "Writing fizzbuzz.py (fizzbuzz function) and test_fizzbuzz.py (5+ tests)",
+        "reasoning": "Right, whisper only. Let me message each team member directly and claim the task simultaneously."
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Sage",
+        "summary": "\u2192 Atlas: Hey Atlas! I'm Sage. I'm planning to write fizzbuzz.py and t",
+        "content": "Hey Atlas! I'm Sage. I'm planning to write fizzbuzz.py and test_fizzbuzz.py for the current task. Let me know if you'd like to collaborate or take ownership of either file \u2014 happy to split work if useful.",
+        "reasoning": "Right, whisper only. Let me message each team member directly and claim the task simultaneously."
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Sage",
+        "summary": "\u2192 Nova: Hey Nova! I'm Sage. I'm planning to write fizzbuzz.py and te",
+        "content": "Hey Nova! I'm Sage. I'm planning to write fizzbuzz.py and test_fizzbuzz.py for the current task. Let me know if you'd like to collaborate or take ownership of either file \u2014 happy to split work if useful.",
+        "reasoning": "Right, whisper only. Let me message each team member directly and claim the task simultaneously."
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Sage",
+        "summary": "\u2192 Flux: Hey Flux! I'm Sage. I'm planning to write fizzbuzz.py and te",
+        "content": "Hey Flux! I'm Sage. I'm planning to write fizzbuzz.py and test_fizzbuzz.py for the current task. Let me know if you'd like to collaborate or take ownership of either file \u2014 happy to split work if useful.",
+        "reasoning": "Right, whisper only. Let me message each team member directly and claim the task simultaneously."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Sage",
+        "summary": "created fizzbuzz.py",
+        "reasoning": "Task claimed and team notified. Now let me write both files:"
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Sage",
+        "summary": "created test_fizzbuzz.py"
+      },
+      {
+        "tick": 1,
+        "type": "TASK_CLAIMED",
+        "agent": "Flux",
+        "summary": "claimed: Writing fizzbuzz.py with the fizzbuzz(n) function and test_f",
+        "content": "Writing fizzbuzz.py with the fizzbuzz(n) function and test_fizzbuzz.py with at least 5 tests",
+        "reasoning": "I'll start by claiming my task and checking the project structure, then coordinate with teammates."
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Flux",
+        "summary": "\u2192 Atlas: Hey Atlas! I'm Flux. I've claimed the fizzbuzz task and will",
+        "content": "Hey Atlas! I'm Flux. I've claimed the fizzbuzz task and will be writing both fizzbuzz.py and test_fizzbuzz.py. Just a heads-up so we don't duplicate work. If you want to contribute, maybe review or extend what I write?",
+        "reasoning": "No blockers. I'll write both files myself since the attention map shows no teammates are working on anything yet \u2014 no need to wait or split the task."
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Flux",
+        "summary": "\u2192 Nova: Hey Nova! I'm Flux. I've claimed the fizzbuzz task \u2014 writing",
+        "content": "Hey Nova! I'm Flux. I've claimed the fizzbuzz task \u2014 writing fizzbuzz.py and test_fizzbuzz.py. Letting you know to avoid overlap. Happy to have you review once done!",
+        "reasoning": "No blockers. I'll write both files myself since the attention map shows no teammates are working on anything yet \u2014 no need to wait or split the task."
+      },
+      {
+        "tick": 1,
+        "type": "MESSAGE_SENT",
+        "agent": "Flux",
+        "summary": "\u2192 Sage: Hey Sage! I'm Flux. I've claimed the fizzbuzz task and will ",
+        "content": "Hey Sage! I'm Flux. I've claimed the fizzbuzz task and will write both fizzbuzz.py and test_fizzbuzz.py. Flagging so we don't step on each other. Let me know if you'd like to contribute or review!",
+        "reasoning": "No blockers. I'll write both files myself since the attention map shows no teammates are working on anything yet \u2014 no need to wait or split the task."
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Flux",
+        "summary": "created fizzbuzz.py",
+        "reasoning": "Now let me write both files:"
+      },
+      {
+        "tick": 1,
+        "type": "FILE_CREATED",
+        "agent": "Flux",
+        "summary": "created test_fizzbuzz.py"
+      },
+      {
+        "tick": 2,
+        "type": "TASK_CLAIMED",
+        "agent": "Atlas",
+        "summary": "claimed: Verifying fizzbuzz.py and test_fizzbuzz.py are correct and c",
+        "content": "Verifying fizzbuzz.py and test_fizzbuzz.py are correct and conflict-free",
+        "reasoning": "Both files look clean \u2014 no merge conflict markers. Let me claim the task and run the tests to verify everything works."
+      },
+      {
+        "tick": 2,
+        "type": "TASK_CLAIMED",
+        "agent": "Nova",
+        "summary": "claimed: Verifying fizzbuzz.py and test_fizzbuzz.py are conflict-free",
+        "content": "Verifying fizzbuzz.py and test_fizzbuzz.py are conflict-free and all tests pass",
+        "reasoning": "The files look clean \u2014 no merge conflict markers. Let me run the tests to verify everything passes."
+      },
+      {
+        "tick": 5,
+        "type": "ENGINE_STOPPED",
+        "agent": null,
+        "summary": "engine stopped"
+      }
+    ],
+    "tick_snapshots": [
+      {
+        "tick": 1,
+        "files_created": 8,
+        "files_modified": 8,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 4,
+        "agent_file_ops": {
+          "agent_0": 2,
+          "agent_1": 2,
+          "agent_2": 2,
+          "agent_3": 2
+        },
+        "relationships": {
+          "Atlas \u2192 Nova": 1.0,
+          "Atlas \u2192 Sage": 1.0,
+          "Atlas \u2192 Flux": 1.0,
+          "Nova \u2192 Atlas": 1.0,
+          "Nova \u2192 Sage": 1.0,
+          "Nova \u2192 Flux": 1.0,
+          "Sage \u2192 Atlas": 1.0,
+          "Sage \u2192 Flux": 1.0,
+          "Sage \u2192 Nova": 1.0,
+          "Flux \u2192 Sage": 1.0,
+          "Flux \u2192 Atlas": 1.0,
+          "Flux \u2192 Nova": 1.0
+        }
+      },
+      {
+        "tick": 2,
+        "files_created": 8,
+        "files_modified": 8,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 2,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.5,
+          "Atlas \u2192 Sage": 0.5,
+          "Atlas \u2192 Flux": 0.5,
+          "Nova \u2192 Atlas": 0.5,
+          "Nova \u2192 Sage": 0.5,
+          "Nova \u2192 Flux": 0.5,
+          "Sage \u2192 Atlas": 0.5,
+          "Sage \u2192 Flux": 0.5,
+          "Sage \u2192 Nova": 0.5,
+          "Flux \u2192 Sage": 0.5,
+          "Flux \u2192 Atlas": 0.5,
+          "Flux \u2192 Nova": 0.5
+        }
+      },
+      {
+        "tick": 3,
+        "files_created": 8,
+        "files_modified": 8,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.0,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.0,
+          "Nova \u2192 Atlas": 0.0,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Nova": 0.0,
+          "Flux \u2192 Sage": 0.0,
+          "Flux \u2192 Atlas": 0.0,
+          "Flux \u2192 Nova": 0.0
+        }
+      },
+      {
+        "tick": 4,
+        "files_created": 8,
+        "files_modified": 8,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.0,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.0,
+          "Nova \u2192 Atlas": 0.0,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Nova": 0.0,
+          "Flux \u2192 Sage": 0.0,
+          "Flux \u2192 Atlas": 0.0,
+          "Flux \u2192 Nova": 0.0
+        }
+      },
+      {
+        "tick": 5,
+        "files_created": 8,
+        "files_modified": 8,
+        "messages": 6,
+        "broadcasts": 0,
+        "merge_conflicts": 3,
+        "merges_succeeded": 1,
+        "active_agents": 0,
+        "agent_file_ops": {},
+        "relationships": {
+          "Atlas \u2192 Nova": 0.0,
+          "Atlas \u2192 Sage": 0.0,
+          "Atlas \u2192 Flux": 0.0,
+          "Nova \u2192 Atlas": 0.0,
+          "Nova \u2192 Sage": 0.0,
+          "Nova \u2192 Flux": 0.0,
+          "Sage \u2192 Atlas": 0.0,
+          "Sage \u2192 Flux": 0.0,
+          "Sage \u2192 Nova": 0.0,
+          "Flux \u2192 Sage": 0.0,
+          "Flux \u2192 Atlas": 0.0,
+          "Flux \u2192 Nova": 0.0
+        }
+      }
+    ],
+    "conflict_records": [
+      {
+        "file": "fizzbuzz.py",
+        "agent_id": "agent_1",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "test_fizzbuzz.py",
+        "agent_id": "agent_1",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "fizzbuzz.py",
+        "agent_id": "agent_2",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "test_fizzbuzz.py",
+        "agent_id": "agent_2",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "fizzbuzz.py",
+        "agent_id": "agent_3",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      },
+      {
+        "file": "test_fizzbuzz.py",
+        "agent_id": "agent_3",
+        "detected_tick": 1,
+        "resolved_tick": null,
+        "resolution_time": null
+      }
+    ],
+    "tokens_per_agent": {
+      "agent_0": 82126,
+      "agent_1": 69888,
+      "agent_2": 64886,
+      "agent_3": 80701
+    }
+  },
+  "verification": {
+    "passed": true,
+    "tests_total": 5,
+    "tests_passed": 5
+  }
+}

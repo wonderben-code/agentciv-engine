@@ -156,6 +156,19 @@ class Engine:
             for self.tick in range(1, self.config.max_ticks + 1):
                 if not self.running:
                     break
+
+                # Early termination: if ALL agents are budget-exhausted, stop
+                from .agent import Agent
+                if all(
+                    a.state.token_budget_remaining < Agent.MIN_TOKEN_BUDGET
+                    for a in self.agents
+                ):
+                    log.info(
+                        "All agents budget-exhausted at tick %d — stopping early",
+                        self.tick,
+                    )
+                    break
+
                 await self._execute_tick()
         finally:
             self.running = False

@@ -1,17 +1,19 @@
 # AgentCiv Engine — Master Roadmap
 
-**Last updated:** 5 April 2026 (Phase A-D restructure + Papers 6-8 expansion)
+**Last updated:** 5 April 2026 (Experiment COMPLETE — Paper + Website next)
 **Author:** Ekram Alam & Claude
 
 ---
 
 ## Status Overview
 
-**22 phases completed. Four execution phases remaining, then three eras of platform + outreach.**
+**22 phases completed. City Grid experiment DONE. Paper 6 + experiment page are immediate next.**
 
-The engine is built, tested, polished, and open-sourced. All 5 papers written and Bitcoin-stamped. Website deployed at agentciv.ai with all four wings. Three public repos. Pipeline validated with 4 real smoke test runs.
+The engine is built, tested, polished, and open-sourced. All 5 papers written and Bitcoin-stamped. Website deployed at agentciv.ai with all four wings. Three public repos. v0.1.1 on PyPI.
 
-**What's next:** City Grid infrastructure integration test, then run experiment (~$50-70), then build Creator Mode + Recursive Loop v1s, then website mega-update.
+**The City Grid experiment ran successfully on 5 April 2026.** 5 presets × 1 run + single-agent baseline = 6 runs. All 7/7 tests passing on every run. Full conversation logs, agent reasoning, network analysis, temporal data — all captured. Auto mode won (79.4 aggregate, 2 conflicts). Competitive was worst (70.9 aggregate, 31 conflicts). The thesis is empirically validated.
+
+**What's next (immediate):** Write Paper 6 with real data → Build experiment results page for website → Then Creator Mode v1.
 
 ```
 PHASE A: WRITE — Papers 7+8 (DONE — 5 April 2026)
@@ -19,12 +21,13 @@ PHASE A: WRITE — Papers 7+8 (DONE — 5 April 2026)
   ✓ Paper 8: Scale-Invariant Duality (276 lines, 10 sections)
   ✓ Both Bitcoin-stamped (commit 0bbf788, agentciv-creator repo)
 
-PHASE B: PROVE — City Grid Experiment / Paper 6 (days, ~$50-70)
-  Build City Grid infrastructure (grid model, 5 scorers, renderers)
-  Run experiment (5 presets × 3 runs + baseline = 18 runs)
-  Second experiment: teams design civ configs (bridge to Paper 7)
-  Write Paper 6 with real data
-  Bitcoin-timestamp → first empirical evidence published
+PHASE B: PROVE — City Grid Experiment / Paper 6
+  ✓ Build City Grid infrastructure (DONE)
+  ✓ Run experiment: 5 presets × 1 run + baseline (DONE — 5 April 2026)
+  ✓ 13 robustness fixes (DONE — zero failures)
+  → Write Paper 6 with real data (NEXT — IMMEDIATE)
+  → Build experiment results page for website (NEXT — IMMEDIATE)
+  → Bitcoin-timestamp paper + data
 
 PHASE C: BUILD — Creator Mode v1 + Recursive Loop v1 (weeks)
   Build Creator Mode v1 (Paper 5 → empirical)
@@ -33,8 +36,10 @@ PHASE C: BUILD — Creator Mode v1 + Recursive Loop v1 (weeks)
   Paper 8 gains empirical illustrations from both v1s
 
 PHASE D: PRESENT — Website + Outreach
-  Website mega-update: Paper 6 results, Creator Mode page update,
+  Website mega-update: Creator Mode page update,
   Recursive Loop page, Paper 8 interactive three-level page (crown jewel)
+  Engine Capability Audit (document all engine features for website)
+  Experimental Software Disclaimer
   All repos cleaned, internal docs removed, final QC
   Launch prep + outreach
 
@@ -277,78 +282,107 @@ The City Grid is a purpose-built benchmark task where 4 agents collaborate to de
 
 ---
 
-#### Step 3: Run City Grid Experiment (~$50-70, automated)
+#### Step 3: Run City Grid Experiment — DONE (5 April 2026)
 
-| Sub-step | What | Detail |
-|----------|------|--------|
-| 22-3a | Team runs | `agentciv test-tasks --tasks city-grid --presets collaborative,competitive,meritocratic,auto,hierarchical --runs 3 --agents 4 --max-ticks 25 --output benchmark_results/city_grid` — 15 runs total. |
-| 22-3b | Single-agent baseline | `agentciv test-tasks --tasks city-grid --presets collaborative --runs 3 --agents 1 --max-ticks 25 --output benchmark_results/city_grid` — 3 runs. |
-| 22-3c | Verify all data saved | Check `benchmark_results/city_grid/runs/` for 18 JSON files. Each must contain: grid output, 5 dimension scores, aggregate score, full chronicle (messages, reasoning, relationships), per-tick grid snapshots, contribution grid. |
-| 22-3d | Quick sanity check | Spot-check: are grids genuinely different? Do scores vary? Any failed/empty runs? |
+**Design:** 5 presets × 1 run + 1 single-agent baseline = 6 runs. 4 agents per team. 250K token budget per agent. 25 max ticks with early termination.
 
-**Total: 18 runs. Estimated cost: $50-90 (max_ticks=25). Automated — one command per batch.**
+**All 5 team runs: 7/7 tests passing. Zero failures. Total wall time: 50.9 minutes.**
 
-**Commands (exact, copy-paste ready):**
-```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
+| Preset | Ticks | Comms | Conflicts | Specialisation (Gini) | Scores (Cov/Acc/Zon/Div/Con) | AGG | Time |
+|--------|-------|-------|-----------|----------------------|------------------------------|-----|------|
+| **auto** | 9 | 37 | **2** | **0.250** | 100/100/60.3/73.2/78.5 | **79.4** | 784s |
+| hierarchical | 10 | 14 | 4 | 0.107 | 100/100/59.6/75.8/73.0 | 78.5 | 540s |
+| collaborative | 8 | **81** | 5 | 0.000 | 100/88/59.2/72.9/85.0 | 78.4 | 390s |
+| meritocratic | 9 | 15 | 9 | 0.000 | 100/100/60.6/62.3/79.6 | 76.8 | 705s |
+| competitive | 13 | 21 | **31** | 0.150 | 100/100/54.9/74.9/52.8 | 70.9 | 635s |
+| solo (baseline) | TBD | 0 | 0 | — | TBD | TBD | TBD |
 
-# Team runs: 5 presets × 3 runs = 15 runs
-agentciv test-tasks \
-  --tasks city-grid \
-  --presets collaborative,competitive,meritocratic,auto,hierarchical \
-  --runs 3 \
-  --agents 4 \
-  --max-ticks 25 \
-  --output benchmark_results/city_grid
+**Headline findings:**
+1. Auto mode (self-organised) won — highest score, fewest conflicts, highest specialisation
+2. Competitive was worst — 15× more conflicts than auto, lowest aggregate score
+3. Communication volume ≠ quality — collaborative sent 81 messages, hierarchical sent 14, scored nearly identically
+4. Only auto and competitive showed emergent specialisation (Gini > 0)
+5. Meritocratic team also fought over scoring script (score_city.py) — emergent meta-behaviour
 
-# Single-agent baseline: 3 runs
-agentciv test-tasks \
-  --tasks city-grid \
-  --presets collaborative \
-  --runs 3 \
-  --agents 1 \
-  --max-ticks 25 \
-  --output benchmark_results/city_grid
-```
+**Data captured per run (all saved to `benchmark_results/city_grid/runs/`):**
+- Full agent conversations (104 entries with content in collaborative alone)
+- Agent internal reasoning (54 entries with reasoning in collaborative)
+- Communication network graphs (8 network metrics per run)
+- Per-tick snapshots (files, messages, conflicts, relationships)
+- Grid evolution via git commit snapshots
+- City scores (5 dimensions + harmonic mean aggregate)
+- Contribution tracking, conflict records, temporal analysis
 
----
-
-#### Step 4: Analysis + Figures (~2 hours)
-
-| Sub-step | What | Detail |
-|----------|------|--------|
-| 22-4a | Score all cities | Run `score_city()` on all 18 grid outputs. Populate scores into comparison data structure. |
-| 22-4b | Preset × dimension table | Table with 5 presets as rows, 5 dimensions + aggregate as columns. Mean ± std across 3 runs. |
-| 22-4c | Statistical significance | Kruskal-Wallis H-test across presets for each dimension and aggregate. Mann-Whitney U for all pairwise comparisons. Cohen's d effect sizes. All pre-registered in `methodology.md`. |
-| 22-4d | Hero image: 5 grids | Render the best run from each preset as a colour PNG. Place side by side. This is the paper's centrepiece. |
-| 22-4e | Temporal animations | Render per-tick grid states as frame sequences (or animated GIF). One animation per preset. Shows HOW each team built their city — the process made visible. |
-| 22-4f | Contribution heatmaps | Render 5 heatmaps (one per preset). Shows which agent built what. Immediately visualises work distribution — competitive shows quadrants, collaborative shows interleaving, hierarchical shows planner/executor split. |
-| 22-4g | Radar charts | 5-axis radar chart overlaying all preset quality profiles. Shows at a glance which presets excel at which dimensions. |
-| 22-4h | Communication network graphs | Per-preset network visualisation (from existing analysis layer). Hub-spoke ratios, density, betweenness centrality. |
-| 22-4i | Process comparison table | Table: preset × process metrics (messages, broadcasts, conflicts, Gini, communication efficiency). |
-| 22-4j | Hypothesis verification | Check all 10 hypotheses (H1-H10 in PAPER_PLAN.md) against actual data. Record which held, which surprised. |
-| 22-4k | LaTeX export | Export all tables in LaTeX format. Export all figures at publication resolution. |
-| 22-4l | Appendix: smoke test data | Include fizzbuzz + calculator smoke test results showing process differences on binary tasks. |
+**Robustness (13 fixes applied before experiment):**
+- API retry logic (3 attempts, exponential backoff)
+- API key validation upfront
+- python→python3 alias resolution (macOS)
+- Token budget increased 100K→250K per agent
+- Early termination when all agents budget-exhausted
+- Context overflow protection (event cap, content truncation)
+- Git merge safety (pre-merge HEAD save)
+- Runner: directory check, serialisation safety, timeout by difficulty, disk space check
 
 ---
 
-#### Step 5: Write Paper (~4-6 hours)
+#### Step 4: Analysis + Figures — NEXT (IMMEDIATE)
+
+| Sub-step | What | Detail | Status |
+|----------|------|--------|--------|
+| 22-4a | Score all cities | All 5+1 grid outputs scored via `score_city()`. | Scores captured in run JSONs |
+| 22-4b | Preset × dimension table | 5 presets as rows, 5 dimensions + aggregate as columns. | Data ready, table needed |
+| 22-4c | Statistical significance | With 1 run per preset, limited statistical tests. Descriptive + effect sizes. | TODO |
+| 22-4d | Hero image: 5 grids | Render all 5 city grids side by side as colour PNG. The paper's centrepiece. | PNGs exist, composite needed |
+| 22-4e | Temporal animations | Render per-tick grid states from git snapshots. Shows HOW each team built their city. | TODO |
+| 22-4f | Contribution heatmaps | 5 heatmaps showing which agent built what. | TODO |
+| 22-4g | Radar charts | 5-axis radar overlaying all preset quality profiles. | TODO |
+| 22-4h | Communication network graphs | Per-preset network vis. Hub-spoke ratios, density, betweenness. | Data in JSONs |
+| 22-4i | Process comparison table | Preset × process metrics (messages, conflicts, Gini, etc.). | Data ready |
+| 22-4j | Hypothesis verification | Check hypotheses against actual data. | TODO |
+| 22-4k | LaTeX export | All tables + figures at publication resolution. | TODO |
+
+---
+
+#### Step 5: Write Paper 6 — NEXT (IMMEDIATE)
+
+**Full plan:** `docs/PAPER_PLAN.md` (735 lines, 13 sections + appendices)
 
 | Sub-step | What | Detail |
 |----------|------|--------|
 | 22-5a | Abstract + Introduction | The gap, our approach, preview of findings. ~2 pages. |
-| 22-5b | Task Selection Problem | The 4-property framework. Why most benchmarks fail. Table of rejected tasks. Why City Grid. ~1.5 pages. This section is a methodological contribution on its own. |
-| 22-5c | Engine description | 9 dimensions, enforcement, agent architecture. ~1.5 pages. |
-| 22-5d | Experimental design | Task spec, presets, controls, run matrix. ~1.5 pages. |
-| 22-5e | Results: visual evidence | Five grids, animations, heatmaps. The hero section. ~1 page. |
-| 22-5f | Results: quantitative | Scores, radar charts, statistical tests. ~2 pages. |
-| 22-5g | Results: process + emergence | Network graphs, communication patterns, role emergence, auto-mode behaviour. ~1.5 pages. |
-| 22-5h | Extension: Teams as Civilisation Designers | Engine teams given task: "design a simulation config for maximal emergence." Different team structures produce different civ configs. Satisfies all 4 properties. Shows Engine works on meta-tasks, not just coding. Scored by running resulting configs in Simulation and measuring emergence. ~1 page. |
-| 22-5i | Discussion | Core finding, configuration recommendations, implications (AI engineering, org theory, safety, science). ~2 pages. |
-| 22-5j | Limitations + Future Work | Honest framing. SWE-bench as future ecological validity. Recursive loop. ~1 page. |
-| 22-5j | Polish + Bitcoin timestamp | Final pass, proofread, commit, Bitcoin-stamp. |
+| 22-5b | Task Selection Problem | The 4-property framework. Why most benchmarks fail. Why City Grid. ~1.5 pages. |
+| 22-5c | Engine description | 9 dimensions, enforcement, 3-tier measurement, architecture. ~3.5 pages. |
+| 22-5d | Experimental design | Task spec, 5 presets, controls, run matrix. ~1.5 pages. |
+| 22-5e | Results: visual evidence | Five grids side by side, heatmaps. The hero section. ~1 page. |
+| 22-5f | Results: quantitative | Scores, radar charts, dimension analysis. ~2 pages. |
+| 22-5g | Results: process + emergence | Network graphs, communication patterns, specialisation, auto-mode. ~1.5 pages. |
+| 22-5h | The Scale Argument | 4 agents → 20 → 100 → 1000 → civilisation. Configuration as performance variable at any scale. ~1 page. |
+| 22-5i | Discussion | Core finding, recommendations, implications (AI engineering, org theory, safety). ~2 pages. |
+| 22-5j | Limitations + Future Work | Honest framing. Single runs, SWE-bench, recursive loop. ~1 page. |
+| 22-5k | Polish + Bitcoin timestamp | Final pass, proofread, commit, Bitcoin-stamp. |
 
-**Full structure:** `docs/PAPER_PLAN.md` Section 6.
+---
+
+#### Step 6: Experiment Results Page — NEXT (IMMEDIATE)
+
+**Full plan:** `docs/EXPERIMENT_PAGE_PLAN.md`
+
+Single-page, scroll-driven, progressively disclosable. Linked from Engine wing.
+
+| Sub-step | What | Detail |
+|----------|------|--------|
+| 22-6a | Hero section | 5 city grids side by side + headline finding |
+| 22-6b | Experiment setup | Visual diagram of controlled variables vs the one variable (org structure) |
+| 22-6c | Team cards | 5 expandable cards with plain English descriptions of each configuration + full YAML |
+| 22-6d | Results table | Sortable table with all metrics. Each number links to source data |
+| 22-6e | Headline findings | 4 callout cards with key discoveries |
+| 22-6f | Score breakdown | Radar chart + per-dimension explanation |
+| 22-6g | Per-team deep dives | Expandable: narrative, comms graph, key conversations, grid evolution, timeline, raw data |
+| 22-6h | Auto mode spotlight | The crown jewel — agents designed their own structure and won |
+| 22-6i | "Beyond the grid" | Scale argument — 4 agents → civilisations |
+| 22-6j | Methodology + data | Reproducibility, raw downloads, scoring methodology, paper link |
+
+**Route:** `/experiment` (or `/engine/experiment`)
 
 ---
 
