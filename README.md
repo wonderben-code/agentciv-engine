@@ -5,7 +5,7 @@
 AgentCiv Engine treats organisational arrangement as a first-class design parameter for multi-agent AI systems. Instead of hard-coding how agents coordinate, you choose from 13 team structures — or let the agents design their own.
 
 ```bash
-pip install -e .
+pip install agentciv-engine
 agentciv setup
 # That's it. Open Claude Code and say: "Use agentciv to build a REST API"
 ```
@@ -21,10 +21,8 @@ The same task solved by a **hierarchical** team (top-down, assigned roles, chain
 ## Quick start
 
 ```bash
-# Install
-git clone https://github.com/wonderben-code/agentciv-engine.git
-cd agentciv-engine
-pip install -e .
+# Install (use pip3 on macOS if pip is not found)
+pip install agentciv-engine
 
 # Set up for your project
 cd /path/to/your/project

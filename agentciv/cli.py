@@ -44,7 +44,7 @@ def build_cli() -> argparse.ArgumentParser:
     # --- solve ---
     solve = sub.add_parser("solve", help="Spawn a community to solve a task")
     solve.add_argument("--task", "-t", required=True, help="What the community should build/solve")
-    solve.add_argument("--org", "-o", default="collaborative", help="Organisational preset (collaborative, competitive, meritocratic, auto)")
+    solve.add_argument("--org", "-o", default="collaborative", help="Organisational preset — 13 available. Run 'agentciv info' to see all. Examples: collaborative, hierarchical, meritocratic, swarm, auto")
     solve.add_argument("--agents", "-a", type=int, default=4, help="Number of agents")
     solve.add_argument("--model", "-m", default="claude-sonnet-4-6", help="LLM model")
     solve.add_argument("--dir", "-d", default=".", help="Project directory")
