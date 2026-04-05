@@ -181,6 +181,15 @@ class SessionManager:
     def __init__(self) -> None:
         self._sessions: dict[str, Session] = {}
         self._step_sessions: dict[str, StepSession] = {}
+        self._benchmark_contexts: dict[str, dict[str, Any]] = {}
+
+    def store_benchmark_context(self, session_id: str, context: dict[str, Any]) -> None:
+        """Store benchmark task context for a step session."""
+        self._benchmark_contexts[session_id] = context
+
+    def get_benchmark_context(self, session_id: str) -> dict[str, Any] | None:
+        """Retrieve benchmark context for a step session."""
+        return self._benchmark_contexts.get(session_id)
 
     @property
     def sessions(self) -> dict[str, Session]:

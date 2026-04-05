@@ -603,6 +603,253 @@ async def agentciv_orchestrate_status(session_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Benchmark Mode — run established benchmarks via Max Plan
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def agentciv_benchmark_start(
+    task_id: str,
+    preset: str = "collaborative",
+    agents: int = 4,
+    max_ticks: int | None = None,
+    output_dir: str = "benchmark_results/internal",
+) -> str:
+    """Start a benchmark task in Max Plan Mode.
+
+    Sets up the task (seed files, working directory), creates a step session,
+    and returns agent contexts for the first tick. Drive agents using the
+    standard orchestrate_act/orchestrate_tick flow. When done, call
+    agentciv_benchmark_verify() to score the result.
+
+    Available internal tasks: fizzbuzz, kv_store, todo_api, calculator,
+    data_pipeline, web_scraper. Use 'all' to list them.
+
+    Args:
+        task_id: Benchmark task ID (e.g. 'fizzbuzz') or 'all' to list tasks
+        preset: Organisational preset (default: collaborative)
+        agents: Number of agents (default: 4)
+        max_ticks: Override max ticks (default: task-specific)
+        output_dir: Where to save results (default: benchmark_results/internal)
+    """
+    from ..benchmark.tasks import TASK_BANK, get_all_tasks
+
+    # List mode
+    if task_id == "all":
+        tasks = get_all_tasks()
+        return json.dumps({
+            "available_tasks": [
+                {
+                    "id": t.id,
+                    "name": t.name,
+                    "difficulty": t.difficulty,
+                    "max_ticks": t.max_ticks,
+                    "expected_files": t.expected_files,
+                }
+                for t in tasks
+            ],
+        }, indent=2)
+
+    # Look up task
+    if task_id not in TASK_BANK:
+        return json.dumps({"error": f"Unknown task: {task_id}. Use task_id='all' to list."}, indent=2)
+
+    task = TASK_BANK[task_id]
+    ticks = max_ticks or task.max_ticks
+
+    # Create temp project directory with seed files
+    import tempfile
+    tmpdir = tempfile.mkdtemp(prefix=f"agentciv_bench_{task_id}_")
+    project = Path(tmpdir) / "project"
+    project.mkdir()
+
+    for fpath, content in task.seed_files.items():
+        full = project / fpath
+        full.parent.mkdir(parents=True, exist_ok=True)
+        full.write_text(content)
+
+    # Create step session
+    session_id, init_result = await manager.create_step_session(
+        task=task.description,
+        org_preset=preset,
+        agent_count=agents,
+        max_ticks=ticks,
+        project_dir=str(project),
+    )
+
+    # Store benchmark context for verify step
+    manager.store_benchmark_context(session_id, {
+        "task_id": task_id,
+        "task": task,
+        "preset": preset,
+        "project_dir": str(project),
+        "tmpdir": tmpdir,
+        "output_dir": output_dir,
+        "agent_count": agents,
+    })
+
+    # Prepare first tick
+    step = manager.get_step_session(session_id)
+    contexts = await step.prepare_tick()
+
+    return json.dumps({
+        "session_id": session_id,
+        "mode": "benchmark_max_plan",
+        "task": {
+            "id": task_id,
+            "name": task.name,
+            "difficulty": task.difficulty,
+            "description": task.description[:200],
+        },
+        "preset": preset,
+        "agents": agents,
+        "max_ticks": ticks,
+        "project_dir": str(project),
+        "tick": 1,
+        "agent_contexts": contexts,
+        "instructions": (
+            "Drive agents using agentciv_orchestrate_act() and "
+            "agentciv_orchestrate_tick() as normal. When the run finishes "
+            "(should_continue=False), call agentciv_benchmark_verify(session_id) "
+            "to score the result and save data."
+        ),
+    }, indent=2)
+
+
+@mcp.tool()
+async def agentciv_benchmark_verify(session_id: str, run_index: int = 0) -> str:
+    """Verify and score a completed benchmark run.
+
+    Runs the task's verification script, extracts metrics, computes analysis
+    (network + temporal), and saves all data to the output directory.
+
+    Call this after the orchestrate loop finishes (should_continue=False).
+
+    Args:
+        session_id: The benchmark step session ID
+        run_index: Run index for this (task, preset) combo (default: 0)
+    """
+    import time
+    from ..benchmark.metrics import VerificationResult, extract_metrics
+    from ..benchmark.analysis import analyse_run
+    from ..benchmark.runner import _verify
+
+    step = manager.get_step_session(session_id)
+    if not step:
+        return json.dumps({"error": f"Session '{session_id}' not found"}, indent=2)
+
+    ctx = manager.get_benchmark_context(session_id)
+    if not ctx:
+        return json.dumps({"error": "No benchmark context — was this started with agentciv_benchmark_start?"}, indent=2)
+
+    task = ctx["task"]
+    project = Path(ctx["project_dir"])
+
+    # Generate chronicle report
+    report = None
+    if step.engine.chronicle:
+        report = step.engine.chronicle.generate_report()
+
+        # Inject per-agent token consumption
+        initial_budget = step.engine.config.parameters.token_budget_per_agent
+        report.tokens_per_agent = {
+            a.state.identity.id: max(0, initial_budget - a.state.token_budget_remaining)
+            for a in step.engine.agents
+        }
+
+    if not report:
+        return json.dumps({"error": "No chronicle report available"}, indent=2)
+
+    # Run verification
+    verification = _verify(task, project)
+
+    # Extract metrics
+    metrics = extract_metrics(
+        report, verification,
+        wall_time=0.0,  # wall time not tracked in Max Plan mode
+        agent_tokens=report.tokens_per_agent,
+    )
+
+    # Run analysis
+    analysis = analyse_run(report, metrics)
+
+    # Save per-run JSON
+    output_dir = Path(ctx["output_dir"])
+    runs_dir = output_dir / "runs"
+    runs_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{ctx['task_id']}_{ctx['preset']}_run{run_index}.json"
+    data = {
+        "task_id": ctx["task_id"],
+        "preset": ctx["preset"],
+        "run_index": run_index,
+        "mode": "max_plan",
+        "agent_count": ctx["agent_count"],
+        "success": verification.passed,
+        "metrics": {
+            "completion_rate": metrics.completion_rate,
+            "ticks_used": metrics.ticks_used,
+            "files_produced": metrics.files_produced,
+            "test_pass_rate": metrics.test_pass_rate,
+            "communication_volume": metrics.communication_volume,
+            "merge_conflicts": metrics.merge_conflicts,
+            "emergent_specialisation": round(metrics.emergent_specialisation, 4),
+            "file_completeness": metrics.file_completeness,
+            "total_tokens": metrics.total_tokens,
+            "tokens_per_agent": metrics.tokens_per_agent,
+        },
+        "analysis": analysis.to_dict(),
+        "verification": {
+            "passed": verification.passed,
+            "tests_total": verification.tests_total,
+            "tests_passed": verification.tests_passed,
+            "tests_failed": verification.tests_failed,
+            "output": verification.output,
+        },
+        "report": report.to_dict(),
+    }
+
+    filepath = runs_dir / filename
+    with open(filepath, "w") as f:
+        json.dump(data, f, indent=2)
+
+    # Clean up step session
+    await step.finish()
+
+    return json.dumps({
+        "session_id": session_id,
+        "task_id": ctx["task_id"],
+        "preset": ctx["preset"],
+        "run_index": run_index,
+        "verification": {
+            "passed": verification.passed,
+            "tests_total": verification.tests_total,
+            "tests_passed": verification.tests_passed,
+        },
+        "metrics": {
+            "completion_rate": metrics.completion_rate,
+            "ticks_used": metrics.ticks_used,
+            "test_pass_rate": metrics.test_pass_rate,
+            "total_tokens": metrics.total_tokens,
+            "communication_volume": metrics.communication_volume,
+            "merge_conflicts": metrics.merge_conflicts,
+            "emergent_specialisation": round(metrics.emergent_specialisation, 4),
+        },
+        "analysis_summary": {
+            "network_density": analysis.network.graph_density,
+            "hub_spoke_ratio": analysis.network.hub_spoke_ratio,
+            "convergence_tick": analysis.temporal.convergence_tick,
+        },
+        "saved_to": str(filepath),
+        "message": (
+            f"{'PASSED' if verification.passed else 'FAILED'}: "
+            f"{verification.tests_passed}/{verification.tests_total} tests. "
+            f"Data saved to {filepath}"
+        ),
+    }, indent=2)
+
+
+# ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
 
