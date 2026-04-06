@@ -36,14 +36,17 @@ PHASE B: PROVE — City Grid Experiment / Paper 6
   → Proofread + upgrade Paper 6 to publication quality (NEXT — IMMEDIATE)
   ✓ Bitcoin-timestamp paper + data (DONE — all commits stamped)
 
-PHASE B2: PAPER AUDIT + SIMULATION PAPER (NEXT — after Paper 6 finalised)
-  Review all 8 papers: which have empirical data, which are theoretical?
-  Paper 3 (Maslow Machines) covers 12-agent sim — assess if deep enough
-  If gaps found: write new companion paper with detailed simulation analysis
-    (agent-by-agent breakdowns, network evolution, innovation chains,
-     governance emergence timeline, interview analysis, Maslow drive dynamics)
-  Ensure every experiment we've run has a publication-quality paper behind it
-  Bitcoin-stamp any new papers
+PHASE B2: PAPER AUDIT + "SEVENTY TICKS" PAPER (ACTIVE — 6 April 2026)
+  ✓ Reviewed all 8 papers: 2 empirical (Papers 3, 6), 6 theoretical
+  ✓ Paper 3 covers mechanism; civilisation story needs its own paper
+  ✓ VERDICT: New paper needed — "Seventy Ticks: Complete Natural History"
+  ✓ Plan written: docs/PAPER_SEVENTY_TICKS_PLAN.md (comprehensive)
+  → Write Paper 9 "Seventy Ticks" (ACTIVE — writing now)
+    6 analysis layers: innovation diffusion, relationship network,
+    Maslow transitions, governance, spatial, interview cross-validation
+    Centrepiece: existence disclosure dataset (12 agents told they're AI)
+    ~15-18K words, dataset published as benchmark
+  → Bitcoin-stamp on completion
 
 PHASE B3: WEBSITE UPDATE — Experiments + Papers
   Build city grid experiment results page (plan at `docs/EXPERIMENT_PAGE_PLAN.md`)
