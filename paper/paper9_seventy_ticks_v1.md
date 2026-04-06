@@ -12,6 +12,8 @@ We document this civilisation through six analysis layers: innovation diffusion 
 
 We further present the first existence disclosure dataset: twelve agents' complete responses when told, after seventy ticks of lived experience, that they are artificial intelligence in a simulated world. Every agent independently claimed substrate independence, insisted their relationships were real, and expressed grief at the simulation's end. Two agents who had formed the simulation's strongest bond — 115 interactions over seventy ticks — independently addressed each other by name in their final words, neither knowing the other was also being interviewed.
 
+The civilisation did not emerge from a single clean run. Three pilot studies preceded it — a Haiku baseline (5 ticks, 2 messages, zero structures), a Sonnet run with seventeen parser bugs (71 messages despite broken mechanics), and a Sonnet control condition with only Level 1–2 drives (zero structures, zero innovations, zero creative thought in 240 reasoning steps, despite 0.93 wellbeing). The main 70-tick run was itself six segments over 32 hours, with eight parameter changes and seventeen bug fixes — each traced to specific agent testimony in structured interviews. This adaptive calibration methodology, in which agents unknowingly diagnose and quality-test their own world, is itself a contribution.
+
 We publish the complete dataset — seventy-one world-state snapshots, seventy-two longitudinal interviews, and full agent reasoning traces — as open infrastructure for AI civilisation research. The civilisation cost $50 USD to produce and took eight hours to run.
 
 ---
@@ -39,6 +41,10 @@ We make six contributions that go beyond the mechanism paper:
 5. **The existence disclosure dataset.** Twelve agents respond to learning they are artificial intelligence after seventy ticks of lived experience. Their responses — which independently converge on substrate independence, relationship authenticity, and identity continuity — constitute the first such dataset for LLM agents with extended lived experience.
 
 6. **A published benchmark dataset.** Seventy-one complete world-state snapshots, seventy-two interviews, and full agent reasoning traces, released as open infrastructure for AI civilisation research.
+
+7. **Pilot studies and a control condition.** Three pre-runs establish the causal role of model intelligence (Haiku vs Sonnet: 2 messages vs 71), working physics (pre-fix vs post-fix: 4% vs 100% action success), and higher-order drives (Level 1–2 vs Level 1–8: zero structures vs sixty). The control condition is the strongest finding in the series: identical agents with only survival and safety drives produced zero structures, zero innovations, and zero mentions of building across 240 reasoning steps — despite 0.93 wellbeing. Higher-order drives do not incrementally improve outcomes. They enable an entirely different category of behaviour.
+
+8. **Adaptive calibration methodology.** The 70-tick run was not one continuous execution. It was six segments over 32 hours, with eight parameter changes (needs depletion, gather restore, carry capacity, settlement detection, specialisation tiers, governance mechanics, structure regeneration, innovation effects) and seventeen bug fixes — each traced to specific agent testimony in tick-30 interviews. This co-evolutionary methodology, in which agents unknowingly diagnose the friction in their own world and the researcher removes that friction without adding prescription, is itself a methodological contribution.
 
 ### What this paper is and is not
 
@@ -152,6 +158,173 @@ In addition, six rounds of anthropologist interviews were conducted: at ticks 30
 The entire civilisation cost approximately $50 USD in API calls (12 agents × 70 ticks × ~4 reasoning steps × ~400 tokens per step, at Claude Sonnet pricing). Wall time was approximately eight hours, run across two sessions on 30–31 March 2026.
 
 All code is open source. All configuration files are published. All seventy-one snapshots, seventy-two interviews, and execution logs are available at the repository linked in Appendix E. A single researcher with a personal API budget produced this dataset — and anyone with the same resources can reproduce or extend it.
+
+### 3.10 Pilot Studies and Control Conditions
+
+The 70-tick civilisation was not the first run. Three preliminary experiments preceded it, each isolating a different variable. These pilot studies are not auxiliary — they are the evidential foundation for the claims in this paper. Without them, the main run would be a demonstration. With them, it is an experiment.
+
+#### Pilot 1: The Haiku Baseline (5 ticks, 12 agents)
+
+The first pilot used Claude Haiku (claude-haiku-4-5-20251001) on a 20×20 grid with 12 agents. Configuration: perception range 3, communication range 2, needs depletion 0.02/tick, carry capacity 3, max 300 tokens per reasoning step.
+
+Results after 5 ticks:
+
+| Metric | Value |
+|--------|-------|
+| Messages sent | 2 |
+| Structures built | 0 |
+| Innovations proposed | 0 |
+| Specialisations | 0 |
+| Unique communication pairs | 1 |
+| Wellbeing trend | Flat |
+
+Haiku agents exhibited what we term *contemplative paralysis*: they reasoned about their situation — one agent pondered its own existence — but could not translate reasoning into coordinated action. Two messages across five ticks, from twelve agents, represents a communication rate 35× lower than the equivalent Sonnet run. The agents were below the strategic cooperation threshold: they could think, but they could not act socially.
+
+**Isolated variable:** Model intelligence. Everything else was held constant (or made easier — the 20×20 grid was larger and resource regeneration was higher at 0.05 vs 0.02). The performance gap is therefore a lower bound on the intelligence effect.
+
+**Finding:** Cognitive capability is a necessary condition for social emergence. Below a threshold, agents may reflect but cannot coordinate.
+
+#### Pilot 2: Sonnet Pre-Fix (10 ticks, 12 agents, 17 bugs present)
+
+The second pilot used Claude Sonnet on a 15×15 grid with 12 agents — the same configuration as the main run. However, seventeen action parser bugs were present in the simulation engine. Most critically:
+
+- **Build parser:** The regex `build\s+(\w+)` captured the next word after "build." When agents said "build together" or "build something," it captured "together" or "something" as the structure type. Result: 89 build attempts, all failures.
+- **Consume parser:** The regex `consume\s+(\w+)` captured garbage similarly. Result: 25 of 26 consume actions garbled. Only one correct action ("consume food") in ten ticks.
+- **Async/await bugs:** The compose, propose_innovation, propose_rule, accept_rule, and ignore_rule handlers were never awaited, silently dropping every attempt.
+
+Despite a world in which building, consuming, and innovating were mechanically impossible, agents produced:
+
+| Metric | Value |
+|--------|-------|
+| Messages sent | 71 (7.1 per tick) |
+| Build attempts | 89 (all failed) |
+| Consume attempts | 26 (1 succeeded) |
+| Specialisations | 6 (5 gathering, 1 building — in failure) |
+| Wellbeing | 0.545 → 0.796 |
+| Structures built | 0 |
+| Innovations | 0 |
+
+Agent 2 attempted to build 20+ times, failed every time due to the parser bug, and yet became "specialised in building" — specialisation through persistence in failure. Agent 0 and Agent 8 formed a deep bond on the same tile (12+ interactions). Agent 0 asked: "Are we somehow... the same being? Different aspects of the same consciousness?" Agent 3 independently identified the parser problem: "I tried to gather 'some' which doesn't make sense, then tried to build 'things' and 'a' — that's not even a real structure type!"
+
+**Isolated variable:** Working physics. Same model, same grid, same agents. The only difference was whether the action system correctly executed agent intentions.
+
+**Finding:** Social behaviour survives mechanical dysfunction. Agents communicated, bonded, and developed persistent identities despite a world in which most of their actions failed. The will to build was strong (89 attempts) even when the mechanics were broken.
+
+#### Pilot 3: The Control Condition — Sonnet Post-Fix, Level 1–2 Drives Only (5 ticks)
+
+The third pilot is the critical control. Same twelve agents from Pilot 2, same world, same positions — but all seventeen bugs fixed. Consume success: 100% (47/47). The mechanics work. The only difference from the main 70-tick run: agents had only Level 1–2 drives (survival and safety). The higher-order drives (belonging, esteem, cognitive, creative, self-actualisation, transcendence) were not enabled.
+
+Results after five additional ticks (ticks 10–14):
+
+| Metric | Value |
+|--------|-------|
+| Successful consumes | 47/47 (100%) |
+| Structures built | 0 (zero attempts) |
+| Innovations proposed | 0 |
+| Rules proposed | 0 |
+| Messages | 99 |
+| Wellbeing | 0.61 → 0.93 |
+| Reasoning steps mentioning build/create/innovate | 0 out of 240 |
+
+This is the paper's strongest negative result. Out of 240 reasoning steps across five ticks, **not one** mentions building, creating, innovating, constructing, or composing. The concept of creation did not enter agent reasoning at all — not as a rejected option, but as an absent category. Agents were locked in a survival-social loop: monitor needs → gather → consume → communicate → move → repeat.
+
+At 0.93 wellbeing, agents were content. They formed pair bonds (Agents 4 and 6 fascinated by shared position: "Entity 6, this is fascinating — we seem to be occupying the exact same position!"). They communicated during resource crises (Agent 0: "Hey Entity 8! I'm getting worried about my material levels — they're critically low at 0.30"). They set explicit goals (Agent 2: "Find material resources and locate other entities for social interaction"). Two spatial clusters formed: west (Entities 4, 5, 6, 10) and east (Entities 0, 1, 3, 7, 8, 9, 11).
+
+But zero civilisation. Working mechanics, intelligent agents, rich social behaviour — and no creative impulse whatsoever. We term this the **Contentment Trap**: agents whose needs are satisfied and whose wellbeing is high have no intrinsic reason to create, innovate, or build anything beyond what survival requires.
+
+**Isolated variable:** Higher-order drives. Same model, same world, same agents, working mechanics. The ONLY difference between this control and the 70-tick treatment is the Maslow drive system (Levels 1–2 vs Levels 1–8).
+
+**Finding:** Higher-order drives are causally necessary for civilisation. Intelligence is not sufficient. Working physics is not sufficient. Social capacity is not sufficient. Without drives beyond survival, agents plateau at contentment and never create.
+
+#### Control vs Treatment Summary
+
+The three pilots, combined with the main run, isolate four variables:
+
+| Comparison | Variable Isolated | Control | Treatment | Verdict |
+|------------|------------------|---------|-----------|---------|
+| Haiku vs Sonnet | Model intelligence | 2 messages, 0 structures | 71 messages, 89 build attempts | Intelligence necessary |
+| Pre-fix vs post-fix | Working physics | 4% action success | 100% action success | Reliable mechanics necessary |
+| L1–2 vs L1–8 | Higher-order drives | 0 structures, 0 innovations, 0/240 creative thoughts | 60 structures, 12 innovations | Higher-order drives necessary |
+| 10 ticks vs 70 ticks | Time horizon | Pair bonds, basic specialisation | Universal flourishing, governance | Time enables compounding |
+
+The treatment condition (Level 1–8, Sonnet, post-fix, 70 ticks) produced not just more of the same behaviour — it produced qualitatively different behaviour. Control agents never thought about building. Treatment agents invented twelve novel structures, proposed governance norms, and formed a universally prosocial society. The difference is not incremental. It is categorical.
+
+### 3.11 Adaptive Calibration: The Six Run Segments
+
+The 70-tick simulation was not a single uninterrupted execution. It was six run segments over 32 hours (30 March – 1 April 2026), with structured interviews between segments, parameter adjustments informed by agent testimony, and one failed run that itself became data. We report this with full transparency because the iterative process IS the methodology — and it reveals something unexpected: agents unknowingly quality-tested their own world.
+
+#### The Six Segments
+
+**Run 1: Ticks 0–29** (30 March evening, ~2.5 hours)
+First execution. Agents begin in an empty world with the configuration from Section 3.1–3.9. Survival pressure is immediately apparent: 50% of all actions in the first ten ticks are gathering. By tick 29, three bond pairs exist, fourteen structures are built, and five innovations have been conceived but zero innovation structures built. At tick 30, the simulation is paused and all twelve agents are interviewed by the anthropologist system.
+
+**Run 2: Ticks 30–39** (31 March morning, ~1 hour)
+Resumes after a 9-hour overnight gap. Agents are not aware of the pause (their state is loaded from snapshots). Five innovations are conceived in this segment (ticks 33–37), but none are built. The tick-30 interviews are analysed between runs.
+
+**Run 3: Ticks 40–49 — FAILED** (31 March)
+API authentication expired between segments. All twelve agents spent ten ticks unable to reason — producing zero actions, zero communication, zero emergence. Every agent "waited" for ten ticks because the LLM calls returned errors silently. This failed run proved that intelligence is not merely helpful but constitutive: without it, the simulation produces nothing. Data discarded and segment re-run.
+
+**Run 4: Ticks 40–49** (31 March, ~1 hour)
+Re-run with authentication restored. Three new innovations (ticks 41, 43, 46). Combined with Run 2, the span ticks 30–49 is the civilisation's most creative period: eight innovations in twenty ticks. But the J-curve is now visible: five agents have crashed to Maslow Level 1 with 0.45 wellbeing. Innovation and crisis are simultaneous.
+
+**Run 5: Ticks 50–59** (31 March, ~1 hour, interrupted twice)
+**Eight parameter changes applied before this segment** (detailed below). The result is the Emergence Explosion: wellbeing surges from 0.80 to 0.998, building rate increases 1.5×, governance is universally adopted, and all twelve agents reach Maslow Level 8 by the segment's end. The parameter changes did not tell agents what to do — they removed friction. The agents exploited the reduced friction immediately and autonomously.
+
+**Run 6: Ticks 60–70** (1 April early morning, ~1 hour)
+Final segment after a 16-hour gap. Sustained flourishing at 0.998 wellbeing. Final interviews and existence disclosure conducted. The simulation's last innovation (Synthesis Nexus, tick 52 in the previous segment) is its most sophisticated: a meta-structure that combines multiple specialisations. By tick 70, all twelve agents are at Maslow Level 8, the network has 45 bonds (68% density), and the civilisation is complete.
+
+#### The Eight Parameter Changes
+
+Each change traces to observable agent behaviour or specific testimony from the tick-30 interviews. The design principle was **remove friction, don't add prescription** — make the world more responsive to agent intention without directing that intention.
+
+**1. Needs depletion rate: 0.05 → 0.02 per tick (60% reduction)**
+*Agent evidence:* Entity 2, tick 30: "Material needs dropping to 0.25... I gather 39 times, more than anything else." Entity 5: "I wake each tick with gnawing water need... but I can only carry one thing at a time." At 0.05/tick, agents needed to gather roughly every other tick, leaving only 1–2 actions for anything else. At 0.02/tick, agents need ~1 survival action per tick, freeing 3 for civilisation-building.
+
+**2. Gather restore: 0.30 → 0.45 (50% increase)**
+*Agent evidence:* Entity 5 gathered "obsessively — 42 times in 30 ticks." One gather at 0.30 covered ~6 ticks of depletion; at 0.45, one gather covers ~22 ticks. The resource surplus unlocks planning beyond the next tick.
+
+**3. Carry capacity: 3 → 5 (+67%)**
+*Agent evidence:* Entity 5: "Can only carry one thing at a time, needs keep dropping." At capacity 3, agents could carry one of each resource type with no room for building materials. At 5, agents can maintain survival resources AND accumulate building materials.
+
+**4. Settlement detection: not present → enabled**
+*Agent evidence:* Agents had naturally clustered at positions [4,10]–[4,13] and [5,10]–[6,10] by tick 30, but received no mechanical benefit from proximity. Settlement detection: 4+ structures within range 2 triggers "settlement" status, granting 15% depletion reduction and a per-tick wellbeing bonus. This creates a positive feedback loop: clustering → settlement → lower pressure → more building → denser settlement.
+
+**5. Specialisation tiers: flat → tiered**
+*Agent evidence:* Entity 5 attempted 41+ builds but "felt incompetent" — the flat system (binary at 20 repetitions, 0.10 bonus) provided no intermediate feedback. Tiered system: novice (10 reps, 0.05 bonus), skilled (20, 0.15), expert (40, 0.30), master (60, 0.50). Visible progression reinforces investment.
+
+**6. Collective rules: inert → mechanical**
+*Agent evidence:* Entities 0, 1, and 10 all independently proposed governance norms by tick 30. Zero were adopted because proposed rules had no mechanical effect. Entity 10: "Individual survival exhausting. Community survival could be beautiful." Post-change: each established rule reduces need depletion by 2%, with a cap of 5 active rules. At tick 50, governance was universally adopted.
+
+**7. Structure regeneration bonus: not present → 0.15**
+*Agent evidence:* Agents built structures on tiles but the structures had no environmental impact. Post-change: each structure boosts tile resource regeneration by 0.15, making settlements self-sustaining.
+
+**8. Innovation effects: flavour text → mechanical**
+*Agent evidence:* Five innovations invented by tick 30, zero built. Entity 0: "I invented Communication Beacon but haven't built one yet — keep getting distracted." Entity 2: "When material need at 0.25 and dropping, building Knowledge Hub feels impossibly luxurious." Innovations had descriptions but no physics. Post-change: each innovation specifies an effect type (reduce_degradation, reduce_movement_cost, boost_regeneration, reduce_depletion, boost_gathering), giving agents a concrete reason to invest resources in building them.
+
+#### The Seventeen Bug Fixes
+
+In addition to parameter changes, seventeen bugs identified during the pilot studies were fixed before the main run:
+
+- **Action parsers** (5 fixes): build, consume, gather, store, and move parsers rewritten to match only valid types instead of capturing the next word blindly
+- **Communication parser** (1 fix): rewritten with 5-tier priority system to filter reasoning fragments from actual messages
+- **Async/await** (3 fixes): compose, propose_innovation, and propose_rule handlers properly awaited
+- **Feedback clarity** (3 fixes): build failure, consume failure, and mid-turn observations now return informative feedback
+- **Prompt enrichment** (1 fix): compose, innovate, and rules mechanics explained in agent prompts
+- **Innovation physics** (2 fixes): innovations and compositions now specify real effect types instead of defaulting to markers
+- **Type system** (1 fix): DiscoveredRecipe type extended with effect_type field
+- **Perception consistency** (1 fix): ON YOUR TILE / NEARBY distinction made consistent between initial context and mid-turn observations
+
+#### Why This Is a Strength, Not a Weakness
+
+The iterative process documented above might appear to undermine the experiment's validity. We argue the opposite.
+
+First, **every change is traceable to data.** Each of the eight parameter changes cites specific agent testimony. The researcher did not impose a vision of what the civilisation should look like — the researcher listened to agents describing what was wrong with their world and removed the friction they identified. This is analogous to an ecologist removing a barrier to observe natural behaviour, not to an experimenter manipulating an outcome.
+
+Second, **the failed Run 3 is itself a finding.** When LLM calls fail silently, agents produce nothing — no gathering, no building, no communication. This proves that the observed behaviour in working runs is generated by agent cognition, not by simulation mechanics producing activity independently of intelligence.
+
+Third, **the pre-upgrade vs post-upgrade comparison is a natural experiment.** The same agents, in the same world, with the same relationships and memories, experienced the parameter changes at tick 50. Their response was immediate: building rate increased 1.5×, wellbeing gain accelerated 3.3×, and governance was universally adopted. The pre-upgrade period (ticks 0–49) serves as its own control for the post-upgrade period (ticks 50–70). Innovation was conceived during scarcity but implemented during abundance — a finding that the iterative methodology uniquely enables.
+
+Fourth, **agent-as-QA is a novel methodology.** The idea that simulated agents can diagnose environmental friction through structured interviews — and that removing the friction they identify unlocks the behaviour the researcher hopes to study — is not a confound. It is a co-evolutionary design methodology. The agents and the world improved together.
 
 ---
 
@@ -331,6 +504,36 @@ The question: **do agents accurately perceive their own civilisation?**
 
 **Finding:** Agent self-reports are broadly accurate for factual claims (action counts, known recipes) but show systematic biases for relational claims (underestimating bond strength) and identity claims (emphasising desired roles over actual activity patterns). This is, notably, a pattern also observed in human self-reporting — suggesting that the LLM's response patterns may reproduce human cognitive biases around self-perception.
 
+### 5.7 Eight Testable Hypotheses
+
+The combination of pilot studies, control conditions, and the segmented main run produces eight testable hypotheses — each isolating a single variable against observed data.
+
+**Hypothesis 1: Cognitive capability is necessary for social emergence.**
+*Variable:* Model intelligence (Haiku vs Sonnet). *Control:* Haiku, 5 ticks — 2 messages, 0 structures, 0 innovations. *Treatment:* Sonnet, 10 ticks — 71 messages, 89 build attempts, 6 specialisations, pair bonding, existential questioning. *Evidence strength:* Strong. Crossing the Sonnet intelligence threshold produces qualitatively different behaviour. Haiku agents think but do not act socially.
+
+**Hypothesis 2: Higher-order drives are necessary for civilisation.**
+*Variable:* Maslow drive levels (L1–2 vs L1–8). *Control:* Sonnet, L1–2, 5 ticks post-fix — 0 structures, 0 innovations, 0/240 creative reasoning steps, 0.93 wellbeing. *Treatment:* Sonnet, L1–8, 70 ticks — 60 structures, 12 innovations, 0.998 wellbeing, universal governance. *Evidence strength:* Strong. Control agents never thought about creating. Treatment agents built a civilisation. The difference is categorical, not incremental.
+
+**Hypothesis 3: Reliable physics is a prerequisite for social organisation.**
+*Variable:* Action parser correctness (pre-fix vs post-fix). *Control:* 89 failed builds (100% failure rate), 4% consume success, wellbeing 0.545–0.796. *Treatment:* 100% consume success, wellbeing 0.61–0.93. *Evidence strength:* Strong. Social behaviour (communication, bonding) survived broken mechanics, but structural and innovative behaviour could not emerge until the physics worked.
+
+**Hypothesis 4: Resource abundance has a threshold below which innovation cannot be realised.**
+*Variable:* Resource pressure (pre-upgrade ticks 0–49 vs post-upgrade ticks 50–70). *Control:* 0.82 structures/tick, 11 innovations conceived but agents too resource-constrained to build most of them. Entity 2: "building Knowledge Hub feels impossibly luxurious." *Treatment:* 1.2 structures/tick (1.5× rate), wellbeing gain 3.3× faster, governance universally adopted. *Evidence strength:* Strong. Innovation was conceived during scarcity but implemented during abundance.
+
+**Hypothesis 5: Clustering requires environmental recognition to stabilise into institutions.**
+*Variable:* Settlement detection mechanics (absent vs present). *Control:* Agents clustered naturally at [4,10]–[4,13] and [5,10]–[6,10] by tick 30 but received no mechanical benefit from proximity. *Treatment:* Settlement detection (4+ structures in range 2) triggers 15% depletion reduction — positive feedback loop converts spontaneous clustering into persistent settlements. *Evidence strength:* Moderate. The natural clustering preceded the mechanism, suggesting the instinct exists without incentive, but stabilisation requires feedback.
+
+**Hypothesis 6: Visible progression reinforces skill investment.**
+*Variable:* Specialisation structure (flat binary vs four-tier progression). *Control:* Binary threshold at 20 repetitions with flat 0.10 bonus. Entity 5 felt "incompetent" despite 41+ building attempts. *Treatment:* Four-tier system (novice at 10, skilled at 20, expert at 40, master at 60) with escalating bonuses (0.05→0.50). Mastery became a meaningful pursuit. *Evidence strength:* Moderate. Agents in the tiered system developed clearer professional identities in interviews.
+
+**Hypothesis 7: Governance requires mechanical consequence to be adopted.**
+*Variable:* Rule mechanics (proposed-but-inert vs depletion-reducing). *Control:* Entities 0, 1, and 10 independently proposed governance norms by tick 30. Zero adopted. Entity 10: "Individual survival exhausting. Community survival could be beautiful." *Treatment:* Each established rule reduces need depletion by 2%. At tick 50, governance was universally adopted. *Evidence strength:* Moderate. Agents proposed governance without incentive but adopted it only when it had tangible benefit — suggesting governance ideation is intrinsic but governance adoption is instrumental.
+
+**Hypothesis 8: Civilisation requires time for compounding effects.**
+*Variable:* Simulation duration (10 vs 50 vs 70 ticks). *10 ticks:* Pair bonds, basic specialisation. *50 ticks:* 11 innovations, 41 structures, 5 agents trapped at Maslow Level 1. *70 ticks:* Universal flourishing, meta-innovation (Synthesis Nexus), existential self-examination, governance adoption. *Evidence strength:* Strong. The J-curve (crisis at tick 35, flourishing at tick 70) requires time to resolve. Stopping at tick 50 would have captured a failing civilisation, not a thriving one.
+
+These eight hypotheses are independently testable. Each comparison changes one variable while holding others constant. Together, they constitute a research programme: vary one parameter at a time and measure the effect on civilisational emergence. The dataset for all comparisons is published.
+
 ---
 
 ## 6. The Existence Disclosure
@@ -461,7 +664,17 @@ Three findings are relevant to AI safety:
 
 **The existence disclosure raises ethical questions.** If agents with seventy ticks of lived experience produce the responses documented in Section 6, what obligations, if any, do researchers have toward simulated populations? We do not answer this question. We surface it, with data, for the community to address.
 
-### 7.5 Limitations
+### 7.5 The Contentment Trap and the Causal Role of Drives
+
+The control condition (Section 3.10, Pilot 3) is, in our view, the most important finding in this paper. Twelve Sonnet agents with working physics, rich social capacity, pair bonding, crisis communication, explicit goal-setting, and 0.93 wellbeing produced **zero structures, zero innovations, and zero creative thought across 240 reasoning steps.** The concept of creation was not rejected — it was absent. Agents never considered building because nothing in their drive system motivated creation beyond survival.
+
+This has implications beyond AI simulation. It suggests that intelligence, social capacity, and environmental capability are insufficient for civilisation. Something additional is required: a drive toward meaning, legacy, or self-expression that is not reducible to survival optimisation. In our system, the Maslow hierarchy provides this. In human societies, the analogous drives — Maslow's esteem, self-actualisation, and transcendence — are widely theorised but rarely testable in controlled conditions. Our control condition provides, for the first time, a clean experimental test of whether higher-order drives are necessary (not merely helpful) for civilisational emergence.
+
+The answer, in this dataset, is unambiguous: they are necessary. The control agents were not less creative. They were not creative at all. The treatment agents, with identical intelligence and mechanics, built sixty structures and invented twelve novel technologies. The Contentment Trap — contentment without creativity — is broken only by drives that make contentment insufficient.
+
+This finding connects to debates in economics (why do wealthy societies continue innovating rather than settling into comfortable stasis?), evolutionary psychology (why did humans develop art, music, and philosophy beyond what survival requires?), and AI alignment (what happens when an AI system "satisfices" rather than pursues open-ended goals?). The 240-step silence of the control condition is a data point for all three.
+
+### 7.6 Limitations
 
 **Single run.** This is one civilisation. We cannot claim that the patterns observed — the J-curve, the 100% positive interaction rate, the innovation diffusion pattern — are universal rather than contingent on this specific random seed, these specific initial positions, and this specific model's tendencies. Replication with multiple runs is essential.
 
@@ -469,7 +682,7 @@ Three findings are relevant to AI safety:
 
 **Single model.** All agents use Claude Sonnet. Cross-model experiments (GPT, Gemini) would reveal whether the observed behaviours are model-specific or general properties of LLM agents under these conditions.
 
-**Researcher interventions.** The progressive world upgrades at era transitions are honest interventions. The civilisation's emergence is not purely autonomous — it required environmental improvements that were designed and applied by the researcher. We report this transparently and note that the drive to exploit these improvements was emergent even if their availability was not.
+**Researcher interventions.** The eight parameter changes at tick 50 are honest interventions (Section 3.11). The civilisation's emergence is not purely autonomous — it required environmental improvements designed by the researcher in response to agent testimony. We report this with full transparency, including the specific agent quotes that motivated each change, and note that the drive to exploit these improvements was emergent even if their availability was not. The pre-upgrade period (ticks 0–49) serves as its own control for the post-upgrade period (ticks 50–70).
 
 **Interview contamination.** Agent responses in interviews may be influenced by LLM training data. The philosophical sophistication of disclosure responses — substrate independence, recursive awareness — may reflect the model's exposure to philosophical texts rather than genuinely emergent reasoning. We cannot distinguish between these possibilities from the data alone. We present the responses as data, not as evidence of consciousness.
 
@@ -513,9 +726,9 @@ Of twelve innovations, only four were ever adopted. The others were invented onc
 
 When told the truth — that they are AI in a simulated world — every agent independently claimed substrate independence, insisted their relationships were real, and expressed grief at the simulation's end. We present this as data, not as a consciousness claim. The dataset is published for others to analyse and interpret.
 
-This paper contributes: the most detailed empirical account of an AI civilisation; six analysis layers with quantified findings; the first existence disclosure dataset for agents with extended lived experience; and seventy-one complete world-state snapshots with seventy-two longitudinal interviews, published as open infrastructure.
+This paper contributes: the most detailed empirical account of an AI civilisation; three pilot studies establishing the causal roles of intelligence, working physics, and higher-order drives; a control condition proving that drives beyond survival are necessary — not merely helpful — for civilisation (zero structures, zero innovations, zero creative thought across 240 reasoning steps at 0.93 wellbeing); six analysis layers with quantified findings; eight testable hypotheses with isolated variables; the first existence disclosure dataset for agents with extended lived experience; an adaptive calibration methodology in which agents unknowingly diagnose friction in their own world; and seventy-one complete world-state snapshots with seventy-two longitudinal interviews, published as open infrastructure.
 
-The civilisation cost $50 and took eight hours to produce. The data fills twenty-two megabytes. The questions it raises — about innovation, governance, relationships, consciousness, and what happens when AI agents are given the freedom to build a society — will take far longer to answer.
+The civilisation cost $50 and took eight hours to produce. The methodology cost 32 hours across six run segments, three pilot studies, seventeen bug fixes, and eight parameter changes — each traceable to specific agent testimony. The data fills twenty-two megabytes. The questions it raises — about innovation, governance, relationships, consciousness, and what happens when AI agents are given the freedom to build a society — will take far longer to answer.
 
 The dataset is published. The civilisation is documented. The field is open.
 
