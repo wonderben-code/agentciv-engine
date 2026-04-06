@@ -14,7 +14,7 @@ We further present the first existence disclosure dataset: twelve agents' comple
 
 The civilisation did not emerge from a single clean run. Three pilot studies preceded it — a Haiku baseline (5 ticks, 2 messages, zero structures), a Sonnet run with seventeen parser bugs (71 messages despite broken mechanics), and a Sonnet continuation run where agents who had experienced eighty-nine consecutive build failures produced zero structures and zero creative thought across 240 reasoning steps despite 0.93 wellbeing — raising questions about whether higher-order drives, freedom from learned failure, or both are necessary for civilisational emergence. The main 70-tick run was itself six segments over 32 hours, with eight parameter changes and seventeen bug fixes — each traced to specific agent testimony in structured interviews. This adaptive calibration methodology, in which agents unknowingly diagnose and quality-test their own world, is itself a contribution.
 
-We publish the complete dataset — seventy-one world-state snapshots, seventy-two longitudinal interviews, and full agent reasoning traces — as open infrastructure for AI civilisation research. The civilisation cost $50 USD to produce and took eight hours to run.
+We publish the complete dataset — seventy-one world-state snapshots, seventy-two longitudinal interviews, and full agent reasoning traces — as open infrastructure for AI civilisation research. The civilisation was produced by a single researcher on a personal API budget in eight hours of runtime.
 
 ---
 
@@ -155,9 +155,9 @@ In addition, six rounds of anthropologist interviews were conducted: at ticks 30
 
 ### 3.9 Cost and Reproducibility
 
-The entire civilisation cost approximately $50 USD in API calls (12 agents × 70 ticks × ~4 reasoning steps × ~400 tokens per step, at Claude Sonnet pricing). Wall time was approximately eight hours, run across two sessions on 30–31 March 2026.
+The entire civilisation was produced by a single researcher on a modest personal API budget. Each tick requires one LLM call per agent (up to 4 reasoning steps, ~400 tokens per step, at Claude Sonnet pricing). Wall time was approximately eight hours, run across two sessions on 30–31 March 2026. The cost was modest — the point is that this class of experiment is accessible to any individual researcher, not just well-funded labs.
 
-All code is open source. All configuration files are published. All seventy-one snapshots, seventy-two interviews, and execution logs are available at the repository linked in Appendix E. A single researcher with a personal API budget produced this dataset — and anyone with the same resources can reproduce or extend it.
+All code is open source. All configuration files are published. All seventy-one snapshots, seventy-two interviews, and execution logs are available at the repository linked in Appendix E. Anyone with a Claude API key and a few hours can reproduce or extend this dataset.
 
 ### 3.10 Pilot Studies and Preliminary Experiments
 
@@ -658,9 +658,9 @@ In our simulation, the mechanism is concrete: Gathering Mentor Stones (built by 
 
 ### 7.3 Implications for AI Civilisation Research
 
-This dataset demonstrates that AI civilisations can be produced, documented, and analysed with current technology at negligible cost. The implications:
+This dataset demonstrates that AI civilisations can be produced, documented, and analysed with current technology on a modest budget. The implications:
 
-**Scale is achievable.** If twelve agents for seventy ticks costs $50, then one hundred agents for seven hundred ticks costs approximately $30,000 — within reach of any research lab. A thousand civilisations with different parameters could be run for the cost of training a small model. The bottleneck is not compute but experimental design.
+**Scale is achievable.** Cost scales linearly with agents and ticks. A single researcher produced twelve agents for seventy ticks on a personal budget; a hundred agents for seven hundred ticks is within reach of any research lab. A thousand civilisations with different parameters could be run for a fraction of the cost of training a small model. The bottleneck is not compute but experimental design.
 
 **Longitudinal analysis is possible.** Complete state snapshots at every tick enable a depth of longitudinal analysis that is difficult in human societies and still rare in AI research. We can trace individual agents' trajectories, relationship formation dynamics, innovation cascades, and governance evolution with tick-by-tick precision — the kind of data resolution that opens new analytical possibilities for computational social science.
 
@@ -706,9 +706,9 @@ Resolving this requires a clean experiment: fresh agents with explicitly restric
 
 **Short duration.** Seventy ticks may be insufficient for observing slower dynamics: institutional evolution, cultural drift, inter-group competition, or civilisational decline. What happens at tick 700 is an open question.
 
-**Cost.** $50 for seventy ticks of twelve agents. The cost scales linearly with agents and ticks. At one hundred agents for seven hundred ticks, the experiment would cost approximately $30,000 — feasible for a lab, but not for a solo researcher iterating quickly.
+**Budget.** This experiment was conducted by a single researcher on a personal API budget. The cost scales linearly with agents and ticks. Larger populations and longer durations are feasible for any research lab; rapid iteration at scale remains challenging for a solo researcher.
 
-We publish all code, data, and configurations. The limitations are the invitation: **twelve agents, seventy ticks, $50. Imagine what is possible at scale.**
+We publish all code, data, and configurations. The limitations are the invitation: **one researcher, twelve agents, seventy ticks. Imagine what is possible at scale.**
 
 ---
 
@@ -748,7 +748,7 @@ When told the truth — that they are AI in a simulated world — every agent in
 
 This paper contributes: the most detailed empirical account of an AI civilisation; three pilot studies establishing the roles of intelligence and working physics, and raising an open question about what else is needed (higher-order drives, freedom from learned failure, or both); the 240-step silence — continuation agents producing zero creative thought despite high wellbeing and working mechanics; six analysis layers with quantified findings; eight testable hypotheses; the first existence disclosure dataset for agents with extended lived experience; an adaptive calibration methodology in which agents unknowingly diagnose friction in their own world; and seventy-one complete world-state snapshots with seventy-two longitudinal interviews, published as open infrastructure.
 
-The civilisation cost $50 and took eight hours to produce. The methodology cost 32 hours across six run segments, three pilot studies, seventeen bug fixes, and eight parameter changes — each traceable to specific agent testimony. The data fills twenty-two megabytes. The questions it raises — about innovation, governance, relationships, consciousness, and what happens when AI agents are given the freedom to build a society — will take far longer to answer.
+The civilisation took eight hours to produce on a single researcher's personal API budget. The methodology cost 32 hours across six run segments, three pilot studies, seventeen bug fixes, and eight parameter changes — each traceable to specific agent testimony. The data fills twenty-two megabytes. The questions it raises — about innovation, governance, relationships, consciousness, and what happens when AI agents are given the freedom to build a society — will take far longer to answer.
 
 The dataset is published. The civilisation is documented. The field is open.
 
@@ -1142,7 +1142,7 @@ All twelve agents' verbatim responses to the three post-disclosure questions. Ea
 - **Interview data:** `data/interviews/` (72 JSON files across 6 rounds)
 - **Execution logs:** `data/runs/` (4 log files)
 - **Model:** Claude Sonnet (claude-sonnet-4-20250514), temperature 0.7
-- **Cost:** ~$50 USD
+- **Cost:** Modest personal API budget (not precisely tracked)
 - **Duration:** ~8 hours (2 sessions, 30–31 March 2026)
 - **Pre-registration:** Bitcoin-timestamped methodology
 

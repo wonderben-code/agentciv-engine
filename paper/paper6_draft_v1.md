@@ -478,7 +478,7 @@ The meta-recommendation: **optimise for conflict minimisation.** The best struct
 
 The economics of this finding deserve explicit attention. Configuration is not just a quality lever — it is a cost lever.
 
-In our experiment, the collaborative team spent 81 messages on coordination. The hierarchical team spent 14. Same quality. That is a 5.8× difference in communication token cost for identical output quality. At API pricing of ~$3/million input tokens and ~$15/million output tokens, the communication overhead of the wrong configuration scales linearly with team size and run count.
+In our experiment, the collaborative team spent 81 messages on coordination. The hierarchical team spent 14. Same quality. That is a 5.8× difference in communication token cost for identical output quality. At current API pricing, the communication overhead of the wrong configuration scales linearly with team size and run count.
 
 The competitive team generated 31 merge conflicts. Each conflict represents: (1) an agent's work being discarded or degraded, (2) tokens spent producing that work, (3) tokens spent resolving the conflict, and (4) tokens spent redoing the work. Conservative estimate: each conflict wastes 2-3× the tokens of a clean contribution. Thirty-one conflicts in a 13-tick run means the competitive team wasted roughly half its total compute on conflict-related work.
 
@@ -558,7 +558,7 @@ We state our limitations honestly, not as caveats but as invitations.
 
 **Single task.** The city grid was purpose-built to maximise configuration sensitivity. Whether these effects replicate on software engineering, creative writing, scientific research, or strategic planning tasks is an open question — though the four-property framework (Section 3) provides the methodology for investigating it.
 
-**Single runs.** Each configuration was run once. Without repeated trials, we cannot compute statistical significance. We frame this paper as a demonstration and methodology paper — the first evidence that the effect exists, not a large-N proof of its magnitude. The entire experiment cost ~$50 USD and 51 minutes of wall time. Any lab can replicate at 100× scale in a week.
+**Single runs.** Each configuration was run once. Without repeated trials, we cannot compute statistical significance. We frame this paper as a demonstration and methodology paper — the first evidence that the effect exists, not a large-N proof of its magnitude. The entire experiment ran in 51 minutes of wall time on a single researcher's personal API budget. Any lab can replicate at 100× scale in a week.
 
 **Single model.** All agents used Claude Sonnet 4.6. Cross-model comparisons (Claude vs. GPT vs. Gemini) would reveal whether configuration effects are model-dependent or model-invariant. If different models respond differently to the same organisational structure, that is itself a contribution — it would mean configuration recommendations are model-specific, adding another dimension to the optimisation space.
 
@@ -566,7 +566,7 @@ We state our limitations honestly, not as caveats but as invitations.
 
 **Independent researcher.** This work was conducted by a single researcher with a personal API budget, not a lab with dedicated compute. The budget constraint is real and stated — and it is also the point: the methodology is efficient enough that anyone can use it.
 
-We publish all code, configurations, data, conversation logs, and scoring infrastructure as open-source. The limitation is the opportunity: **we showed this is possible with $50 and 51 minutes. Imagine what is possible at scale.**
+We publish all code, configurations, data, conversation logs, and scoring infrastructure as open-source. The limitation is the opportunity: **one researcher, five configurations, 51 minutes. Imagine what is possible at scale.**
 
 ---
 
@@ -609,7 +609,7 @@ The implications scale vertically: from 4 agents building a city, to 20 agents b
 
 The implications scale horizontally: from AI engineering to organisational theory, from compute cost optimisation to AGI safety, from enterprise deployment to the governance of AI collectives. Configuration is not a technical detail. It is an independent lever that multiplies the gains from model capability — and unlike model capability, it can be optimised today, at zero additional cost, by anyone with access to the tools we publish.
 
-This paper opens the field of Collective Intelligence Engineering — the systematic design, measurement, and optimisation of collective AI configurations. One researcher, $50, 51 minutes, and the first empirical proof that structure shapes AI collective output. The methodology is efficient enough that anyone can reproduce it. A lab could explore the full configuration space in a week. The possibility space is vast. The tools exist. The first evidence is in. The field is open.
+This paper opens the field of Collective Intelligence Engineering — the systematic design, measurement, and optimisation of collective AI configurations. One researcher, a personal API budget, 51 minutes, and the first empirical proof that structure shapes AI collective output. The methodology is efficient enough that anyone can reproduce it. A lab could explore the full configuration space in a week. The possibility space is vast. The tools exist. The first evidence is in. The field is open.
 
 ---
 
@@ -686,7 +686,7 @@ agentciv test-tasks \
   --output benchmark_results/city_grid
 ```
 
-Estimated cost: ~$50 USD. Estimated time: ~51 minutes.
+Estimated time: ~51 minutes. Cost scales linearly with runs.
 
 ---
 
