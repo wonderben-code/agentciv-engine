@@ -450,6 +450,8 @@ The deeper implication is about recursive improvement. Auto mode agents are not 
 
 This primitive form of collective self-improvement is available today, with current models. It does not require AGI-level individual agents. It requires only the freedom to restructure and the mechanisms to do so.
 
+The auto mode finding connects directly to a mechanism described in a companion paper: recursive emergence (Mala, 2026g). When a configured team spawns a civilisation and that civilisation produces emergent organisational forms, those forms can be extracted and used to configure the next generation of teams. Auto mode's self-designed organisational structures — discovered through collective deliberation rather than human design — are precisely the kind of emergent configurations that seed the recursive loop. The fact that auto mode's self-designed structure outperformed every human-designed preset in this experiment suggests that the recursive emergence mechanism has a strong starting signal: even at generation zero, the emergent configurations are competitive with or superior to designed ones.
+
 ### 7.3 Communication, Conflict, and the Cost of Coordination
 
 Two findings, taken together, reveal the economics of multi-agent coordination:
@@ -499,6 +501,8 @@ The auto mode result has a further implication for enterprises: AI teams can sel
 At scale, this becomes a competitive advantage. Consider two companies deploying 1,000 AI agents each on identical tasks. Company A uses a single hardcoded coordination strategy. Company B uses auto mode with the learning system, accumulating empirical data on which configurations work for which task types and adapting automatically. Company B's agents will, over time, produce better output at lower cost with fewer failures — not because the individual agents are smarter, but because the collective is better organised. **In the age of multi-agent AI, organisational design is competitive advantage.**
 
 The trajectory from here is clear: AI-run companies. Not companies that use AI, but companies where the workforce *is* AI agents — hundreds or thousands of them, coordinated by organisational structures that can be measured, tuned, and adapted in real time. The org chart of such a company is not a static diagram. It is a configuration parameter, optimised continuously against performance metrics, adapted per-task and per-phase. This paper demonstrates the principle at 4-agent scale. The principle is scale-invariant.
+
+This controlled experiment has a natural complement: a companion paper (Mala, 2026i) documents the complete natural history of a 12-agent civilisation running under the AgentCiv Simulation — the emergent arm of the research programme. Where this paper holds everything constant except organisational structure and measures the effect, that paper provides identical agents with Maslow-driven needs and no social programming, then documents what civilisation emerges over 70 ticks. The two experiments are complementary: this paper establishes that organisational configuration causes measurable performance differences in a controlled setting; the companion paper establishes that rich civilisational dynamics — governance, innovation, social bonds, collective identity — emerge spontaneously when agents are given the freedom to self-organise. Together, they demonstrate both the directed and emergent dimensions of Collective Machine Intelligence (Mala, 2026d).
 
 ### 7.7 Implications for AGI: Configuration as Capability Amplifier
 
@@ -707,6 +711,10 @@ Lawrence, P.R. and Lorsch, J.W. (1967). *Organization and Environment.* Harvard 
 Li, G. et al. (2023). CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society. *NeurIPS 2023.*
 
 Mala, M.E. (2026). Collective Machine Intelligence: A New Field for the Age of AI Collectives. *AgentCiv Paper Series, Paper 4.*
+
+Mala, M.E. (2026g). Recursive Emergence: Self-Propagating Organisational Evolution Through Civilisational Generation. *AgentCiv Paper Series, Paper 7.*
+
+Mala, M.E. (2026i). Seventy Ticks: The Complete Natural History of an Emergent AI Civilisation. *AgentCiv Paper Series, Paper 9.*
 
 Mintzberg, H. (1979). *The Structuring of Organizations.* Prentice-Hall.
 
