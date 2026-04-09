@@ -1,6 +1,7 @@
 # Same City, Different Architects: How Organisational Structure Shapes Collective AI Output Quality, Process, and Emergent Behaviour
 
 **Mark E. Mala**
+4 April 2026
 
 ---
 

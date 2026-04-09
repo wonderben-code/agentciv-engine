@@ -1,6 +1,7 @@
 # Seventy Ticks: The Complete Natural History of an Emergent AI Civilisation
 
 **Mark E. Mala**
+5 April 2026
 
 ---
 

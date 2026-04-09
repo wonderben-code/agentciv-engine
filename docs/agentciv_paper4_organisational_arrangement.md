@@ -1,7 +1,7 @@
 # Collective Machine Intelligence: A New Field for the Age of AI Collectives
 
 **Mark E. Mala**
-April 2026
+2 April 2026
 
 ---
 
