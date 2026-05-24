@@ -11,3 +11,20 @@ build/
 .agentciv/
 .netlify/
 *.ots.bak
+
+# Internal planning / Claude Code artefacts — keep out of public repo
+# (preserved in the private wonderben-code/agentciv-internal-archive repo)
+CLAUDE.md
+ROADMAP.md
+ROADMAP_*.md
+docs/WEBSITE_PLAN.md
+docs/BENCHMARK_PLAN.md
+docs/BENCHMARK_EXECUTION_PLAN.md
+docs/EXPERIMENT_PAGE_PLAN.md
+docs/PAPER_PLAN.md
+docs/PAPER_*_PLAN.md
+docs/APPLE_STYLE_GUIDE.md
+docs/CREATOR_MODE.md
+benchmark_results/internal/
+.claude/
+.clauderc
